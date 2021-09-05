@@ -1,0 +1,27 @@
+apiVersion: v2
+name: workshop-operator
+description: Helm Chart for workshop-operator
+
+type: application
+
+sources:
+  - https://github.com/stakater/workshop-operator
+
+# Helm chart Version
+version:  0.0.28
+
+# Application version to be deployed
+appVersion:  0.0.28
+
+keywords:
+  - stakater
+  - sro
+  - workshop-operator
+  - slack
+
+# Maintainers
+maintainers:
+  - name: stakater
+    email: hello@stakater.com
+
+icon: https://github.com/stakater/ForecastleIcons/blob/master/stakater.png
