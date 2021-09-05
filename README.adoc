@@ -1,0 +1,61 @@
+= Workshop Operator
+
+== Overview
+
+This is an https://coreos.com/operators/[Kubernetes Operator^] to install the infrastructure for running workshops on OpenShift.
+
+[IMPORTANT]
+====
+This operator has been tested on **OpenShift Container Platform 4.x** 
+with **N preconfigured users (user1, user2, ..., userN)**. 
+====
+
+== Deploy the Operator
+
+[IMPORTANT]
+====
+Please use an OpenShift user with **cluster-admin** privileges
+====
+
+=== Run it from your local environment
+
+Perform the following tasks:
+
+[source,bash]
+----
+oc new-project workshop-infra
+make install
+make run ENABLE_WEBHOOKS=false
+----
+
+=== Deploy it on OpenShift
+
+Perform the following tasks:
+
+[source,bash]
+----
+oc new-project workshop-infra
+oc apply -f https://raw.githubusercontent.com/stakater/workshop-operator/1.0/config/deploy/workshop_operator_deployment.yaml
+----
+
+== Install the Workshop Infrastructure
+
+The Workshop Infrastructure is deployed by creating a Custom Resource based on the **WorkShop** Custom Resource Definition. 
+There is examples of custom resources (CR) in https://github.com/stakater/openshift-workshop-operator/tree/master/deploy/crds[crds]
+
+For instance, to deploy the Workshop Infrastruture for the Cloud-Native Workshop, please execute the following command:
+
+[source,bash]
+----
+oc apply -n workshop-infra -f config/samples/workshop_v1_cloud_native_workshop.yaml
+----
+
+== Development
+
+=== Build and Push the Operator Image
+
+[source,bash]
+----
+make docker-build IMG=quay.io/stakater/workshop-operator
+make docker-push IMG=quay.io/stakater/workshop-operator
+----

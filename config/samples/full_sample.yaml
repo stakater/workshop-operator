@@ -1,0 +1,84 @@
+apiVersion: workshop.stakater.com/v1
+kind: Workshop
+spec:
+  infrastructure:
+    gitops:
+      enabled: true
+      operatorHub:
+        channel: stable
+        clusterServiceVersion: openshift-gitops-operator.v1.2.0
+    serviceMesh:
+      enabled: true
+      elasticSearchOperatorHub:
+        channel: stable
+      jaegerOperatorHub:
+        channel: stable
+      kialiOperatorHub:
+        channel: stable
+        clusterServiceVersion: kiali-operator.v1.24.9
+      serviceMeshOperatorHub:
+        channel: stable
+        clusterServiceVersion: servicemeshoperator.v2.0.7
+    pipeline:
+      enabled: false
+      operatorHub:
+        channel: stable
+        clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
+    istioWorkspace:
+      enabled: false
+      operatorHub:
+        channel: ''
+    certManager:
+      enabled: false
+      operatorHub:
+        channel: ''
+    gitea:
+      enabled: true
+      image:
+        name: quay.io/gpte-devops-automation/gitea-operator
+        tag: v0.17
+    vault:
+      enabled: true
+      image:
+        name: ''
+        tag: ''
+      agentInjectorImage:
+        name: ''
+        tag: ''
+    project:
+      enabled: true
+      stagingName: cn-project
+    guide:
+      bookbag:
+        enabled: false
+        image:
+          name: ''
+          tag: ''
+      scholars:
+        enabled: true
+        guideURL:
+          inner-loop: >-
+            https://redhat-scholars.github.io/inner-loop-guide/inner-loop/5.0/index.html
+          outer-loop: >-
+            https://redhat-scholars.github.io/outer-loop-guide/outer-loop/5.0/index.html
+    serverless:
+      enabled: false
+      operatorHub:
+        channel: ''
+    codeReadyWorkspace:
+      enabled: true
+      openshiftOAuth: false
+      operatorHub:
+        channel: latest
+        clusterServiceVersion: crwoperator.v2.10.1
+      pluginRegistryImage:
+        name: ''
+        tag: ''
+    nexus:
+      enabled: true
+  source:
+    gitBranch: '5.1'
+    gitURL: 'https://github.com/stakater/cloud-native-workshop'
+  user:
+    number: 1
+    password: openshift
