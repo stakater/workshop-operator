@@ -1,6 +1,6 @@
 module github.com/stakater/workshop-operator
 
-go 1.15
+go 1.16
 
 require (
 	github.com/argoproj-labs/argocd-operator v0.0.14
