@@ -3,10 +3,10 @@ package controllers
 import (
 	"context"
 
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	nexus "github.com/stakater/workshop-operator/common/nexus"
-	"github.com/prometheus/common/log"
 
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,7 +32,7 @@ func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reco
 // Add Nexus
 func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamespaceName string) (reconcile.Result, error) {
 
-	labels := map[string]string {
+	labels := map[string]string{
 		"app":                       "nexus",
 		"app.kubernetes.io/name":    "nexus",
 		"app.kubernetes.io/part-of": "nexus",

@@ -1,8 +1,8 @@
 package kubernetes
 
 import (
-	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

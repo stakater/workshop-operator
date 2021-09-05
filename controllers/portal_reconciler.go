@@ -4,10 +4,10 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/prometheus/common/log"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/redis"
 	"github.com/stakater/workshop-operator/common/usernamedistribution"
-	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

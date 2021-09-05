@@ -1,8 +1,8 @@
 package kubernetes
 
 import (
-	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	routev1 "github.com/openshift/api/route/v1"
+	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"

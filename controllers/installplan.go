@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/stakater/workshop-operator/common/kubernetes"
-	"github.com/stakater/workshop-operator/common/util"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/prometheus/common/log"
+	"github.com/stakater/workshop-operator/common/kubernetes"
+	"github.com/stakater/workshop-operator/common/util"
 )
 
 // ApproveInstallPlan approves manually the install of a specific CSV

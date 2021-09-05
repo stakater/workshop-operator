@@ -7,10 +7,10 @@ import (
 
 	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocdv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/argocd"
 	"github.com/stakater/workshop-operator/common/kubernetes"
-	"github.com/prometheus/common/log"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -24,7 +24,7 @@ import (
 // Reconciling GitOps
 func (r *WorkshopReconciler) reconcileGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-	
+
 	enabledGitOps := workshop.Spec.Infrastructure.GitOps.Enabled
 	argocdNamespaceName := "argocd"
 

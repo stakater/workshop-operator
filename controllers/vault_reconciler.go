@@ -17,7 +17,7 @@ import (
 
 // Reconciling Vault
 func (r *WorkshopReconciler) reconcileVault(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
-	
+
 	enabled := workshop.Spec.Infrastructure.Vault.Enabled
 	vaultNamespaceName := "vault"
 
@@ -141,7 +141,7 @@ storage "file" {
 }
 
 // Add VaultAgentInjector
-func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop, users int, , vaultNamespaceName string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop, users int, vaultNamespaceName string) (reconcile.Result, error) {
 
 	// Create Labels
 	labels := map[string]string{

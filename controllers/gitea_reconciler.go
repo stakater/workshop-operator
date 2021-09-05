@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
+	routev1 "github.com/openshift/api/route/v1"
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/gitea"
 	"github.com/stakater/workshop-operator/common/kubernetes"
-	routev1 "github.com/openshift/api/route/v1"
-	"github.com/prometheus/common/log"
 
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"

@@ -18,8 +18,8 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			Labels:    labels,
 		},
 		Spec: NexusSpec{
-			NexusVolumeSize:    "5Gi",
-			NexusSSL:           true,
+			NexusVolumeSize: "5Gi",
+			NexusSSL:        true,
 			// TODO: it's pretty old image; should replace with latest version
 			NexusImageTag:      "3.18.1-01-ubi-3",
 			NexusCPURequest:    1,
