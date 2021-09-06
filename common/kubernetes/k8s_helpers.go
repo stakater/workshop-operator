@@ -19,10 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var (
-	k8sclient = GetK8Client()
-)
-
 type k8s struct {
 	clientset kubernetes.Interface
 }

@@ -494,7 +494,7 @@ func updateUserEmail(workshop *workshopv1.Workshop, username string,
 				strings.NewReader(`{"email":"`+username+`@none.com"}`))
 			httpRequest.Header.Set("Content-Type", "application/json")
 			httpRequest.Header.Set("Authorization", "Bearer "+masterToken.AccessToken)
-			httpResponse, err = client.Do(httpRequest)
+			// httpResponse, err = client.Do(httpRequest)
 			if err != nil {
 				log.Errorf("Error when update email address for %s: %v", username, err)
 				return reconcile.Result{}, err
