@@ -19,9 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-var (
-	k8sclient = GetK8Client()
-)
 
 type k8s struct {
 	clientset kubernetes.Interface
@@ -136,6 +133,9 @@ func (cl *k8s) GetPodLogs(podName string, namespace string) {
 	} else {
 		buf := new(bytes.Buffer)
 		_, err = io.Copy(buf, readCloser)
+		if err != nil {
+			log.Error(err, "Failed to copy")
+		}
 		log.Infof("Pod log: %v", buf.String())
 	}
 }

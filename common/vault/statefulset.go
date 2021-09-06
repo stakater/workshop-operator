@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewStatefulSet creates a statefulset
@@ -218,7 +219,9 @@ sed -Ei "s/POD_IP/${POD_IP?}/g" /tmp/storageconfig.hcl;
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, statefulset, scheme)
-
+	err := ctrl.SetControllerReference(workshop, statefulset, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return statefulset
 }

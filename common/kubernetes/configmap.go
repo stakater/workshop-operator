@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewConfigMap creates a Config Map
@@ -22,7 +23,9 @@ func NewConfigMap(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, configmap, scheme)
-
+	err := ctrl.SetControllerReference(workshop, configmap, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return configmap
 }

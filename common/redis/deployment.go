@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewDeployment create a deployment
@@ -117,7 +118,8 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, dep, scheme)
-
+	err := ctrl.SetControllerReference(workshop, dep, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")	}
 	return dep
 }

@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewRole creates a Role
@@ -22,7 +23,9 @@ func NewRole(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, role, scheme)
-
+	err := ctrl.SetControllerReference(workshop, role, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return role
 }
