@@ -40,8 +40,9 @@ oc apply -f https://raw.githubusercontent.com/stakater/workshop-operator/1.0/con
 
 == Install the Workshop Infrastructure
 
-The Workshop Infrastructure is deployed by creating a Custom Resource based on the **WorkShop** Custom Resource Definition. 
-There is examples of custom resources (CR) in https://github.com/stakater/openshift-workshop-operator/tree/master/deploy/crds[crds]
+The Workshop Infrastructure is deployed by creating a Custom Resource based on the **WorkShop** Custom Resource Definition.
+
+There is examples of custom resources (CR) in https://github.com/stakater/workshop-operator/tree/main/config/samples[CR]
 
 For instance, to deploy the Workshop Infrastruture for the Cloud-Native Workshop, please execute the following command:
 
