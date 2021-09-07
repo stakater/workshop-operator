@@ -5,7 +5,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
+	"github.com/prometheus/common/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -19,7 +19,9 @@ func NewNamespace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name st
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, namespace, scheme)
-
+	err := ctrl.SetControllerReference(workshop, namespace, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return namespace
 }

@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewServiceMeshControlPlaneCR create a SMCP Custom Resource
@@ -47,7 +48,10 @@ func NewServiceMeshControlPlaneCR(workshop *workshopv1.Workshop, scheme *runtime
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, smcp, scheme)
+	err := ctrl.SetControllerReference(workshop, smcp, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 
 	return smcp
 }
@@ -66,7 +70,9 @@ func NewServiceMeshMemberRollCR(workshop *workshopv1.Workshop, scheme *runtime.S
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, smmr, scheme)
-
+	err := ctrl.SetControllerReference(workshop, smmr, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return smmr
 }

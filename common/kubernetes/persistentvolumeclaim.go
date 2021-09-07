@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewPersistentVolumeClaim creates a new persistent volume claim
@@ -35,8 +36,10 @@ func NewPersistentVolumeClaim(workshop *workshopv1.Workshop, scheme *runtime.Sch
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, pvc, scheme)
-
+	err :=ctrl.SetControllerReference(workshop, pvc, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return pvc
 
 }

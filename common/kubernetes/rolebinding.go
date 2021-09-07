@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewRoleBindingSA creates a Role Binding for Service Account
@@ -34,8 +35,10 @@ func NewRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, rolebinding, scheme)
-
+	err := ctrl.SetControllerReference(workshop, rolebinding, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return rolebinding
 }
 
@@ -58,7 +61,9 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, rolebinding, scheme)
-
+	err := ctrl.SetControllerReference(workshop, rolebinding, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return rolebinding
 }

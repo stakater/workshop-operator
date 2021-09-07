@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewAnsibleOperatorDeployment creates an Ansible Operator Deployment
@@ -97,8 +98,10 @@ func NewAnsibleOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, operator, scheme)
-
+	err := ctrl.SetControllerReference(workshop, operator, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return operator
 }
 
@@ -169,7 +172,10 @@ func NewOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, operator, scheme)
+	err := ctrl.SetControllerReference(workshop, operator, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 
 	return operator
 }

@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewCustomResourceDefinition creates a Custom Resource Definition (CRD)
@@ -35,7 +36,9 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, crd, scheme)
-
+	err := ctrl.SetControllerReference(workshop, crd, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return crd
 }

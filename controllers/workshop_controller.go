@@ -131,8 +131,8 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 	openshiftConsoleURL = "https://" + route.Spec.Host
-
-	re := regexp.MustCompile("^console-openshift-console\\.(.*?)$")
+	// change double quote to back quote
+	re := regexp.MustCompile(`^console-openshift-console\\.(.*?)$`)
 	match := re.FindStringSubmatch(route.Spec.Host)
 	appsHostnameSuffix = match[1]
 

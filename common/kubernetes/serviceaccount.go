@@ -6,6 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"github.com/prometheus/common/log"
 )
 
 // NewServiceAccount creates a Service Account
@@ -21,7 +22,9 @@ func NewServiceAccount(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
-	ctrl.SetControllerReference(workshop, serviceaccount, scheme)
-
+	err := ctrl.SetControllerReference(workshop, serviceaccount, scheme)
+	if err != nil {
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return serviceaccount
 }
