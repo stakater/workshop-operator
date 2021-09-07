@@ -520,8 +520,10 @@ func updateUserEmail(workshop *workshopv1.Workshop, username string,
 			}
 			httpRequest.Header.Set("Content-Type", "application/json")
 			httpRequest.Header.Set("Authorization", "Bearer "+masterToken.AccessToken)
+
 			// remove httpResponse because it is unused
 			_, err = client.Do(httpRequest)
+
 			if err != nil {
 				log.Errorf("Error when update email address for %s: %v", username, err)
 				return reconcile.Result{}, err
