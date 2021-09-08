@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/stakater/workshop-operator
-  newTag: latest
+  newTag: v0.0.1

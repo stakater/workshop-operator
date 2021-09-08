@@ -260,7 +260,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: quay.io/stakater/workshop-operator:latest
+                image: quay.io/stakater/workshop-operator:v0.0.1
                 name: manager
                 resources:
                   limits:
