@@ -3,10 +3,10 @@ package argocd
 import (
 	argocdoperator "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocd "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"github.com/prometheus/common/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

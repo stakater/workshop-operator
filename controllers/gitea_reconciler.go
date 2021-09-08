@@ -161,7 +161,7 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 
 	httpRequest, err = http.NewRequest("POST", requestURL, strings.NewReader(body.Encode()))
 	if err != nil {
-		log.Error(err,"Failed http POST Request  ")
+		log.Error(err, "Failed http POST Request  ")
 	}
 	httpRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	httpRequest.Header.Set("Accept", "application/json")

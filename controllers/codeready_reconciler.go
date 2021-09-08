@@ -299,7 +299,7 @@ func getUserToken(workshop *workshopv1.Workshop, username string, codeflavor str
 
 	httpRequest, err = http.NewRequest("POST", keycloakCheTokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
-		log.Error(err,"Failed http POST Request")
+		log.Error(err, "Failed http POST Request")
 	}
 	httpRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	httpResponse, err = client.Do(httpRequest)
@@ -349,7 +349,7 @@ func getOAuthUserToken(workshop *workshopv1.Workshop, username string,
 	// GET TOKEN
 	httpRequest, err = http.NewRequest("GET", oauthOpenShiftURL, nil)
 	if err != nil {
-		log.Error(err,"Failed http GET Request")
+		log.Error(err, "Failed http GET Request")
 	}
 	httpRequest.Header.Set("Authorization", "Basic "+util.GetBasicAuth(username, openshiftUserPassword))
 	httpRequest.Header.Set("X-CSRF-Token", "xxx")
@@ -379,7 +379,7 @@ func getOAuthUserToken(workshop *workshopv1.Workshop, username string,
 
 		httpRequest, err = http.NewRequest("POST", keycloakCheTokenURL, strings.NewReader(data.Encode()))
 		if err != nil {
-			log.Error(err,"Failed http POST Request")
+			log.Error(err, "Failed http POST Request")
 		}
 		httpRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		httpResponse, err = client.Do(httpRequest)
@@ -516,7 +516,7 @@ func updateUserEmail(workshop *workshopv1.Workshop, username string,
 			httpRequest, err = http.NewRequest("PUT", keycloakUserURL+"/"+cheUser[0].ID,
 				strings.NewReader(`{"email":"`+username+`@none.com"}`))
 			if err != nil {
-				log.Error(err,"Failed http PUT Request")
+				log.Error(err, "Failed http PUT Request")
 			}
 			httpRequest.Header.Set("Content-Type", "application/json")
 			httpRequest.Header.Set("Authorization", "Bearer "+masterToken.AccessToken)
@@ -562,7 +562,7 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 
 	httpRequest, err = http.NewRequest("POST", devfileWorkspaceURL, strings.NewReader(devfile))
 	if err != nil {
-		log.Error(err,"Failed http POST Request")
+		log.Error(err, "Failed http POST Request")
 	}
 	httpRequest.Header.Set("Authorization", "Bearer "+userAccessToken)
 	httpRequest.Header.Set("Content-Type", "application/json")

@@ -217,3 +217,6 @@ bump-chart-operator:
 
 # Bump Chart
 bump-chart: bump-chart-operator
+
+generate-crds: controller-gen
+	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/workshop-operator/crds

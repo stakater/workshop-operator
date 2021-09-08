@@ -1,12 +1,12 @@
 package kubernetes
 
 import (
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"github.com/prometheus/common/log"
 )
 
 // NewStringDataSecret create a String Data Secret
