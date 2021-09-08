@@ -114,7 +114,7 @@ jobs:
       # Generate tag for operator without "v"
       - name: Generate Operator Tag
         id: generate_operator_tag
-        uses: github-tag-action@1.32.0
+        uses: anothrNick/github-tag-action@1.32.0
         env:
           GITHUB_TOKEN: ${{ secrets.STAKATER_GITHUB_TOKEN }}
           RELEASE_BRANCHES: main
