@@ -16,7 +16,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    operators.operatorframework.io/builder: operator-sdk-v1.3.0
+    operators.operatorframework.io/builder: operator-sdk-v1.10.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
   name: workshop-operator.v0.0.1
   namespace: placeholder
@@ -29,7 +29,8 @@ spec:
       kind: Workshop
       name: workshops.workshop.stakater.com
       version: v1
-  description: A Kubernetes Operator to install the infrastructure for running workshops/bootcamps on OpenShift.
+  description: A Kubernetes Operator to install the infrastructure for running workshops/bootcamps
+    on OpenShift.
   displayName: workshop-operator
   icon:
   - base64data: ""
@@ -259,7 +260,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: controller:latest
+                image: docker.io/stakater/workshop-operator:v0.0.1
                 name: manager
                 resources:
                   limits:

@@ -36,7 +36,9 @@ IMAGE_TAG_BASE ?= docker.io/stakater/workshop-operator
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
+
 IMG ?= $(IMAGE_TAG_BASE):v$(VERSION)
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
