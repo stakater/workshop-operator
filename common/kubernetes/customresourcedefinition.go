@@ -1,12 +1,12 @@
 package kubernetes
 
 import (
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"github.com/prometheus/common/log"
 )
 
 // NewCustomResourceDefinition creates a Custom Resource Definition (CRD)

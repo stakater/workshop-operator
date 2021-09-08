@@ -1,12 +1,12 @@
 package kubernetes
 
 import (
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	admissionregistration "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"github.com/prometheus/common/log"
 )
 
 // NewMutatingWebhookConfiguration creates a Mutating Webhook Configuration

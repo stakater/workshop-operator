@@ -1,13 +1,13 @@
 package kubernetes
 
 import (
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"github.com/prometheus/common/log"
 )
 
 // NewPersistentVolumeClaim creates a new persistent volume claim
@@ -36,7 +36,7 @@ func NewPersistentVolumeClaim(workshop *workshopv1.Workshop, scheme *runtime.Sch
 	}
 
 	// Set Workshop instance as the owner and controller
-	err :=ctrl.SetControllerReference(workshop, pvc, scheme)
+	err := ctrl.SetControllerReference(workshop, pvc, scheme)
 	if err != nil {
 		log.Error(err, "Failed to set SetControllerReference")
 	}

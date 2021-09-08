@@ -1,10 +1,10 @@
 package nexus
 
 import (
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"github.com/prometheus/common/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -82,6 +82,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, cr, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")	}
+		log.Error(err, "Failed to set SetControllerReference")
+	}
 	return cr
 }
