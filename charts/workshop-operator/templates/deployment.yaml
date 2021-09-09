@@ -11,6 +11,7 @@ spec:
   selector:
     matchLabels:
       {{- include "workshop-operator.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -19,6 +20,7 @@ spec:
       {{- end }}
       labels:
         {{- include "workshop-operator.selectorLabels" . | nindent 8 }}
+        control-plane: controller-manager
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -33,16 +35,15 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=10
-        image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.7.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
           name: https
       - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
+        - --metrics-addr=127.0.0.1:8080
+        - --enable-leader-election
         command:
         - /manager
         env:

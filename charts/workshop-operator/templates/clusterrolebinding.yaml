@@ -44,5 +44,5 @@ subjects:
   name: {{ include "workshop-operator.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}
-  
+
 {{- end }}
