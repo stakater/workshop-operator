@@ -12,7 +12,7 @@ roleRef:
   name: {{ include "workshop-operator.fullname" . }}-leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: {{ include "workshop-operator.serviceAccountName" . }}
   namespace: {{ .Release.Namespace }}
 {{- end }}
   
