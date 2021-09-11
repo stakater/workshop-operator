@@ -198,13 +198,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.STAKATER_GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
 
-      - name: Helm install
-        run: |
-          curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz
-          tar -zxvf helm
-          sudo mv linux-amd64/helm /usr/local/bin/helm
-          helm version
-
-      - name: Generate manifests yaml
-        run: source hack/generate_workload.sh
-
