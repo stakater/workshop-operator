@@ -3,67 +3,219 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: {{ include "workshop-operator.fullname" . }}-manager-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - slack.stakater.com
-  resources:
-  - channels
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - slack.stakater.com
-  resources:
-  - channels/status
-  verbs:
-  - get
-  - patch
-  - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - appprojects
+      - argocds
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - endpoints
+      - events
+      - namespaces
+      - persistentvolumeclaims
+      - pods
+      - secrets
+      - serviceaccounts
+      - services
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - gpte.opentlc.com
+    resources:
+      - giteas
+      - nexus
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - maistra.io
+    resources:
+      - servicemeshcontrolplanes
+      - servicemeshmemberrolls
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - operators.coreos.com
+    resources:
+      - clusterserviceversions
+      - installplans
+      - operatorgroups
+      - subscriptions
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - org.eclipse.che
+    resources:
+      - checlusters
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - project.openshift.io
+    resources:
+      - projectrequests
+    verbs:
+      - create
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+      - clusterroles
+      - rolebindings
+      - roles
+    verbs:
+      - '*'
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - list
+      - update
+      - watch
+  - apiGroups:
+      - workshop.stakater.com
+    resources:
+      - workshops
+      - workshops/finalizers
+    verbs:
+      - '*'
+  - apiGroups:
+      - workshop.stakater.com
+    resources:
+      - workshops/status
+    verbs:
+      - get
+      - patch
+      - update
 ---
-{{- if .Values.rbac.allowProxyRole }}
+  {{- if .Values.rbac.allowProxyRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ include "workshop-operator.fullname" . }}-proxy-role
 rules:
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - tokenreviews
-  verbs:
-  - create
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
-{{- end }}
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  {{- end }}
 
 ---
-{{- if .Values.rbac.allowMetricsReaderRole }}
+  {{- if .Values.rbac.allowMetricsReaderRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ include "workshop-operator.fullname" . }}-metrics-reader
 rules:
-- nonResourceURLs:
-  - /metrics
-  verbs:
-  - get
-{{- end }}
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
+  {{- end }}
 
-{{- end }}
+  {{- end }}
