@@ -126,3 +126,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.STAKATER_GITHUB_TOKEN }}
         SLACK_WEBHOOK_URL: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
+
+    - name: helm install
+      run: make helm-install
+
+    - name: generate manifests yaml
+      run: make generate-workload-yaml
