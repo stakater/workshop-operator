@@ -118,7 +118,8 @@ jobs:
         allow-repeats: false
 
     - name: helm install
-      run: make helm-install
+      run: |
+        make helm-install
 
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
@@ -132,4 +133,5 @@ jobs:
 
 
     - name: generate manifests yaml
-      run: make generate-workload-yaml
+      run:|
+        make generate-workload-yaml
