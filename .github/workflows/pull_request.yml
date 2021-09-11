@@ -117,10 +117,6 @@ jobs:
         message: '@${{ github.actor }} Yikes! You better fix it before anyone else finds out! [Build](https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}/checks) has Failed!'
         allow-repeats: false
 
-    - name: helm install
-      run: |
-        make helm-install
-
     - name: Notify Slack
       uses: 8398a7/action-slack@v3
       if: always() # Pick up events even if the job fails or is canceled.
@@ -131,7 +127,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.STAKATER_GITHUB_TOKEN }}
         SLACK_WEBHOOK_URL: ${{ secrets.STAKATER_DELIVERY_SLACK_WEBHOOK }}
 
+      - name: helm install
+        run: |
+          curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz
+          tar -zxvf helm
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          helm version
 
-    - name: generate manifests yaml
-      run:|
-        make generate-workload-yaml
+      - name: generate manifests yaml
+        run: source hack/generate_workload.sh
