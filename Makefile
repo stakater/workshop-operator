@@ -224,6 +224,3 @@ generate-crds: controller-gen
 helm-install:
 	curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz && \
 	tar -zxvf helm && sudo mv linux-amd64/helm /usr/local/bin/helm &&  helm version
-
-generate-workload-yaml:
-	source hack/generate_workload.sh
