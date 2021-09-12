@@ -61,13 +61,6 @@ jobs:
     - name: Test
       run: make test OPERATOR_NAMESPACE=test USE_EXISTING_CLUSTER=true
 
-    - name: Helm install
-      run: |
-        curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz
-        tar -zxvf helm
-        sudo mv linux-amd64/helm /usr/local/bin/helm
-        helm version
-
     - name: Generate Tag
       id: generate_tag
       run: |
@@ -106,6 +99,17 @@ jobs:
           org.opencontainers.image.source=${{ github.event.repository.clone_url }}
           org.opencontainers.image.created=${{ steps.prep.outputs.created }}
           org.opencontainers.image.revision=${{ github.sha }}
+
+    - name: Helm install
+      run: |
+        curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz
+        tar -zxvf helm
+        sudo mv linux-amd64/helm /usr/local/bin/helm
+        helm version
+
+    - name: Generate manifests yaml
+      run: |
+        source hack/generate_workload.sh
 
     - name: Comment on PR
       uses: mshick/add-pr-comment@v1
