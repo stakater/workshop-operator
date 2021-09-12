@@ -65,17 +65,6 @@ jobs:
       - name: Test
         run: make test OPERATOR_NAMESPACE=test USE_EXISTING_CLUSTER=true
 
-      - name: Helm install
-        run: |
-          curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz
-          tar -zxvf helm
-          sudo mv linux-amd64/helm /usr/local/bin/helm
-          helm version
-
-      - name: Generate manifests yaml
-        run: |
-          source hack/generate_workload.sh
-
       - name: Generate Tag
         id: generate_tag
         uses: anothrNick/github-tag-action@1.32.0
@@ -176,6 +165,17 @@ jobs:
           linting: off
           commit_username: stakater-user
           commit_email: stakater@gmail.com
+
+      - name: Helm install
+        run: |
+          curl -L -o helm https://get.helm.sh/helm-v3.7.0-rc.3-linux-amd64.tar.gz
+          tar -zxvf helm
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          helm version
+
+      - name: Generate manifests yaml
+        run: |
+          source hack/generate_workload.sh
 
       # Commit back changes
       - name: Commit files
