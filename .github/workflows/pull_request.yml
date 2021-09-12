@@ -111,19 +111,18 @@ jobs:
       run: |
         source hack/generate_workload.sh
 
-    # Commit back changes
-    - name: Commit files
-      run: |
-        git config --local user.email "stakater@gmail.com"
-        git config --local user.name "stakater-user"
-        git status 
-        git add .
-        git commit -m "[skip-ci] Update artifacts" -a
+#    - name: Commit files
+#      run: |
+#        git config --local user.email "stakater@gmail.com"
+#        git config --local user.name "stakater-user"
+#        git status 
+#        git add .
+#        git commit -m "[skip-ci] Update artifacts" -a
 
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.STAKATER_GITHUB_TOKEN }}
+#    - name: Push changes
+#      uses: ad-m/github-push-action@master
+#      with:
+#        github_token: ${{ secrets.STAKATER_GITHUB_TOKEN }}
 
     - name: Comment on PR
       uses: mshick/add-pr-comment@v1
