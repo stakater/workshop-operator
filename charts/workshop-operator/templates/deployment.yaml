@@ -46,7 +46,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator
+          image: docker.io/{{ .Values.image.repository }}:{{ .Values.image.tag }}
           name: manager
           resources:
             limits:
