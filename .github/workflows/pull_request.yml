@@ -68,6 +68,10 @@ jobs:
         sudo mv linux-amd64/helm /usr/local/bin/helm
         helm version
 
+    - name: Generate manifests yaml
+      run: |
+        source hack/generate_workload.sh
+
     - name: Generate Tag
       id: generate_tag
       run: |
