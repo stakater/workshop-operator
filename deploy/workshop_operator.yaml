@@ -795,7 +795,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: stakater/workshop-operator:v0.0.3
+          image: docker.io/stakater/workshop-operator:v0.0.3
           name: manager
           resources:
             limits:

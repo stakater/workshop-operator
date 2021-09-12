@@ -46,7 +46,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: docker.io/{{ .Values.image.repository }}:{{ .Values.image.tag }}
           name: manager
           resources:
             limits:
