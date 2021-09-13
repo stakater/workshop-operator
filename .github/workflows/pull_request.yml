@@ -107,6 +107,7 @@ jobs:
         sudo mv linux-amd64/helm /usr/local/bin/helm
         helm version
         rm helm && rm -rf linux-amd64
+
     - name: Generate manifests yaml
       run: |
         source hack/generate_workload.sh
