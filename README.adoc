@@ -35,7 +35,7 @@ Perform the following tasks:
 [source,bash]
 ----
 oc new-project workshop-infra
-oc apply -f https://raw.githubusercontent.com/stakater/workshop-operator/main/config/deploy/workshop_operator_deployment.yaml
+oc apply -f https://raw.githubusercontent.com/stakater/workshop-operator/main/deploy/workshop_operator.yaml
 ----
 
 == Install the Workshop Infrastructure
