@@ -2,6 +2,9 @@ package controllers
 
 import (
 	"context"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -18,6 +21,11 @@ func (r *WorkshopReconciler) reconcileCertManager(workshop *workshopv1.Workshop,
 
 	if enabledCertManager {
 		if result, err := r.addCertManager(workshop, users); util.IsRequeued(result, err) {
+			return result, err
+		}
+	}
+	if enabledCertManager {
+		if result, err := r.deleteCertManager(workshop, users); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}
@@ -63,6 +71,42 @@ func (r *WorkshopReconciler) addCertManager(workshop *workshopv1.Workshop, users
 		log.Infof("Created %s Custom Resource", customresource.Name)
 	}
 
+	//Success
+	return reconcile.Result{}, nil
+}
+func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
+
+	certmanagerNameSpace :="cert-manager"
+	certmanagerresourceFound := &certmanager.CertManager{}
+
+	certmanagerresourceErr := r.Get(context.TODO(), types.NamespacedName{Name: "cert-manager", Namespace: certmanagerNameSpace}, certmanagerresourceFound )
+	if certmanagerresourceErr == nil {
+		// Delete cert-manager resource
+		if err := r.Delete(context.TODO(), certmanagerresourceFound); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s cert-manager resource", certmanagerresourceFound.Name)
+	}
+
+	certmanagerNameSpaceFound := &corev1.Namespace{}
+	certmanagerNameSpaceErr := r.Get(context.TODO(), types.NamespacedName{Name: "cert-manager"}, certmanagerNameSpaceFound )
+	if certmanagerNameSpaceErr == nil {
+		// Delete cert-manager NameSpace
+		if err := r.Delete(context.TODO(),certmanagerNameSpaceFound ); err !=nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s cert-manager namespace", certmanagerNameSpaceFound.Name)
+	}
+
+	certManagerSubscriptionFund := &olmv1alpha1.Subscription{}
+	certManagerSubscriptionErr := kubernetes.GetObject(r, "cert-manager-operator",  "openshift-operators", certManagerSubscriptionFund)
+	if 	certManagerSubscriptionErr == nil {
+		// Delete certManager Subscription
+		if err := r.Delete(context.TODO(),certManagerSubscriptionFund ); err !=nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s cert-manager Subscription", certManagerSubscriptionFund.Name)
+	}
 	//Success
 	return reconcile.Result{}, nil
 }
