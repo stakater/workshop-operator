@@ -37,6 +37,12 @@ func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users
 		}
 	}
 
+	if enabledGitea {
+		if result, err := r.deleteGitea(workshop, users, giteaNamespaceName); util.IsRequeued(result, err) {
+			return result, err
+		}
+	}
+
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -184,8 +190,7 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 	return reconcile.Result{}, nil
 }
 
-// TODO: Delete Gitea
-// Add Gitea
+// Delete Gitea
 func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users int, giteaNamespaceName string) (reconcile.Result, error) {
 
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
@@ -201,7 +206,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, "gitea-server", giteaNamespace.Name, labels)
 	giteaCustomResourceFound := &gitea.Gitea{}
-	giteaCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResource.Name},giteaCustomResourceFound )
+	giteaCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResource.Name, Namespace: giteaNamespace.Name},giteaCustomResourceFound )
 	if giteaCustomResourceErr == nil {
 		// Delete Custom Resource
 		if err := r.Delete(context.TODO(), giteaCustomResource); err != nil{
@@ -212,7 +217,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, imageName+":"+imageTag, "gitea-operator")
 	giteaOperatorFound := &appsv1.Deployment{}
-	giteaOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaOperator.Name},giteaOperatorFound )
+	giteaOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaOperator.Name ,Namespace: giteaNamespace.Name},giteaOperatorFound )
 	if giteaOperatorErr == nil {
 		// Delete Operator
 		if err := r.Delete(context.TODO(), giteaOperator); err != nil{
@@ -224,7 +229,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, "gitea-operator", "gitea-operator", "ClusterRole")
 	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
-	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRoleBinding.Name },giteaClusterRoleBindingFound )
+	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRoleBinding.Name,Namespace: giteaNamespace.Name},giteaClusterRoleBindingFound )
 	if giteaClusterRoleBindingErr == nil {
 		// Delete Cluster Role Binding
 		if err := r.Delete(context.TODO(), giteaClusterRoleBinding) ; err != nil {
@@ -235,7 +240,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, kubernetes.GiteaRules())
 	giteaClusterRoleFound :=&rbac.ClusterRole{}
-	giteaClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRole.Name }, giteaClusterRoleFound)
+	giteaClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRole.Name,Namespace: giteaNamespace.Name}, giteaClusterRoleFound)
 	if giteaClusterRoleErr == nil {
 		// Delete Cluster Role
 		if err := r.Delete(context.TODO(), giteaClusterRole); err != nil {
@@ -247,7 +252,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels)
 	giteaServiceAccountFound := &corev1.ServiceAccount{}
-	giteaServiceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaServiceAccount.Name}, giteaServiceAccountFound)
+	giteaServiceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaServiceAccount.Name, Namespace: giteaNamespace.Name}, giteaServiceAccountFound)
 	if giteaServiceAccountErr == nil {
 		// Delete Service Account
 		if err := r.Delete(context.TODO(), giteaServiceAccount); err != nil {
