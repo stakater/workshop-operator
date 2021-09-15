@@ -4,17 +4,20 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
-
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/gitea"
 	"github.com/stakater/workshop-operator/common/kubernetes"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -182,3 +185,98 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 }
 
 // TODO: Delete Gitea
+// Add Gitea
+func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users int, giteaNamespaceName string) (reconcile.Result, error) {
+
+	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
+	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
+
+	labels := map[string]string{
+		"app":                       "gitea",
+		"app.kubernetes.io/name":    "gitea",
+		"app.kubernetes.io/part-of": "gitea",
+	}
+
+	giteaNamespace := kubernetes.NewNamespace(workshop, r.Scheme, giteaNamespaceName)
+
+	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, "gitea-server", giteaNamespace.Name, labels)
+	giteaCustomResourceFound := &gitea.Gitea{}
+	giteaCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResource.Name},giteaCustomResourceFound )
+	if giteaCustomResourceErr == nil {
+		// Delete Custom Resource
+		if err := r.Delete(context.TODO(), giteaCustomResource); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Custom Resource", giteaCustomResource.Name)
+	}
+
+	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, imageName+":"+imageTag, "gitea-operator")
+	giteaOperatorFound := &appsv1.Deployment{}
+	giteaOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaOperator.Name},giteaOperatorFound )
+	if giteaOperatorErr == nil {
+		// Delete Operator
+		if err := r.Delete(context.TODO(), giteaOperator); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Operator", giteaOperator.Name)
+	}
+
+
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, "gitea-operator", "gitea-operator", "ClusterRole")
+	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
+	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRoleBinding.Name },giteaClusterRoleBindingFound )
+	if giteaClusterRoleBindingErr == nil {
+		// Delete Cluster Role Binding
+		if err := r.Delete(context.TODO(), giteaClusterRoleBinding) ; err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Cluster  Role Binding", giteaClusterRoleBinding.Name)
+	}
+
+	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, kubernetes.GiteaRules())
+	giteaClusterRoleFound :=&rbac.ClusterRole{}
+	giteaClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRole.Name }, giteaClusterRoleFound)
+	if giteaClusterRoleErr == nil {
+		// Delete Cluster Role
+		if err := r.Delete(context.TODO(), giteaClusterRole); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Cluster Role", giteaClusterRole.Name)
+	}
+
+
+	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels)
+	giteaServiceAccountFound := &corev1.ServiceAccount{}
+	giteaServiceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaServiceAccount.Name}, giteaServiceAccountFound)
+	if giteaServiceAccountErr == nil {
+		// Delete Service Account
+		if err := r.Delete(context.TODO(), giteaServiceAccount); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Service Account", giteaServiceAccount.Name)
+	}
+
+	giteaCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "giteas.gpte.opentlc.com", "gpte.opentlc.com", "Gitea", "GiteaList", "giteas", "gitea", "v1alpha1", nil, nil)
+	giteaCustomResourceDefinitionFound := &apiextensionsv1beta1.CustomResourceDefinition{}
+	giteaCustomResourceDefinitionErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResourceDefinition.Name}, giteaCustomResourceDefinitionFound)
+	if giteaCustomResourceDefinitionErr == nil {
+		// Delete CRD
+		if err := r.Delete(context.TODO(), giteaCustomResourceDefinition); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Custom Resource Definition", giteaCustomResourceDefinition.Name)
+	}
+
+	giteaNamespaceFound := &corev1.Namespace{}
+	giteaNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaNamespace.Name}, giteaNamespaceFound)
+	if giteaNamespaceErr == nil {
+		// Delete Project
+		if err := r.Delete(context.TODO(), giteaNamespace); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s gitea Project ", giteaNamespace.Name)
+	}
+
+	//Success
+	return reconcile.Result{}, nil
+}
