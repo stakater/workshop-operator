@@ -2,6 +2,11 @@ package controllers
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -11,6 +16,7 @@ import (
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 )
 
 // Reconciling Nexus
@@ -25,7 +31,11 @@ func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reco
 		}
 	}
 
-	//Success
+	if enabledNexus {
+		if result, err := r.deleteNexus(workshop, nexusNamespaceName); util.IsRequeued(result, err) {
+			return result, err
+		}
+	}
 	return reconcile.Result{}, nil
 }
 
@@ -98,5 +108,94 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamesp
 	return reconcile.Result{}, nil
 }
 
-// TODO: Delete Nexus
-// TODO: Delete namespace
+// Delete Nexus
+func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNamespaceName string) (reconcile.Result, error) {
+
+	labels := map[string]string{
+		"app":                       "nexus",
+		"app.kubernetes.io/name":    "nexus",
+		"app.kubernetes.io/part-of": "nexus",
+	}
+	nexusNamespace := kubernetes.NewNamespace(workshop, r.Scheme, nexusNamespaceName)
+
+	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, "nexus", nexusNamespace.Name, labels)
+	nexusCustomResourceFound := &nexus.Nexus{}
+	nexusCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResource.Name, Namespace: nexusNamespace.Name},nexusCustomResourceFound )
+	if nexusCustomResourceErr == nil {
+		// Delete Custom Resource
+		if err := r.Delete(context.TODO(), nexusCustomResource); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Custom Resource", nexusCustomResource.Name)
+	}
+
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/stakater/nexus-operator:v0.10", "nexus-operator")
+	nexusOperatorFound :=  &appsv1.Deployment{}
+	nexusOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name:nexusOperator.Name , Namespace: nexusNamespace.Name},nexusOperatorFound)
+	if nexusOperatorErr == nil {
+		// Delete Operator
+		if err := r.Delete(context.TODO(), nexusOperator); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Operator", nexusOperator.Name)
+	}
+
+	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "nexus-operator", "nexus-operator", "ClusterRole")
+	nexusClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
+	nexusClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRoleBinding.Name, Namespace: nexusNamespace.Name}, nexusClusterRoleBindingFound)
+	if nexusClusterRoleBindingErr == nil {
+		// Delete Cluster Role Binding
+		if err := r.Delete(context.TODO(), nexusClusterRoleBinding); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Cluster Role Binding", nexusClusterRoleBinding.Name)
+	}
+
+	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, nexus.NewRules())
+	nexusClusterRoleFound :=  &rbac.ClusterRole{}
+	nexusClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRole.Name, Namespace:nexusNamespace.Name }, nexusClusterRoleFound)
+	if nexusClusterRoleErr == nil {
+		// Delete Cluster Role
+		if err := r.Delete(context.TODO(),nexusClusterRole ); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Cluster Role", nexusClusterRole.Name)
+	}
+
+	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels)
+	nexusServiceAccountFound :=  &corev1.ServiceAccount{}
+	nexusServiceAccountErr := r.Get(context.TODO(),types.NamespacedName{Name: nexusServiceAccount.Name,Namespace: nexusNamespace.Name }, nexusServiceAccountFound )
+	if nexusServiceAccountErr == nil {
+		// Delete Service Account
+		if err := r.Delete(context.TODO(), nexusServiceAccount);  err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Service Account", nexusServiceAccount.Name)
+	}
+
+	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "nexus.gpte.opentlc.com", "gpte.opentlc.com", "Nexus", "NexusList", "nexus", "nexus", "v1alpha1", nil, nil)
+	nexusCustomResourceDefinitionFound := &apiextensionsv1beta1.CustomResourceDefinition{}
+	nexusCustomResourceDefinitionErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResourceDefinition.Name,  },nexusCustomResourceDefinitionFound )
+	if nexusCustomResourceDefinitionErr == nil {
+		// Delete CRD
+		if err := r.Delete(context.TODO(), nexusCustomResourceDefinition); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Custom Resource Definition", nexusCustomResourceDefinition.Name)
+	}
+
+
+	nexusNamespaceFound := &corev1.Namespace{}
+	nexusNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name:nexusNamespace.Name  }, nexusNamespaceFound)
+	if nexusNamespaceErr != nil {
+		// Delete Project
+		if err := r.Delete(context.TODO(), nexusNamespace); err != nil{
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s Project", nexusNamespace.Name)
+	}
+
+	//Success
+	return reconcile.Result{}, nil
+}
+
