@@ -608,7 +608,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 
 	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "che", codeReadyWorkspacesNamespace.Name, labels, "che", cheClusterRole.Name, "ClusterRole")
 	cheClusterRoleBindingFound :=&rbac.ClusterRoleBinding{}
-	cheClusterRoleBindingeErr := r.Get(context.TODO(), types.NamespacedName{Name: "che", Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleBindingFound)
+	cheClusterRoleBindingeErr := r.Get(context.TODO(), types.NamespacedName{Name: cheClusterRoleBinding.Name, Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleBindingFound)
 	if cheClusterRoleBindingeErr == nil {
 		// Delete che Cluster RoleBinding
 		if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
@@ -618,7 +618,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	}
 
 	cheClusterRoleFound :=&rbac.ClusterRole{}
-	cheClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: "che", Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleFound)
+	cheClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: cheClusterRole.Name, Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleFound)
 	if cheClusterRoleErr == nil {
 		// Delete che Cluster Role
 		if err := r.Delete(context.TODO(), cheClusterRole); err != nil {
@@ -629,7 +629,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 
 	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, "codereadyworkspaces", codeReadyWorkspacesNamespace.Name)
 	codeReadyWorkspacesCustomResourceFound :=&che.CheCluster{}
-	codeReadyWorkspacesCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: "codeready-workspaces", Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesCustomResourceFound)
+	codeReadyWorkspacesCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: codeReadyWorkspacesCustomResource.Name, Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesCustomResourceFound)
 	if codeReadyWorkspacesCustomResourceErr == nil {
 		// Delete codeReadyWorkspaces CustomResource
 		if err := r.Delete(context.TODO(), codeReadyWorkspacesCustomResource); err != nil {
@@ -641,7 +641,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "codeready-workspaces", codeReadyWorkspacesNamespace.Name,
 		"codeready-workspaces", channel, clusterServiceVersion)
 	codeReadyWorkspacesSubscriptionFound := &olmv1alpha1.Subscription{}
-	codeReadyWorkspacesSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: "codeready-workspaces", Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesSubscriptionFound)
+	codeReadyWorkspacesSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: codeReadyWorkspacesSubscription.Name, Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesSubscriptionFound)
 	if codeReadyWorkspacesSubscriptionErr == nil {
 		// Delete Subscription
 		if err := r.Delete(context.TODO(), codeReadyWorkspacesSubscription); err != nil {
@@ -652,7 +652,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 
 	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, "codeready-workspaces", codeReadyWorkspacesNamespace.Name)
 	codeReadyWorkspacesOperatorGroupFound := &olmv1.OperatorGroup{}
-	codeReadyWorkspacesOperatorGroupErr := r.Get(context.TODO(), types.NamespacedName{Name: "codeready-workspaces", Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesOperatorGroupFound)
+	codeReadyWorkspacesOperatorGroupErr := r.Get(context.TODO(), types.NamespacedName{Name: codeReadyWorkspacesOperatorGroup.Name, Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesOperatorGroupFound)
 	if codeReadyWorkspacesOperatorGroupErr == nil {
 		// Delete OperatorGroup
 		if err := r.Delete(context.TODO(), codeReadyWorkspacesOperatorGroup); err != nil {
