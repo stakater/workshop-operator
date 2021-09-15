@@ -48,7 +48,6 @@ func (r *WorkshopReconciler) reconcileCodeReadyWorkspace(workshop *workshopv1.Wo
 		}
 	}
 
-
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -592,7 +591,6 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 	return reconcile.Result{}, nil
 }
 
-
 func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
@@ -607,7 +605,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 		kubernetes.NewClusterRole(workshop, r.Scheme, "che", codeReadyWorkspacesNamespace.Name, labels, kubernetes.CheRules())
 
 	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "che", codeReadyWorkspacesNamespace.Name, labels, "che", cheClusterRole.Name, "ClusterRole")
-	cheClusterRoleBindingFound :=&rbac.ClusterRoleBinding{}
+	cheClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
 	cheClusterRoleBindingeErr := r.Get(context.TODO(), types.NamespacedName{Name: cheClusterRoleBinding.Name, Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleBindingFound)
 	if cheClusterRoleBindingeErr == nil {
 		// Delete che Cluster RoleBinding
@@ -617,7 +615,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 		log.Infof("Deleted %s Che Cluster RoleBinding ", cheClusterRoleBinding.Name)
 	}
 
-	cheClusterRoleFound :=&rbac.ClusterRole{}
+	cheClusterRoleFound := &rbac.ClusterRole{}
 	cheClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: cheClusterRole.Name, Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleFound)
 	if cheClusterRoleErr == nil {
 		// Delete che Cluster Role
@@ -628,7 +626,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	}
 
 	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, "codereadyworkspaces", codeReadyWorkspacesNamespace.Name)
-	codeReadyWorkspacesCustomResourceFound :=&che.CheCluster{}
+	codeReadyWorkspacesCustomResourceFound := &che.CheCluster{}
 	codeReadyWorkspacesCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: codeReadyWorkspacesCustomResource.Name, Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesCustomResourceFound)
 	if codeReadyWorkspacesCustomResourceErr == nil {
 		// Delete codeReadyWorkspaces CustomResource
@@ -662,7 +660,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	}
 
 	codeReadyWorkspacesNamespaceFound := &corev1.Namespace{}
-	codeReadyWorkspacesNamespacErr := r.Get(context.TODO(), types.NamespacedName{Name:codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesNamespaceFound)
+	codeReadyWorkspacesNamespacErr := r.Get(context.TODO(), types.NamespacedName{Name: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesNamespaceFound)
 	if codeReadyWorkspacesNamespacErr == nil {
 		// Delete Project
 		if err := r.Delete(context.TODO(), codeReadyWorkspacesNamespace); err != nil {

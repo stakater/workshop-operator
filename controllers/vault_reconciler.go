@@ -7,12 +7,12 @@ import (
 	"github.com/stakater/workshop-operator/common/util"
 	"github.com/stakater/workshop-operator/common/vault"
 
+	securityv1 "github.com/openshift/api/security/v1"
+	"github.com/prometheus/common/log"
+	admissionregistration "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
-	admissionregistration "k8s.io/api/admissionregistration/v1"
-	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/prometheus/common/log"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -279,32 +279,32 @@ storage "file" {
 	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "vault", vaultNamespace.Name, labels)
 
 	stateful := vault.NewStatefulSet(workshop, r.Scheme, "vault", vaultNamespace.Name, labels)
-	statefulFound :=  &appsv1.StatefulSet{}
-	statefulErr := r.Get(context.TODO(), types.NamespacedName{Name: stateful.Name,Namespace: vaultNamespace.Name},statefulFound )
+	statefulFound := &appsv1.StatefulSet{}
+	statefulErr := r.Get(context.TODO(), types.NamespacedName{Name: stateful.Name, Namespace: vaultNamespace.Name}, statefulFound)
 	if statefulErr == nil {
 		// Delete stateful
-		if err := r.Delete(context.TODO(), stateful); err !=nil {
+		if err := r.Delete(context.TODO(), stateful); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s stateful", stateful.Name)
 	}
 	service := kubernetes.NewService(workshop, r.Scheme, "vault", vaultNamespace.Name, labels, []string{"http", "internal"}, []int32{8200, 8201})
-	serviceFound :=  &corev1.Service{}
-	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name: service.Name,Namespace: vaultNamespace.Name},serviceFound )
+	serviceFound := &corev1.Service{}
+	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: vaultNamespace.Name}, serviceFound)
 	if serviceErr == nil {
 		// Delete Service
-		if err := r.Delete(context.TODO(), service); err !=nil {
+		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service", service.Name)
 	}
 
 	internalService := kubernetes.NewService(workshop, r.Scheme, "vault-internal", vaultNamespace.Name, labels, []string{"http", "internal"}, []int32{8200, 8201})
-	internalServiceFound :=  &corev1.Service{}
-	internalServiceErr := r.Get(context.TODO(), types.NamespacedName{Name: internalService.Name,Namespace: vaultNamespace.Name},internalServiceFound )
+	internalServiceFound := &corev1.Service{}
+	internalServiceErr := r.Get(context.TODO(), types.NamespacedName{Name: internalService.Name, Namespace: vaultNamespace.Name}, internalServiceFound)
 	if internalServiceErr == nil {
 		// Delete internal Service
-		if err := r.Delete(context.TODO(), internalService); err !=nil {
+		if err := r.Delete(context.TODO(), internalService); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s internal Service", internalService.Name)
@@ -312,37 +312,36 @@ storage "file" {
 
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "vault-server-binding", vaultNamespace.Name,
 		labels, serviceAccount.Name, "system:auth-delegator", "ClusterRole")
-	clusterRoleBindingFound :=  &rbac.ClusterRoleBinding{}
-	clusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBinding.Name,Namespace: vaultNamespace.Name},clusterRoleBindingFound )
+	clusterRoleBindingFound := &rbac.ClusterRoleBinding{}
+	clusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: vaultNamespace.Name}, clusterRoleBindingFound)
 	if clusterRoleBindingErr == nil {
 		// Delete ClusterRole Binding
-		if err := r.Delete(context.TODO(), clusterRoleBinding); err !=nil {
+		if err := r.Delete(context.TODO(), clusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s ClusterRole Binding", clusterRoleBinding.Name)
 	}
 
-	serviceAccountFound :=  &corev1.ServiceAccount{}
-	serviceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceAccount.Name,Namespace: vaultNamespace.Name},serviceAccountFound )
+	serviceAccountFound := &corev1.ServiceAccount{}
+	serviceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceAccount.Name, Namespace: vaultNamespace.Name}, serviceAccountFound)
 	if serviceAccountErr == nil {
 		// Delete Service Account
-		if err := r.Delete(context.TODO(), serviceAccount); err !=nil {
+		if err := r.Delete(context.TODO(), serviceAccount); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service Account", serviceAccount.Name)
 	}
 
 	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, "vault-config", vaultNamespace.Name, labels, extraconfigFromValues)
-	configMapFound :=  &corev1.ConfigMap{}
-	configMapErr := r.Get(context.TODO(), types.NamespacedName{Name: configMap.Name,Namespace: vaultNamespace.Name},configMapFound )
+	configMapFound := &corev1.ConfigMap{}
+	configMapErr := r.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: vaultNamespace.Name}, configMapFound)
 	if configMapErr == nil {
 		// Delete configMap
-		if err := r.Delete(context.TODO(), configMap); err !=nil {
+		if err := r.Delete(context.TODO(), configMap); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s configMap", configMap.Name)
 	}
-
 
 	//Success
 	return reconcile.Result{}, nil
@@ -359,7 +358,6 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 		"component":                 "webhook",
 	}
 
-
 	vaultNamespace := kubernetes.NewNamespace(workshop, r.Scheme, vaultNamespaceName)
 	clusterRole := kubernetes.NewClusterRole(workshop, r.Scheme,
 		"vault-agent-injector", vaultNamespace.Name, labels, kubernetes.VaultAgentInjectorRules())
@@ -368,67 +366,65 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 	mutatingWebhookConfiguration := kubernetes.NewMutatingWebhookConfiguration(workshop, r.Scheme,
 		"vault-agent-injector-cfg", labels, webhooks)
 	webhooksFound := &admissionregistration.MutatingWebhookConfiguration{}
-	webhooksErr := r.Get(context.TODO(), types.NamespacedName{Name:mutatingWebhookConfiguration.Name, Namespace:mutatingWebhookConfiguration.Name }, webhooksFound)
+	webhooksErr := r.Get(context.TODO(), types.NamespacedName{Name: mutatingWebhookConfiguration.Name, Namespace: mutatingWebhookConfiguration.Name}, webhooksFound)
 	if webhooksErr == nil {
 		// Delete AgentInjectorWebHook
-		if err := r.Delete(context.TODO(), mutatingWebhookConfiguration); err !=nil {
+		if err := r.Delete(context.TODO(), mutatingWebhookConfiguration); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Mutating Webhook Configuration ", mutatingWebhookConfiguration.Name)
 	}
 	ocpDeployment := vault.NewAgentInjectorDeployment(workshop, r.Scheme, "vault-agent-injector", vaultNamespace.Name, labels)
 	ocpDeploymentFound := &appsv1.Deployment{}
-	ocpDeploymentErr := r.Get(context.TODO(), types.NamespacedName{Name:ocpDeployment.Name, Namespace:vaultNamespace.Name }, ocpDeploymentFound)
+	ocpDeploymentErr := r.Get(context.TODO(), types.NamespacedName{Name: ocpDeployment.Name, Namespace: vaultNamespace.Name}, ocpDeploymentFound)
 	if ocpDeploymentErr == nil {
 		// Delete Deployment
-		if err := r.Delete(context.TODO(), ocpDeployment); err !=nil {
+		if err := r.Delete(context.TODO(), ocpDeployment); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Deployment ", ocpDeployment.Name)
 	}
 
-
 	service := kubernetes.NewServiceWithTarget(workshop, r.Scheme, "vault-agent-injector", vaultNamespace.Name, labels,
 		[]string{"http"}, []int32{443}, []int32{8080})
 	serviceFound := &corev1.Service{}
-	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name:service.Name, Namespace:vaultNamespace.Name }, serviceFound)
+	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: vaultNamespace.Name}, serviceFound)
 	if serviceErr == nil {
 		// Delete Service
-		if err := r.Delete(context.TODO(), service); err !=nil {
+		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service ", service.Name)
 	}
 
-
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "vault-agent-injector", vaultNamespace.Name,
 		labels, "vault-agent-injector", clusterRole.Name, "ClusterRole")
 	clusterRoleBindingFound := &rbac.ClusterRoleBinding{}
-	clusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:clusterRoleBinding.Name, Namespace:vaultNamespace.Name }, clusterRoleBindingFound)
+	clusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: clusterRoleBinding.Name, Namespace: vaultNamespace.Name}, clusterRoleBindingFound)
 	if clusterRoleBindingErr == nil {
 		// Delete Cluster Role Binding
-		if err := r.Delete(context.TODO(), clusterRoleBinding); err !=nil {
+		if err := r.Delete(context.TODO(), clusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Cluster Role Binding", clusterRoleBinding.Name)
 	}
 
-	clusterRoleFound :=&rbac.ClusterRole{}
-	clusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name:clusterRole.Name, Namespace:vaultNamespace.Name }, clusterRoleFound)
+	clusterRoleFound := &rbac.ClusterRole{}
+	clusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: clusterRole.Name, Namespace: vaultNamespace.Name}, clusterRoleFound)
 	if clusterRoleErr == nil {
 		// Delete Cluster Role
-		if err := r.Delete(context.TODO(), clusterRole); err !=nil {
+		if err := r.Delete(context.TODO(), clusterRole); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Cluster Role", clusterRole.Name)
 	}
 
 	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "vault-agent-injector", vaultNamespace.Name, labels)
-	serviceAccountFound :=&corev1.ServiceAccount{}
-	serviceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name:serviceAccount.Name, Namespace:vaultNamespace.Name }, serviceAccountFound)
+	serviceAccountFound := &corev1.ServiceAccount{}
+	serviceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceAccount.Name, Namespace: vaultNamespace.Name}, serviceAccountFound)
 	if serviceAccountErr == nil {
 		// Delete  Service Account
-		if err := r.Delete(context.TODO(), serviceAccount); err !=nil {
+		if err := r.Delete(context.TODO(), serviceAccount); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service Account", serviceAccount.Name)
@@ -442,16 +438,15 @@ func (r *WorkshopReconciler) deleteVaultNamespace(workshop *workshopv1.Workshop,
 
 	// last method last line
 	vaultNamespace := kubernetes.NewNamespace(workshop, r.Scheme, vaultNamespaceName)
-	vaultNamespaceFound :=&corev1.Namespace{}
-	vaultNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name:vaultNamespaceName }, vaultNamespaceFound)
+	vaultNamespaceFound := &corev1.Namespace{}
+	vaultNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: vaultNamespaceName}, vaultNamespaceFound)
 	if vaultNamespaceErr == nil {
 		// Delete Namespace
-		if err := r.Delete(context.TODO(), vaultNamespace); err !=nil {
+		if err := r.Delete(context.TODO(), vaultNamespace); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Namespace", vaultNamespace.Name)
 	}
-
 
 	//Success
 	return reconcile.Result{}, nil

@@ -331,7 +331,7 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	customResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: namespace.Name}, customResourceFound)
 	if customResourceErr == nil {
 		// Delete argoCD Custom Resource
-		if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil{
+		if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s argoCD Custom Resource", argoCDCustomResource.Name)
@@ -343,7 +343,7 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	configmapErr := r.Get(context.TODO(), types.NamespacedName{Name: configmap.Name, Namespace: namespace.Name}, configmapFound)
 	if configmapErr != nil {
 		// Delete Configmap
-		if err := r.Delete(context.TODO(),configmap ); err != nil {
+		if err := r.Delete(context.TODO(), configmap); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Configmap", configmap.Name)
@@ -355,13 +355,11 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	secretErr := r.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: namespace.Name}, secretFound)
 	if secretErr == nil {
 		// Delete Secret
-		if err := r.Delete(context.TODO(), secret); err !=   nil {
+		if err := r.Delete(context.TODO(), secret); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Secret", secret.Name)
 	}
-
-
 
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprintf("user%d", id)
@@ -401,31 +399,31 @@ g, ` + username + `, ` + userRole + `
 
 		roleBindingfound := &rbac.RoleBinding{}
 		roleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: roleBinding.Name, Namespace: projectName}, roleBindingfound)
-		if 	roleBindingErr == nil {
+		if roleBindingErr == nil {
 			// Delete roleBinding
-			if err := r.Delete(context.TODO(),roleBinding ); err != nil{
+			if err := r.Delete(context.TODO(), roleBinding); err != nil {
 				return reconcile.Result{}, err
 			}
 			log.Infof("Deleted %s Role Binding  in %s namespace", roleBinding.Name, projectName)
 		}
 
 		roleFound := &rbac.Role{}
-		roleErr := r.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace:namespace.Name }, roleFound)
+		roleErr := r.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: namespace.Name}, roleFound)
 		if roleErr == nil {
 			// Delete role
-			if err := r.Delete(context.TODO(),role ); err != nil {
+			if err := r.Delete(context.TODO(), role); err != nil {
 				return reconcile.Result{}, err
 			}
-			log.Infof("Deleted %s role in %s namespace ", role.Name,projectName )
+			log.Infof("Deleted %s role in %s namespace ", role.Name, projectName)
 		}
 
 		labels["app.kubernetes.io/name"] = "appproject-cr"
 		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, namespace.Name, labels, argocdPolicy)
 		customResourceFound := &argocdv1.AppProject{}
 		customResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: appProjectCustomResource.Name, Namespace: namespace.Name}, customResourceFound)
-		if 	customResourceErr == nil {
+		if customResourceErr == nil {
 			// Delete appProject Custom Resource
-			if err := r.Delete(context.TODO(),appProjectCustomResource ); err != nil {
+			if err := r.Delete(context.TODO(), appProjectCustomResource); err != nil {
 				return reconcile.Result{}, err
 			}
 			log.Infof("Deleted %s appProject Custom Resource ", appProjectCustomResource.Name)
@@ -434,7 +432,7 @@ g, ` + username + `, ` + userRole + `
 	}
 
 	namespaceFound := &corev1.Namespace{}
-	namespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name},namespaceFound )
+	namespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, namespaceFound)
 	if namespaceErr == nil {
 		// Delete a Project
 		if err := r.Delete(context.TODO(), namespace); err != nil {
@@ -443,14 +441,13 @@ g, ` + username + `, ` + userRole + `
 		log.Infof("Deleted %s Project", namespace.Name)
 	}
 
-
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, name, operatorNamespace,
 		name, channel, clusterServiceVersion)
 	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name},subscriptionFound )
+	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name}, subscriptionFound)
 	if subscriptionErr == nil {
 		// Delete subscription
-		if err := r.Delete(context.TODO(), subscription); err != nil{
+		if err := r.Delete(context.TODO(), subscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", subscription.Name)
@@ -477,7 +474,7 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 	clusterConfigSecretErr := r.Get(context.TODO(), types.NamespacedName{Name: clusterConfigSecret.Name}, clusterConfigSecretFound)
 	if clusterConfigSecretErr == nil {
 		// delete cluster Config Secret
-		if err := r.Delete(context.TODO(),clusterConfigSecret ); err != nil{
+		if err := r.Delete(context.TODO(), clusterConfigSecret); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Secret", clusterConfigSecret.Name)

@@ -323,10 +323,10 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
 		"default", istioSystemNamespace.Name, istioMembers)
 	serviceMeshMemberRollCRFound := &maistrav1.ServiceMeshMemberRoll{}
-	serviceMeshMemberRollCRErr := r.Get(context.TODO(), types.NamespacedName{Name:serviceMeshMemberRollCR.Name , Namespace: istioSystemNamespace.Name},serviceMeshMemberRollCRFound )
+	serviceMeshMemberRollCRErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceMeshMemberRollCR.Name, Namespace: istioSystemNamespace.Name}, serviceMeshMemberRollCRFound)
 	if serviceMeshMemberRollCRErr == nil {
 		// Delete service MeshMember Roll CR
-		if err := r.Delete(context.TODO(),serviceMeshMemberRollCR ); err!= nil{
+		if err := r.Delete(context.TODO(), serviceMeshMemberRollCR); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Custom Resource", serviceMeshMemberRollCR.Name)
@@ -334,10 +334,10 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 
 	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, "basic", istioSystemNamespace.Name)
 	serviceMeshControlPlaneCRFound := &maistrav2.ServiceMeshControlPlane{}
-	serviceMeshControlPlaneCRErr := r.Get(context.TODO(), types.NamespacedName{Name:serviceMeshControlPlaneCR.Name , Namespace: istioSystemNamespace.Name},serviceMeshControlPlaneCRFound )
+	serviceMeshControlPlaneCRErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceMeshControlPlaneCR.Name, Namespace: istioSystemNamespace.Name}, serviceMeshControlPlaneCRFound)
 	if serviceMeshControlPlaneCRErr == nil {
 		// Delete Service Mesh Control Plane Custom Resource
-		if err := r.Delete(context.TODO(),serviceMeshControlPlaneCR ); err!= nil{
+		if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service Mesh Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
@@ -345,11 +345,11 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		"mesh-users", "istio-system", labels, istioUsers, "mesh-user", "Role")
-	meshUserRoleBindingFound :=&rbac.RoleBinding{}
-	meshUserRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:meshUserRoleBinding.Name , Namespace:meshUserRoleBinding.Namespace },meshUserRoleBindingFound )
+	meshUserRoleBindingFound := &rbac.RoleBinding{}
+	meshUserRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: meshUserRoleBinding.Name, Namespace: meshUserRoleBinding.Namespace}, meshUserRoleBindingFound)
 	if meshUserRoleBindingErr == nil {
 		// Delete meshUser RoleBinding
-		if err := r.Delete(context.TODO(),meshUserRoleBinding); err != nil {
+		if err := r.Delete(context.TODO(), meshUserRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Role Binding", meshUserRoleBinding.Name)
@@ -361,24 +361,24 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	jaegerRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: jaegerRoleBinding.Name, Namespace: istioSystemNamespace.Name}, jaegerRoleBindingFound)
 	if jaegerRoleBindingErr == nil {
 		// Delete jaeger RoleBinding
-		if err := r.Delete(context.TODO(), jaegerRoleBinding); err != nil{
+		if err := r.Delete(context.TODO(), jaegerRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Role Binding", jaegerRoleBinding.Name)
 	}
 
 	jaegerRoleFound := &rbac.Role{}
-	jaegerRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: jaegerRole.Name, Namespace:jaegerRole.Namespace }, jaegerRoleFound)
+	jaegerRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: jaegerRole.Name, Namespace: jaegerRole.Namespace}, jaegerRoleFound)
 	if jaegerRoleErr == nil {
 		// Delete jaeger Role
-		if err := r.Delete(context.TODO(),jaegerRole ); err != nil {
+		if err := r.Delete(context.TODO(), jaegerRole); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Role", jaegerRole.Name)
 	}
 
 	istioSystemNamespaceFound := &corev1.Namespace{}
-	istioSystemNamespaceErr :=  r.Get(context.TODO(), types.NamespacedName{Name: istioSystemNamespace.Name }, istioSystemNamespaceFound)
+	istioSystemNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: istioSystemNamespace.Name}, istioSystemNamespaceFound)
 	if istioSystemNamespaceErr == nil {
 		// Delete istioSystem Namespace
 		if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
@@ -390,7 +390,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "servicemeshoperator", operatorNamespace,
 		"servicemeshoperator", channel, clusterserviceversion)
 	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name:subscription.Name ,Namespace:operatorNamespace },subscriptionFound )
+	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name, Namespace: operatorNamespace}, subscriptionFound)
 	if subscriptionErr == nil {
 		// Delete Subscription
 		if err := r.Delete(context.TODO(), subscription); err != nil {
@@ -409,14 +409,13 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.ClusterServiceVersion
 	subcriptionName := fmt.Sprintf("elasticsearch-operator-%s", channel)
 
-
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, "openshift-operators-redhat",
 		"elasticsearch-operator", channel, clusterserviceversion)
 	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name:subcriptionName , Namespace:subscription.Namespace }, subscriptionFound)
+	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subcriptionName, Namespace: subscription.Namespace}, subscriptionFound)
 	if subscriptionErr == nil {
 		// Delete Subscription
-		if err := r.Delete(context.TODO(),subscription ); err!= nil{
+		if err := r.Delete(context.TODO(), subscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", subscription.Name)
@@ -424,10 +423,10 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 
 	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, "openshift-operators-redhat")
 	redhatOperatorsNamespaceFound := &corev1.Namespace{}
-	redhatOperatorsNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name:redhatOperatorsNamespace.Name },redhatOperatorsNamespaceFound )
+	redhatOperatorsNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: redhatOperatorsNamespace.Name}, redhatOperatorsNamespaceFound)
 	if redhatOperatorsNamespaceErr == nil {
 		// Delete Namespace
-		if err := r.Delete(context.TODO(),redhatOperatorsNamespace ); err!= nil{
+		if err := r.Delete(context.TODO(), redhatOperatorsNamespace); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Namespace", redhatOperatorsNamespace.Name)
@@ -445,10 +444,10 @@ func (r *WorkshopReconciler) deleteJaegerOperator(workshop *workshopv1.Workshop)
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "jaeger-product", "openshift-operators",
 		"jaeger-product", channel, clusterserviceversion)
 	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name:subscription.Name , Namespace:subscription.Namespace }, subscriptionFound)
+	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name, Namespace: subscription.Namespace}, subscriptionFound)
 	if subscriptionErr == nil {
 		// Delete Subscription
-		if err := r.Delete(context.TODO(),subscription ); err!= nil{
+		if err := r.Delete(context.TODO(), subscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", subscription.Name)
@@ -466,10 +465,10 @@ func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "kiali-ossm", "openshift-operators",
 		"kiali-ossm", channel, clusterserviceversion)
 	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name:subscription.Name , Namespace:subscription.Namespace }, subscriptionFound)
+	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name, Namespace: subscription.Namespace}, subscriptionFound)
 	if subscriptionErr == nil {
 		// Delete Subscription
-		if err := r.Delete(context.TODO(),subscription ); err!= nil{
+		if err := r.Delete(context.TODO(), subscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", subscription.Name)

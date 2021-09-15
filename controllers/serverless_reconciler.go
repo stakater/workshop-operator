@@ -108,11 +108,11 @@ func (r *WorkshopReconciler) deleteServerless(workshop *workshopv1.Workshop) (re
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "serverless-operator", namespace.Name, "serverless-operator",
 		channel, clusterServiceVersion)
-	subscriptionFound := &olmv1alpha1.Subscription {}
+	subscriptionFound := &olmv1alpha1.Subscription{}
 	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name, Namespace: namespace.Name}, subscriptionFound)
 	if subscriptionErr == nil {
 		//Delete subscription
-		if err := r.Delete(context.TODO(),subscription); err != nil {
+		if err := r.Delete(context.TODO(), subscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", subscription.Name)
@@ -122,15 +122,13 @@ func (r *WorkshopReconciler) deleteServerless(workshop *workshopv1.Workshop) (re
 	namespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, namespaceFound)
 	if namespaceErr == nil {
 		// Delete namespace
-		if err := r.Delete(context.TODO(),namespace ); err != nil{
+		if err := r.Delete(context.TODO(), namespace); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s namespace", namespace.Name)
 	}
 
 	//
-
-
 
 	// TODO
 	// Add  knativeServingNamespace to ServiceMeshMember

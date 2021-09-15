@@ -206,10 +206,10 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, "gitea-server", giteaNamespace.Name, labels)
 	giteaCustomResourceFound := &gitea.Gitea{}
-	giteaCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResource.Name, Namespace: giteaNamespace.Name},giteaCustomResourceFound )
+	giteaCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResource.Name, Namespace: giteaNamespace.Name}, giteaCustomResourceFound)
 	if giteaCustomResourceErr == nil {
 		// Delete Custom Resource
-		if err := r.Delete(context.TODO(), giteaCustomResource); err != nil{
+		if err := r.Delete(context.TODO(), giteaCustomResource); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s gitea Custom Resource", giteaCustomResource.Name)
@@ -217,30 +217,29 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 
 	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, imageName+":"+imageTag, "gitea-operator")
 	giteaOperatorFound := &appsv1.Deployment{}
-	giteaOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaOperator.Name ,Namespace: giteaNamespace.Name},giteaOperatorFound )
+	giteaOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaOperator.Name, Namespace: giteaNamespace.Name}, giteaOperatorFound)
 	if giteaOperatorErr == nil {
 		// Delete Operator
-		if err := r.Delete(context.TODO(), giteaOperator); err != nil{
+		if err := r.Delete(context.TODO(), giteaOperator); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s gitea Operator", giteaOperator.Name)
 	}
 
-
 	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, "gitea-operator", "gitea-operator", "ClusterRole")
 	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
-	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRoleBinding.Name,Namespace: giteaNamespace.Name},giteaClusterRoleBindingFound )
+	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRoleBinding.Name, Namespace: giteaNamespace.Name}, giteaClusterRoleBindingFound)
 	if giteaClusterRoleBindingErr == nil {
 		// Delete Cluster Role Binding
-		if err := r.Delete(context.TODO(), giteaClusterRoleBinding) ; err != nil {
+		if err := r.Delete(context.TODO(), giteaClusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s gitea Cluster  Role Binding", giteaClusterRoleBinding.Name)
 	}
 
 	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels, kubernetes.GiteaRules())
-	giteaClusterRoleFound :=&rbac.ClusterRole{}
-	giteaClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name:giteaClusterRole.Name,Namespace: giteaNamespace.Name}, giteaClusterRoleFound)
+	giteaClusterRoleFound := &rbac.ClusterRole{}
+	giteaClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRole.Name, Namespace: giteaNamespace.Name}, giteaClusterRoleFound)
 	if giteaClusterRoleErr == nil {
 		// Delete Cluster Role
 		if err := r.Delete(context.TODO(), giteaClusterRole); err != nil {
@@ -248,7 +247,6 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 		}
 		log.Infof("Deleted %s gitea Cluster Role", giteaClusterRole.Name)
 	}
-
 
 	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "gitea-operator", giteaNamespace.Name, labels)
 	giteaServiceAccountFound := &corev1.ServiceAccount{}
@@ -266,7 +264,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 	giteaCustomResourceDefinitionErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResourceDefinition.Name}, giteaCustomResourceDefinitionFound)
 	if giteaCustomResourceDefinitionErr == nil {
 		// Delete CRD
-		if err := r.Delete(context.TODO(), giteaCustomResourceDefinition); err != nil{
+		if err := r.Delete(context.TODO(), giteaCustomResourceDefinition); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s gitea Custom Resource Definition", giteaCustomResourceDefinition.Name)
@@ -276,7 +274,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 	giteaNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaNamespace.Name}, giteaNamespaceFound)
 	if giteaNamespaceErr == nil {
 		// Delete Project
-		if err := r.Delete(context.TODO(), giteaNamespace); err != nil{
+		if err := r.Delete(context.TODO(), giteaNamespace); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s gitea Project ", giteaNamespace.Name)

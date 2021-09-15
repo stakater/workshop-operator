@@ -424,10 +424,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.8
+    helm.sh/chart: workshop-operator-0.0.9
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.8"
+    app.kubernetes.io/version: "0.0.9"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -731,10 +731,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.8
+    helm.sh/chart: workshop-operator-0.0.9
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.8"
+    app.kubernetes.io/version: "0.0.9"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -754,10 +754,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.8
+    helm.sh/chart: workshop-operator-0.0.9
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.8"
+    app.kubernetes.io/version: "0.0.9"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -794,7 +794,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.8
+          image: docker.io/stakater/workshop-operator:v0.0.9
           name: manager
           resources:
             limits:
@@ -811,10 +811,10 @@ kind: Pod
 metadata:
   name: "workshop-operator-test-connection"
   labels:
-    helm.sh/chart: workshop-operator-0.0.8
+    helm.sh/chart: workshop-operator-0.0.9
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.8"
+    app.kubernetes.io/version: "0.0.9"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": test

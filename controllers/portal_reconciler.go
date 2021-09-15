@@ -165,13 +165,12 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 		"database-password": "redis",
 	}
 
-
 	service := kubernetes.NewService(workshop, r.Scheme, serviceName, workshop.Namespace, labels, []string{"http"}, []int32{6379})
 	serviceFound := &corev1.Service{}
-	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: service.Namespace},serviceFound )
+	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, serviceFound)
 	if serviceErr == nil {
 		// Delete Service
-		if err := r.Delete(context.TODO(),service); err != nil {
+		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service", service.Name)
@@ -180,9 +179,9 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 	dep := redis.NewDeployment(workshop, r.Scheme, "redis", workshop.Namespace, labels)
 	deploymentFound := &appsv1.Deployment{}
 	deploymentErr := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: workshop.Namespace}, deploymentFound)
-	if deploymentErr == nil{
+	if deploymentErr == nil {
 		// Delete Deployment
-		if err := r.Delete(context.TODO(),dep); err != nil {
+		if err := r.Delete(context.TODO(), dep); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Deployment ", dep.Name)
@@ -190,10 +189,10 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 
 	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, serviceName, workshop.Namespace, labels, "512Mi")
 	persistentVolumeClaimFound := &corev1.PersistentVolumeClaim{}
-	persistentVolumeClaimErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceName, Namespace: workshop.Namespace},persistentVolumeClaimFound )
+	persistentVolumeClaimErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceName, Namespace: workshop.Namespace}, persistentVolumeClaimFound)
 	if persistentVolumeClaimErr == nil {
 		// Delete persistentVolume Claim
-		if err := r.Delete(context.TODO(),persistentVolumeClaim); err != nil {
+		if err := r.Delete(context.TODO(), persistentVolumeClaim); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Persistent Volume Claim", persistentVolumeClaim.Name)
@@ -204,7 +203,7 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 	secretErr := r.Get(context.TODO(), types.NamespacedName{Name: serviceName, Namespace: workshop.Namespace}, secretFound)
 	if secretErr == nil {
 		// Delete secret
-		if err := r.Delete(context.TODO(), secret); err != nil{
+		if err := r.Delete(context.TODO(), secret); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Secret", secret.Name)
@@ -227,10 +226,10 @@ func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshop
 
 	route := kubernetes.NewSecuredRoute(workshop, r.Scheme, serviceName, workshop.Namespace, labels, serviceName, 8080)
 	routeFound := &routev1.Route{}
-	routeErr := r.Get(context.TODO(), types.NamespacedName{Name: route.Name,Namespace: workshop.Namespace},routeFound )
+	routeErr := r.Get(context.TODO(), types.NamespacedName{Name: route.Name, Namespace: workshop.Namespace}, routeFound)
 	if routeErr == nil {
 		// Delete Route
-		if err := r.Delete(context.TODO(),route); err != nil{
+		if err := r.Delete(context.TODO(), route); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Route", route.Name)
@@ -238,10 +237,10 @@ func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshop
 
 	service := kubernetes.NewService(workshop, r.Scheme, serviceName, workshop.Namespace, labels, []string{"http"}, []int32{8080})
 	serviceFound := &corev1.Service{}
-	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name:service.Name , Namespace:workshop.Namespace }, serviceFound)
+	serviceErr := r.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: workshop.Namespace}, serviceFound)
 	if serviceErr == nil {
 		// Delete Service
-		if err := r.Delete(context.TODO(),service ); err != nil {
+		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service", service.Name)
@@ -252,7 +251,7 @@ func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshop
 	deploymentErr := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: workshop.Namespace}, deploymentFound)
 	if deploymentErr == nil {
 		// Delete Deployment
-		if err := r.Delete(context.TODO(),dep); err != nil {
+		if err := r.Delete(context.TODO(), dep); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Deployment", dep.Name)

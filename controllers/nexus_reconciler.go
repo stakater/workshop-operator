@@ -16,7 +16,6 @@ import (
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 )
 
 // Reconciling Nexus
@@ -120,7 +119,7 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 
 	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, "nexus", nexusNamespace.Name, labels)
 	nexusCustomResourceFound := &nexus.Nexus{}
-	nexusCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResource.Name, Namespace: nexusNamespace.Name},nexusCustomResourceFound )
+	nexusCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResource.Name, Namespace: nexusNamespace.Name}, nexusCustomResourceFound)
 	if nexusCustomResourceErr == nil {
 		// Delete Custom Resource
 		if err := r.Delete(context.TODO(), nexusCustomResource); err != nil {
@@ -130,11 +129,11 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 	}
 
 	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/stakater/nexus-operator:v0.10", "nexus-operator")
-	nexusOperatorFound :=  &appsv1.Deployment{}
-	nexusOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name:nexusOperator.Name , Namespace: nexusNamespace.Name},nexusOperatorFound)
+	nexusOperatorFound := &appsv1.Deployment{}
+	nexusOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusOperator.Name, Namespace: nexusNamespace.Name}, nexusOperatorFound)
 	if nexusOperatorErr == nil {
 		// Delete Operator
-		if err := r.Delete(context.TODO(), nexusOperator); err != nil{
+		if err := r.Delete(context.TODO(), nexusOperator); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Operator", nexusOperator.Name)
@@ -145,29 +144,29 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 	nexusClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRoleBinding.Name, Namespace: nexusNamespace.Name}, nexusClusterRoleBindingFound)
 	if nexusClusterRoleBindingErr == nil {
 		// Delete Cluster Role Binding
-		if err := r.Delete(context.TODO(), nexusClusterRoleBinding); err != nil{
+		if err := r.Delete(context.TODO(), nexusClusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Cluster Role Binding", nexusClusterRoleBinding.Name)
 	}
 
 	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, nexus.NewRules())
-	nexusClusterRoleFound :=  &rbac.ClusterRole{}
-	nexusClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRole.Name, Namespace:nexusNamespace.Name }, nexusClusterRoleFound)
+	nexusClusterRoleFound := &rbac.ClusterRole{}
+	nexusClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRole.Name, Namespace: nexusNamespace.Name}, nexusClusterRoleFound)
 	if nexusClusterRoleErr == nil {
 		// Delete Cluster Role
-		if err := r.Delete(context.TODO(),nexusClusterRole ); err != nil{
+		if err := r.Delete(context.TODO(), nexusClusterRole); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Cluster Role", nexusClusterRole.Name)
 	}
 
 	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels)
-	nexusServiceAccountFound :=  &corev1.ServiceAccount{}
-	nexusServiceAccountErr := r.Get(context.TODO(),types.NamespacedName{Name: nexusServiceAccount.Name,Namespace: nexusNamespace.Name }, nexusServiceAccountFound )
+	nexusServiceAccountFound := &corev1.ServiceAccount{}
+	nexusServiceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusServiceAccount.Name, Namespace: nexusNamespace.Name}, nexusServiceAccountFound)
 	if nexusServiceAccountErr == nil {
 		// Delete Service Account
-		if err := r.Delete(context.TODO(), nexusServiceAccount);  err != nil{
+		if err := r.Delete(context.TODO(), nexusServiceAccount); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service Account", nexusServiceAccount.Name)
@@ -175,7 +174,7 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 
 	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "nexus.gpte.opentlc.com", "gpte.opentlc.com", "Nexus", "NexusList", "nexus", "nexus", "v1alpha1", nil, nil)
 	nexusCustomResourceDefinitionFound := &apiextensionsv1beta1.CustomResourceDefinition{}
-	nexusCustomResourceDefinitionErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResourceDefinition.Name,  },nexusCustomResourceDefinitionFound )
+	nexusCustomResourceDefinitionErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResourceDefinition.Name}, nexusCustomResourceDefinitionFound)
 	if nexusCustomResourceDefinitionErr == nil {
 		// Delete CRD
 		if err := r.Delete(context.TODO(), nexusCustomResourceDefinition); err != nil {
@@ -184,12 +183,11 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 		log.Infof("Deleted %s Custom Resource Definition", nexusCustomResourceDefinition.Name)
 	}
 
-
 	nexusNamespaceFound := &corev1.Namespace{}
-	nexusNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name:nexusNamespace.Name  }, nexusNamespaceFound)
+	nexusNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusNamespace.Name}, nexusNamespaceFound)
 	if nexusNamespaceErr != nil {
 		// Delete Project
-		if err := r.Delete(context.TODO(), nexusNamespace); err != nil{
+		if err := r.Delete(context.TODO(), nexusNamespace); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Project", nexusNamespace.Name)
@@ -198,4 +196,3 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 	//Success
 	return reconcile.Result{}, nil
 }
-

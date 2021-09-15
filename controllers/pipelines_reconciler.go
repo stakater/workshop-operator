@@ -70,10 +70,10 @@ func (r *WorkshopReconciler) deletePipelines(workshop *workshopv1.Workshop) (rec
 	pipelineSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, name, "openshift-operators",
 		name, channel, clusterServiceVersion)
 	pipelineSubscriptionFound := &olmv1alpha1.Subscription{}
-	pipelineSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name:pipelineSubscription.Name , Namespace: pipelineSubscription.Namespace}, pipelineSubscriptionFound)
+	pipelineSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: pipelineSubscription.Name, Namespace: pipelineSubscription.Namespace}, pipelineSubscriptionFound)
 	if pipelineSubscriptionErr == nil {
 		// Delete Subscription
-		if err := r.Delete(context.TODO(), pipelineSubscription); err != nil{
+		if err := r.Delete(context.TODO(), pipelineSubscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", pipelineSubscription.Name)

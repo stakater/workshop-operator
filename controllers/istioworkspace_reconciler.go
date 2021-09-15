@@ -146,7 +146,7 @@ func (r *WorkshopReconciler) deleteIstioWorkspace(workshop *workshopv1.Workshop,
 		role := kubernetes.NewRole(workshop, r.Scheme,
 			username+"-istio-workspace", stagingProjectName, labels, kubernetes.IstioWorkspaceUserRules())
 		roleFound := &rbac.Role{}
-		roleErr:= r.Get(context.TODO(),types.NamespacedName{Name: role.Name, Namespace:role.Namespace },roleFound)
+		roleErr := r.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: role.Namespace}, roleFound)
 		if roleErr == nil {
 			// Delete role
 			if err := r.Delete(context.TODO(), role); err != nil {
@@ -158,10 +158,10 @@ func (r *WorkshopReconciler) deleteIstioWorkspace(workshop *workshopv1.Workshop,
 		roleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 			username+"-istio-workspace", stagingProjectName, labels, users, username+"-istio-workspace", "Role")
 		roleBindingFound := &rbac.RoleBinding{}
-		roleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name:roleBindingFound.Name , Namespace: roleBindingFound.Namespace}, roleBindingFound)
+		roleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: roleBindingFound.Name, Namespace: roleBindingFound.Namespace}, roleBindingFound)
 		if roleBindingErr == nil {
 			// Delete RoleBinding
-			if err := r.Delete(context.TODO(),roleBinding ); err != nil {
+			if err := r.Delete(context.TODO(), roleBinding); err != nil {
 				return reconcile.Result{}, err
 			}
 			log.Infof("Deleted %s Role Binding", roleBinding.Name)
@@ -171,10 +171,10 @@ func (r *WorkshopReconciler) deleteIstioWorkspace(workshop *workshopv1.Workshop,
 	subscription := kubernetes.NewCommunitySubscription(workshop, r.Scheme, "istio-workspace-operator", "openshift-operators",
 		"istio-workspace-operator", channel, clusterserviceversion)
 	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name:subscription.Name ,Namespace:subscription.Namespace }, subscriptionFound)
+	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name, Namespace: subscription.Namespace}, subscriptionFound)
 	if subscriptionErr == nil {
 		// Delete Subscription
-		if err := r.Delete(context.TODO(), subscription); err != nil{
+		if err := r.Delete(context.TODO(), subscription); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Subscription", subscription.Name)

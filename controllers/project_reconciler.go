@@ -165,11 +165,11 @@ func (r *WorkshopReconciler) deletemanageRoles(workshop *workshopv1.Workshop, pr
 
 	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		username+"-argocd", projectName, labels, argocdUsers, "edit", "ClusterRole")
-	argocdEditRoleBindingFound :=  &rbac.RoleBinding{}
-	argocdEditRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: argocdEditRoleBinding.Name, Namespace: projectName }, argocdEditRoleBindingFound)
+	argocdEditRoleBindingFound := &rbac.RoleBinding{}
+	argocdEditRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: argocdEditRoleBinding.Name, Namespace: projectName}, argocdEditRoleBindingFound)
 	if argocdEditRoleBindingErr == nil {
 		// Delete Argo CD
-		if err := r.Delete(context.TODO(),argocdEditRoleBinding); err != nil {
+		if err := r.Delete(context.TODO(), argocdEditRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Role Binding", argocdEditRoleBinding.Name)
@@ -177,11 +177,11 @@ func (r *WorkshopReconciler) deletemanageRoles(workshop *workshopv1.Workshop, pr
 
 	defaultRoleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, username+"-default", projectName, labels,
 		"default", "view", "ClusterRole")
-	defaultRoleBindingFound :=  &rbac.RoleBinding{}
-	defaultRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: defaultRoleBinding.Name, Namespace: projectName }, defaultRoleBindingFound)
+	defaultRoleBindingFound := &rbac.RoleBinding{}
+	defaultRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: defaultRoleBinding.Name, Namespace: projectName}, defaultRoleBindingFound)
 	if defaultRoleBindingErr == nil {
 		// Delete default Role Binding
-		if err := r.Delete(context.TODO(),defaultRoleBinding); err != nil {
+		if err := r.Delete(context.TODO(), defaultRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Role Binding", defaultRoleBinding.Name)
@@ -190,7 +190,7 @@ func (r *WorkshopReconciler) deletemanageRoles(workshop *workshopv1.Workshop, pr
 	userRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, username+"-project", projectName, labels,
 		users, "edit", "ClusterRole")
 	userRoleBindingFound := &rbac.RoleBinding{}
-	userRoleBindingErr := 	r.Get(context.TODO(), types.NamespacedName{Name: userRoleBinding.Name,Namespace: projectName}, userRoleBindingFound)
+	userRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: userRoleBinding.Name, Namespace: projectName}, userRoleBindingFound)
 	if userRoleBindingErr == nil {
 		// Delete user Role Binding
 		if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
@@ -202,4 +202,3 @@ func (r *WorkshopReconciler) deletemanageRoles(workshop *workshopv1.Workshop, pr
 	//Success
 	return reconcile.Result{}, nil
 }
-
