@@ -76,36 +76,43 @@ func (r *WorkshopReconciler) addCertManager(workshop *workshopv1.Workshop, users
 }
 func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
-	certmanagerNameSpace :="cert-manager"
-	certmanagerresourceFound := &certmanager.CertManager{}
+	channel := workshop.Spec.Infrastructure.CertManager.OperatorHub.Channel
+	clusterServiceVersion := workshop.Spec.Infrastructure.CertManager.OperatorHub.ClusterServiceVersion
+	labels := map[string]string{
+		"app.kubernetes.io/part-of": "certmanager",
+	}
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, "cert-manager")
 
-	certmanagerresourceErr := r.Get(context.TODO(), types.NamespacedName{Name: "cert-manager", Namespace: certmanagerNameSpace}, certmanagerresourceFound )
+	customresource := certmanager.NewCustomResource(workshop, r.Scheme, "cert-manager", namespace.Name, labels)
+	certmanagerresourceFound := &certmanager.CertManager{}
+	certmanagerresourceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, certmanagerresourceFound )
 	if certmanagerresourceErr == nil {
 		// Delete cert-manager resource
-		if err := r.Delete(context.TODO(), certmanagerresourceFound); err != nil {
+		if err := r.Delete(context.TODO(), customresource); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s cert-manager resource", certmanagerresourceFound.Name)
+		log.Infof("Deleted %s cert-manager resource", customresource.Name)
 	}
 
 	certmanagerNameSpaceFound := &corev1.Namespace{}
-	certmanagerNameSpaceErr := r.Get(context.TODO(), types.NamespacedName{Name: "cert-manager"}, certmanagerNameSpaceFound )
+	certmanagerNameSpaceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, certmanagerNameSpaceFound )
 	if certmanagerNameSpaceErr == nil {
 		// Delete cert-manager NameSpace
-		if err := r.Delete(context.TODO(),certmanagerNameSpaceFound ); err !=nil{
+		if err := r.Delete(context.TODO(),namespace ); err !=nil{
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s cert-manager namespace", certmanagerNameSpaceFound.Name)
+		log.Infof("Deleted %s cert-manager namespace", namespace.Name)
 	}
-
+	CertManagerSubscription := kubernetes.NewCertifiedSubscription(workshop, r.Scheme, "cert-manager-operator", "openshift-operators",
+		"cert-manager-operator", channel, clusterServiceVersion)
 	certManagerSubscriptionFund := &olmv1alpha1.Subscription{}
-	certManagerSubscriptionErr := kubernetes.GetObject(r, "cert-manager-operator",  "openshift-operators", certManagerSubscriptionFund)
+	certManagerSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, certManagerSubscriptionFund )
 	if 	certManagerSubscriptionErr == nil {
 		// Delete certManager Subscription
-		if err := r.Delete(context.TODO(),certManagerSubscriptionFund ); err !=nil{
+		if err := r.Delete(context.TODO(),CertManagerSubscription ); err !=nil{
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s cert-manager Subscription", certManagerSubscriptionFund.Name)
+		log.Infof("Deleted %s cert-manager Subscription", CertManagerSubscription.Name)
 	}
 	//Success
 	return reconcile.Result{}, nil
