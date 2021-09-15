@@ -596,65 +596,79 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
+	channel := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.Channel
+	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
+	labels := map[string]string{
+		"app.kubernetes.io/part-of": "codeready",
+	}
+
 	codeReadyWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, "workspaces")
+	cheClusterRole :=
+		kubernetes.NewClusterRole(workshop, r.Scheme, "che", codeReadyWorkspacesNamespace.Name, labels, kubernetes.CheRules())
+
+	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "che", codeReadyWorkspacesNamespace.Name, labels, "che", cheClusterRole.Name, "ClusterRole")
 	cheClusterRoleBindingFound :=&rbac.ClusterRoleBinding{}
 	cheClusterRoleBindingeErr := r.Get(context.TODO(), types.NamespacedName{Name: "che", Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleBindingFound)
 	if cheClusterRoleBindingeErr == nil {
 		// Delete che Cluster RoleBinding
-		if err := r.Delete(context.TODO(), cheClusterRoleBindingFound); err != nil {
+		if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s Che Cluster RoleBinding ", cheClusterRoleBindingFound.Name)
+		log.Infof("Deleted %s Che Cluster RoleBinding ", cheClusterRoleBinding.Name)
 	}
 
 	cheClusterRoleFound :=&rbac.ClusterRole{}
 	cheClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: "che", Namespace: codeReadyWorkspacesNamespace.Name}, cheClusterRoleFound)
 	if cheClusterRoleErr == nil {
 		// Delete che Cluster Role
-		if err := r.Delete(context.TODO(), cheClusterRoleFound); err != nil {
+		if err := r.Delete(context.TODO(), cheClusterRole); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Che Cluster Role ", cheClusterRoleFound.Name)
 	}
 
+	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, "codereadyworkspaces", codeReadyWorkspacesNamespace.Name)
 	codeReadyWorkspacesCustomResourceFound :=&che.CheCluster{}
 	codeReadyWorkspacesCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: "codeready-workspaces", Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesCustomResourceFound)
 	if codeReadyWorkspacesCustomResourceErr == nil {
 		// Delete codeReadyWorkspaces CustomResource
-		if err := r.Delete(context.TODO(), codeReadyWorkspacesCustomResourceFound); err != nil {
+		if err := r.Delete(context.TODO(), codeReadyWorkspacesCustomResource); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s codeReadyWorkspaces CustomResource", codeReadyWorkspacesCustomResourceFound.Name)
+		log.Infof("Deleted %s codeReadyWorkspaces CustomResource", codeReadyWorkspacesCustomResource.Name)
 	}
 
+	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "codeready-workspaces", codeReadyWorkspacesNamespace.Name,
+		"codeready-workspaces", channel, clusterServiceVersion)
 	codeReadyWorkspacesSubscriptionFound := &olmv1alpha1.Subscription{}
 	codeReadyWorkspacesSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: "codeready-workspaces", Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesSubscriptionFound)
 	if codeReadyWorkspacesSubscriptionErr == nil {
 		// Delete Subscription
-		if err := r.Delete(context.TODO(), codeReadyWorkspacesSubscriptionFound); err != nil {
+		if err := r.Delete(context.TODO(), codeReadyWorkspacesSubscription); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s codeReadyWorkspaces Subscription", codeReadyWorkspacesSubscriptionFound.Name)
+		log.Infof("Deleted %s codeReadyWorkspaces Subscription", codeReadyWorkspacesSubscription.Name)
 	}
 
+	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, "codeready-workspaces", codeReadyWorkspacesNamespace.Name)
 	codeReadyWorkspacesOperatorGroupFound := &olmv1.OperatorGroup{}
 	codeReadyWorkspacesOperatorGroupErr := r.Get(context.TODO(), types.NamespacedName{Name: "codeready-workspaces", Namespace: codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesOperatorGroupFound)
 	if codeReadyWorkspacesOperatorGroupErr == nil {
 		// Delete OperatorGroup
-		if err := r.Delete(context.TODO(), codeReadyWorkspacesOperatorGroupFound); err != nil {
+		if err := r.Delete(context.TODO(), codeReadyWorkspacesOperatorGroup); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s codeReadyWorkspaces OperatorGroup", codeReadyWorkspacesOperatorGroupFound.Name)
+		log.Infof("Deleted %s codeReadyWorkspaces OperatorGroup", codeReadyWorkspacesOperatorGroup.Name)
 	}
 
 	codeReadyWorkspacesNamespaceFound := &corev1.Namespace{}
 	codeReadyWorkspacesNamespacErr := r.Get(context.TODO(), types.NamespacedName{Name:codeReadyWorkspacesNamespace.Name}, codeReadyWorkspacesNamespaceFound)
 	if codeReadyWorkspacesNamespacErr == nil {
 		// Delete Project
-		if err := r.Delete(context.TODO(), codeReadyWorkspacesNamespaceFound); err != nil {
+		if err := r.Delete(context.TODO(), codeReadyWorkspacesNamespace); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s codeReadyWorkspaces namespace", codeReadyWorkspacesNamespaceFound.Name)
+		log.Infof("Deleted %s codeReadyWorkspaces namespace", codeReadyWorkspacesNamespace.Name)
 	}
 
 	//Success
