@@ -85,7 +85,7 @@ func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop, us
 
 	customresource := certmanager.NewCustomResource(workshop, r.Scheme, "cert-manager", namespace.Name, labels)
 	certmanagerresourceFound := &certmanager.CertManager{}
-	certmanagerresourceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, certmanagerresourceFound )
+	certmanagerresourceErr := r.Get(context.TODO(), types.NamespacedName{Name: customresource.Name , Namespace: namespace.Name}, certmanagerresourceFound )
 	if certmanagerresourceErr == nil {
 		// Delete cert-manager resource
 		if err := r.Delete(context.TODO(), customresource); err != nil {
@@ -106,7 +106,7 @@ func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop, us
 	CertManagerSubscription := kubernetes.NewCertifiedSubscription(workshop, r.Scheme, "cert-manager-operator", "openshift-operators",
 		"cert-manager-operator", channel, clusterServiceVersion)
 	certManagerSubscriptionFund := &olmv1alpha1.Subscription{}
-	certManagerSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, certManagerSubscriptionFund )
+	certManagerSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: CertManagerSubscription.Name, Namespace: namespace.Name}, certManagerSubscriptionFund )
 	if 	certManagerSubscriptionErr == nil {
 		// Delete certManager Subscription
 		if err := r.Delete(context.TODO(),CertManagerSubscription ); err !=nil{
