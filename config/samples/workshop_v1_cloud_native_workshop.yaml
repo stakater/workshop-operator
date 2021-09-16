@@ -37,6 +37,12 @@ spec:
       enabled: true
     vault: 
       enabled: true
+      image: 
+        name: hashicorp/vault
+        tag: 1.8.2
+      agentInjectorImage:
+        name: hashicorp/vault-k8s
+        tag: 0.13.0        
     pipeline:
       enabled: false
       operatorHub:
