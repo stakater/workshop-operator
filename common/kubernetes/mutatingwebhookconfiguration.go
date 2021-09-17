@@ -24,7 +24,7 @@ func NewMutatingWebhookConfiguration(workshop *workshopv1.Workshop, scheme *runt
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, mwc, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for Mutating Webhook Configuration.")
 	}
 	return mwc
 }

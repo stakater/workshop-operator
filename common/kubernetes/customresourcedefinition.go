@@ -38,7 +38,7 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, crd, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for CRD.")
 	}
 	return crd
 }

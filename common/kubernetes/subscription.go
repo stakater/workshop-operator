@@ -36,7 +36,7 @@ func NewCertifiedSubscription(workshop *workshopv1.Workshop, scheme *runtime.Sch
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, subscription, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for Certified Subscription.")
 	}
 	return subscription
 }
@@ -67,7 +67,7 @@ func NewCommunitySubscription(workshop *workshopv1.Workshop, scheme *runtime.Sch
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, subscription, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for Community Subscription.")
 	}
 	return subscription
 }
@@ -98,7 +98,7 @@ func NewRedHatSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, subscription, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for RedHat Subscription.")
 	}
 	return subscription
 }
@@ -128,7 +128,7 @@ func NewCustomSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, subscription, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for Custom Subscription.")
 	}
 	return subscription
 }

@@ -25,7 +25,7 @@ func NewStringDataSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, secret, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for String Data Secret.")
 	}
 	return secret
 }
@@ -47,7 +47,7 @@ func NewCrtSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, secret, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for CRT Secret.")
 	}
 	return secret
 }

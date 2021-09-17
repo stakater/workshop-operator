@@ -9,7 +9,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// NewConfigMap creates a Config Map
+// NewConfigMap creates a ConfigMap
 func NewConfigMap(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string, data map[string]string) *corev1.ConfigMap {
 
@@ -25,7 +25,7 @@ func NewConfigMap(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, configmap, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for ConfigMap.")
 	}
 	return configmap
 }

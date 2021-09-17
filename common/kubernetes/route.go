@@ -39,7 +39,7 @@ func NewRoute(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, route, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference fpr OpenShift Route.")
 	}
 	return route
 }
@@ -76,7 +76,7 @@ func NewSecuredRoute(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, route, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for OpenShift Secured Route.")
 	}
 	return route
 }
