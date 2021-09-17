@@ -424,10 +424,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.10
+    helm.sh/chart: workshop-operator-0.0.11
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.10"
+    app.kubernetes.io/version: "0.0.11"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -731,10 +731,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.10
+    helm.sh/chart: workshop-operator-0.0.11
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.10"
+    app.kubernetes.io/version: "0.0.11"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -754,10 +754,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.10
+    helm.sh/chart: workshop-operator-0.0.11
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.10"
+    app.kubernetes.io/version: "0.0.11"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -794,7 +794,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.10
+          image: docker.io/stakater/workshop-operator:v0.0.11
           name: manager
           resources:
             limits:
@@ -804,24 +804,3 @@ spec:
               cpu: 100m
               memory: 512Mi
       terminationGracePeriodSeconds: 10
----
-# Source: workshop-operator/templates/tests/test-connection.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: "workshop-operator-test-connection"
-  labels:
-    helm.sh/chart: workshop-operator-0.0.10
-    app.kubernetes.io/name: workshop-operator
-    app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.10"
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    "helm.sh/hook": test
-spec:
-  containers:
-    - name: wget
-      image: busybox
-      command: ['wget']
-      args: ['workshop-operator:443']
-  restartPolicy: Never
