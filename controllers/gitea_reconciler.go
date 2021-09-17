@@ -4,6 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -13,11 +19,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -29,7 +30,7 @@ import (
 func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 	enabledGitea := workshop.Spec.Infrastructure.Gitea.Enabled
 
-	giteaNamespaceName := "nexus"
+	giteaNamespaceName := "gitea"
 
 	if enabledGitea {
 		if result, err := r.addGitea(workshop, users, giteaNamespaceName); util.IsRequeued(result, err) {
