@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: stakater/workshop-operator
-  tag:  v0.0.16
+  tag:  v0.0.17
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
