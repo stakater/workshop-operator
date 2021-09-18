@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -118,6 +116,7 @@ func (r *WorkshopReconciler) addIstioWorkspace(workshop *workshopv1.Workshop, us
 	return reconcile.Result{}, nil
 }
 
+/**
 // delete IstioWorkspace
 func (r *WorkshopReconciler) deleteIstioWorkspace(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
@@ -177,3 +176,4 @@ func (r *WorkshopReconciler) deleteIstioWorkspace(workshop *workshopv1.Workshop,
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

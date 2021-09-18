@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"reflect"
 
-	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -261,6 +257,7 @@ func (r *WorkshopReconciler) addKialiOperator(workshop *workshopv1.Workshop) (re
 	return reconcile.Result{}, nil
 }
 
+/**
 // Delete ServiceMesh
 func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
@@ -459,3 +456,4 @@ func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) 
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

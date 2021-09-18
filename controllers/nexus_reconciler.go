@@ -3,12 +3,6 @@ package controllers
 import (
 	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbac "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
@@ -103,6 +97,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamesp
 	return reconcile.Result{}, nil
 }
 
+/**
 // Delete Nexus
 func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNamespaceName string) (reconcile.Result, error) {
 
@@ -192,3 +187,4 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNam
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

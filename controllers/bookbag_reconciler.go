@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strconv"
 
-	routev1 "github.com/openshift/api/route/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/bookbag"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/stakater/workshop-operator/common/util"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -149,6 +147,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	return reconcile.Result{}, nil
 }
 
+/**
 func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID string, guidesNamespace string) (reconcile.Result, error) {
 
 	bookbagName := fmt.Sprintf("user%s-bookbag", userID)
@@ -196,3 +195,4 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

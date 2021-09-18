@@ -13,12 +13,7 @@ import (
 	"strings"
 	"time"
 
-	che "github.com/eclipse/che-operator/pkg/apis/org/v1"
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	_ "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -26,7 +21,6 @@ import (
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/util"
 
-	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
@@ -587,6 +581,7 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 	return reconcile.Result{}, nil
 }
 
+/**
 func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
@@ -668,3 +663,4 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

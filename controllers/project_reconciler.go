@@ -66,19 +66,6 @@ func (r *WorkshopReconciler) addProject(workshop *workshopv1.Workshop, projectNa
 	return reconcile.Result{}, nil
 }
 
-// Delete Project
-func (r *WorkshopReconciler) deleteProject(namespaces *corev1.Namespace) (reconcile.Result, error) {
-
-	if err := r.Delete(context.TODO(), namespaces); err != nil && !errors.IsNotFound(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Deleted %s Namespace", namespaces.Name)
-	}
-
-	//Success
-	return reconcile.Result{}, nil
-}
-
 // Manage Roles
 func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
 
@@ -132,6 +119,7 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 	return reconcile.Result{}, nil
 }
 
+/**
 // Delete Manage Roles
 func (r *WorkshopReconciler) deletemanageRoles(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
 
@@ -193,3 +181,18 @@ func (r *WorkshopReconciler) deletemanageRoles(workshop *workshopv1.Workshop, pr
 	//Success
 	return reconcile.Result{}, nil
 }
+
+// Delete Project
+func (r *WorkshopReconciler) deleteProject(namespaces *corev1.Namespace) (reconcile.Result, error) {
+
+	if err := r.Delete(context.TODO(), namespaces); err != nil && !errors.IsNotFound(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Deleted %s Namespace", namespaces.Name)
+	}
+
+	//Success
+	return reconcile.Result{}, nil
+}
+
+**/

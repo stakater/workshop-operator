@@ -4,9 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	routev1 "github.com/openshift/api/route/v1"
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/prometheus/common/log"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/redis"
@@ -147,6 +144,7 @@ func (r *WorkshopReconciler) addUpdateUsernameDistribution(workshop *workshopv1.
 }
 
 // delete Redis
+/**
 func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	serviceName := "redis"
@@ -253,3 +251,4 @@ func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshop
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

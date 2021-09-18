@@ -3,10 +3,6 @@ package controllers
 import (
 	"context"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	certmanager "github.com/stakater/workshop-operator/common/certmanager"
@@ -70,6 +66,8 @@ func (r *WorkshopReconciler) addCertManager(workshop *workshopv1.Workshop, users
 	//Success
 	return reconcile.Result{}, nil
 }
+
+/**
 func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
 	channel := workshop.Spec.Infrastructure.CertManager.OperatorHub.Channel
@@ -113,3 +111,4 @@ func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop, us
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

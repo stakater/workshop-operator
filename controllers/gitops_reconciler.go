@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-
 	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocdv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/prometheus/common/log"
@@ -293,6 +291,7 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 	return reconcile.Result{}, nil
 }
 
+/**
 // delete GitOps
 func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string, argocdNamespaceName string) (reconcile.Result, error) {
@@ -480,3 +479,4 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

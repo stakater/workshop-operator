@@ -3,13 +3,10 @@ package controllers
 import (
 	"context"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/util"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -73,6 +70,7 @@ func (r *WorkshopReconciler) addServerless(workshop *workshopv1.Workshop) (recon
 	return reconcile.Result{}, nil
 }
 
+/**
 // delete Serverless
 func (r *WorkshopReconciler) deleteServerless(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
@@ -134,3 +132,4 @@ func (r *WorkshopReconciler) deleteServerless(workshop *workshopv1.Workshop) (re
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

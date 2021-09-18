@@ -10,10 +10,6 @@ import (
 
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/prometheus/common/log"
-	admissionregistration "k8s.io/api/admissionregistration/v1"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -238,6 +234,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	return reconcile.Result{}, nil
 }
 
+/**
 // delete Vault
 func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop, users int, vaultNamespaceName string) (reconcile.Result, error) {
 
@@ -441,3 +438,4 @@ func (r *WorkshopReconciler) deleteVaultNamespace(workshop *workshopv1.Workshop,
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

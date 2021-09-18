@@ -15,10 +15,6 @@ import (
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/gitea"
 	"github.com/stakater/workshop-operator/common/kubernetes"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbac "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -185,6 +181,7 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 	return reconcile.Result{}, nil
 }
 
+/**
 // Delete Gitea
 func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users int, giteaNamespaceName string) (reconcile.Result, error) {
 
@@ -278,3 +275,4 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 	//Success
 	return reconcile.Result{}, nil
 }
+**/

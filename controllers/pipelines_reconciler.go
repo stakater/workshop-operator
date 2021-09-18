@@ -3,9 +3,6 @@ package controllers
 import (
 	"context"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
@@ -55,6 +52,7 @@ func (r *WorkshopReconciler) addPipelines(workshop *workshopv1.Workshop) (reconc
 	return reconcile.Result{}, nil
 }
 
+/**
 // delete Pipelines
 func (r *WorkshopReconciler) deletePipelines(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
@@ -78,3 +76,4 @@ func (r *WorkshopReconciler) deletePipelines(workshop *workshopv1.Workshop) (rec
 	//Success
 	return reconcile.Result{}, nil
 }
+**/
