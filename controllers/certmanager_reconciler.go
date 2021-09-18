@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,11 +22,6 @@ func (r *WorkshopReconciler) reconcileCertManager(workshop *workshopv1.Workshop,
 
 	if enabledCertManager {
 		if result, err := r.addCertManager(workshop, users); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
-	if enabledCertManager {
-		if result, err := r.deleteCertManager(workshop, users); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}

@@ -40,14 +40,7 @@ func (r *WorkshopReconciler) reconcileProject(workshop *workshopv1.Workshop, use
 			if stagingProjectNamespaceErr != nil && errors.IsNotFound(stagingProjectNamespaceErr) {
 				break
 			}
-
-			if !(stagingProjectNamespaceErr != nil && errors.IsNotFound(stagingProjectNamespaceErr)) {
-				if result, err := r.deleteProject(stagingProjectNamespace); util.IsRequeued(result, err) {
-					return result, err
-				}
-			}
 		}
-
 		id++
 	}
 
@@ -68,9 +61,7 @@ func (r *WorkshopReconciler) addProject(workshop *workshopv1.Workshop, projectNa
 	if result, err := r.manageRoles(workshop, projectNamespace.Name, username); err != nil {
 		return result, err
 	}
-	if result, err := r.deletemanageRoles(workshop, projectNamespace.Name, username); err != nil {
-		return result, err
-	}
+
 	//Success
 	return reconcile.Result{}, nil
 }

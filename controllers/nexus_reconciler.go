@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -30,11 +31,6 @@ func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reco
 		}
 	}
 
-	if enabledNexus {
-		if result, err := r.deleteNexus(workshop, nexusNamespaceName); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
 	return reconcile.Result{}, nil
 }
 

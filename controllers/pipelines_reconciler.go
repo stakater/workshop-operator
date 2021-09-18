@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -20,11 +21,6 @@ func (r *WorkshopReconciler) reconcilePipelines(workshop *workshopv1.Workshop) (
 
 	if enabledPipeline {
 		if result, err := r.addPipelines(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
-	if enabledPipeline {
-		if result, err := r.deletePipelines(workshop); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}

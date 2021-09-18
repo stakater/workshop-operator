@@ -3,10 +3,11 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"reflect"
 
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	"github.com/prometheus/common/log"
@@ -45,24 +46,6 @@ func (r *WorkshopReconciler) reconcileServiceMesh(workshop *workshopv1.Workshop,
 		}
 	}
 
-	if enabledServiceMesh || enabledServerless {
-
-		if result, err := r.deleteElasticSearchOperator(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
-
-		if result, err := r.deleteJaegerOperator(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
-
-		if result, err := r.deleteKialiOperator(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
-
-		if result, err := r.deleteServiceMesh(workshop, users); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
 	//Success
 	return reconcile.Result{}, nil
 }

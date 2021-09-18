@@ -45,10 +45,6 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 			if depErr != nil && errors.IsNotFound(depErr) {
 				break
 			}
-
-			if result, err := r.deleteBookbag(workshop, strconv.Itoa(id), guidesNamespace); util.IsRequeued(result, err) {
-				return result, err
-			}
 		}
 
 		id++

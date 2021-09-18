@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 
 	securityv1 "github.com/openshift/api/security/v1"
@@ -24,12 +25,6 @@ func (r *WorkshopReconciler) reconcileIstioWorkspace(workshop *workshopv1.Worksh
 	if enabled {
 
 		if result, err := r.addIstioWorkspace(workshop, users); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
-	if enabled {
-
-		if result, err := r.deleteIstioWorkspace(workshop, users); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}

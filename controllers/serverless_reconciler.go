@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -24,11 +25,7 @@ func (r *WorkshopReconciler) reconcileServerless(workshop *workshopv1.Workshop) 
 			return result, err
 		}
 	}
-	if enabledServerless {
-		if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
+
 	//Success
 	return reconcile.Result{}, nil
 }

@@ -6,18 +6,19 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	che "github.com/eclipse/che-operator/pkg/apis/org/v1"
-	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	_ "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
+
+	che "github.com/eclipse/che-operator/pkg/apis/org/v1"
+	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	_ "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -39,11 +40,6 @@ func (r *WorkshopReconciler) reconcileCodeReadyWorkspace(workshop *workshopv1.Wo
 
 	if enabled {
 		if result, err := r.addCodeReadyWorkspace(workshop, users, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
-	if enabled {
-		if result, err := r.deleteCodeReadyWorkspace(workshop, users, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}

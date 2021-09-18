@@ -38,12 +38,6 @@ func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users
 		}
 	}
 
-	if enabledGitea {
-		if result, err := r.deleteGitea(workshop, users, giteaNamespaceName); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
-
 	//Success
 	return reconcile.Result{}, nil
 }

@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"context"
+	"reflect"
+
 	routev1 "github.com/openshift/api/route/v1"
 	corev1 "k8s.io/api/core/v1"
-	"reflect"
 
 	"github.com/prometheus/common/log"
 	"github.com/stakater/workshop-operator/common/kubernetes"
@@ -28,13 +29,6 @@ func (r *WorkshopReconciler) reconcilePortal(workshop *workshopv1.Workshop, user
 	}
 
 	if result, err := r.addUpdateUsernameDistribution(workshop, users, appsHostnameSuffix, openshiftConsoleURL); err != nil {
-		return result, err
-	}
-
-	if result, err := r.deleteRedis(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-	if result, err := r.deleteUpdateUsernameDistribution(workshop, users, appsHostnameSuffix, openshiftConsoleURL); err != nil {
 		return result, err
 	}
 

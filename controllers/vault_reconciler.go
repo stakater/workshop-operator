@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/util"
@@ -33,18 +34,7 @@ func (r *WorkshopReconciler) reconcileVault(workshop *workshopv1.Workshop, users
 			return result, err
 		}
 	}
-	if enabled {
-		if result, err := r.deleteVaultServer(workshop, users, vaultNamespaceName); util.IsRequeued(result, err) {
-			return result, err
-		}
 
-		if result, err := r.deleteVaultAgentInjector(workshop, users, vaultNamespaceName); util.IsRequeued(result, err) {
-			return result, err
-		}
-		if result, err := r.deleteVaultNamespace(workshop, users, vaultNamespaceName); util.IsRequeued(result, err) {
-			return result, err
-		}
-	}
 	//Success
 	return reconcile.Result{}, nil
 }
