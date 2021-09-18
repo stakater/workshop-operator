@@ -71,7 +71,7 @@ func NewCustomService(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, service, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Custom Service.")
+		log.Error(err, " - Failed to set SetControllerReference for Custom Service - %s", name)
 	}
 	return service
 }
@@ -107,7 +107,7 @@ func NewServiceWithTarget(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, service, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Service with specific target.")
+		log.Error(err, " - Failed to set SetControllerReference for Service with specific target - %s", name)
 	}
 	return service
 }

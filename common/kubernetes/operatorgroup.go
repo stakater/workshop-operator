@@ -28,7 +28,7 @@ func NewOperatorGroup(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, operatorgroup, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Operator Group.")
+		log.Error(err, " - Failed to set SetControllerReference for Operator Group - %s", name)
 	}
 	return operatorgroup
 }

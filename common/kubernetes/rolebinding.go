@@ -37,7 +37,7 @@ func NewRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, rolebinding, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Role Binding for Service Account.")
+		log.Error(err, " - Failed to set SetControllerReference for Role Binding for Service Account - %s", name)
 	}
 	return rolebinding
 }
@@ -63,7 +63,7 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, rolebinding, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Role Binding for Users.")
+		log.Error(err, " - Failed to set SetControllerReference for Role Binding for Users - %s", name)
 	}
 	return rolebinding
 }

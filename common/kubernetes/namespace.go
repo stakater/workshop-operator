@@ -21,7 +21,7 @@ func NewNamespace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name st
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, namespace, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Namespace.")
+		log.Error(err, " - Failed to set SetControllerReference for Namespace - %s", name)
 	}
 	return namespace
 }

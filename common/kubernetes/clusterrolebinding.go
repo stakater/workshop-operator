@@ -36,7 +36,7 @@ func NewClusterRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Sche
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, clusterrolebinding, scheme)
 	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
+		log.Error(err, " - Failed to set SetControllerReference for ClusterRoleBinding for Service Account - %s", namespace)
 	}
 	return clusterrolebinding
 }
@@ -67,7 +67,7 @@ func NewClusterRoleBinding(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, clusterrolebinding, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for ClusterRoleBinding.")
+		log.Error(err, " - Failed to set SetControllerReference for ClusterRoleBinding for Users - %s", name)
 	}
 	return clusterrolebinding
 }

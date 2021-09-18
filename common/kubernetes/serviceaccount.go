@@ -24,7 +24,7 @@ func NewServiceAccount(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, serviceaccount, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Service Account.")
+		log.Error(err, " - Failed to set SetControllerReference for Service Account - %s", name)
 	}
 	return serviceaccount
 }

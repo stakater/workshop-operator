@@ -25,7 +25,7 @@ func NewConfigMap(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	// Set Workshop instance as the owner and controller
 	err := ctrl.SetControllerReference(workshop, configmap, scheme)
 	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for ConfigMap.")
+		log.Error(err, " - Failed to set SetControllerReference for ConfigMap - %s", name)
 	}
 	return configmap
 }
