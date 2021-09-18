@@ -131,12 +131,12 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 	openshiftConsoleURL = "https://" + route.Spec.Host
-	log.Info("OpenShift Console URL %s", openshiftConsoleURL)
+	log.Infof("OpenShift Console URL %s", openshiftConsoleURL)
 
 	re := regexp.MustCompile(`^console-openshift-console.(.*?)$`)
 	match := re.FindStringSubmatch(route.Spec.Host)
 	appsHostnameSuffix = match[1]
-	log.Info("Apps Hostname Suffix %s", appsHostnameSuffix)
+	log.Infof("Apps Hostname Suffix %s", appsHostnameSuffix)
 
 	users := workshop.Spec.User.Number
 	if users < 0 {
