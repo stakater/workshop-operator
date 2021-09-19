@@ -191,8 +191,20 @@ spec:
                     properties:
                       enabled:
                         type: boolean
+                      image:
+                        description: ImageSpec ...
+                        properties:
+                          name:
+                            type: string
+                          tag:
+                            type: string
+                        required:
+                        - name
+                        - tag
+                        type: object
                     required:
                     - enabled
+                    - image
                     type: object
                   pipeline:
                     description: PipelineSpec ...

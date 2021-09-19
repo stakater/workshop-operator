@@ -197,8 +197,20 @@ spec:
                     properties:
                       enabled:
                         type: boolean
+                      image:
+                        description: ImageSpec ...
+                        properties:
+                          name:
+                            type: string
+                          tag:
+                            type: string
+                        required:
+                        - name
+                        - tag
+                        type: object
                     required:
                     - enabled
+                    - image
                     type: object
                   pipeline:
                     description: PipelineSpec ...
@@ -424,10 +436,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.18
+    helm.sh/chart: workshop-operator-0.0.19
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.18"
+    app.kubernetes.io/version: "0.0.19"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -731,10 +743,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.18
+    helm.sh/chart: workshop-operator-0.0.19
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.18"
+    app.kubernetes.io/version: "0.0.19"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -754,10 +766,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.18
+    helm.sh/chart: workshop-operator-0.0.19
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.18"
+    app.kubernetes.io/version: "0.0.19"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -794,7 +806,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.18
+          image: docker.io/stakater/workshop-operator:v0.0.19
           name: manager
           resources:
             limits:

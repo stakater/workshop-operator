@@ -18,7 +18,7 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.7.1+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: workshop-operator.v0.0.18
+  name: workshop-operator.v0.0.19
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -259,7 +259,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: docker.io/stakater/workshop-operator:v0.0.18
+                image: docker.io/stakater/workshop-operator:v0.0.19
                 name: manager
                 resources:
                   limits:
@@ -318,4 +318,4 @@ spec:
   provider:
     name: stakater
     url: https://stakater.com
-  version: 0.0.18
+  version: 0.0.19
