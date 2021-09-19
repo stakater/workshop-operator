@@ -34,7 +34,7 @@ spec:
         channel: stable
         clusterServiceVersion: openshift-gitops-operator.v1.2.0
     nexus:
-      enabled: false
+      enabled: true
     vault: 
       enabled: false
       image: 

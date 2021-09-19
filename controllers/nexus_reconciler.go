@@ -78,7 +78,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamesp
 	}
 
 	// Create Operator
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/stakater/nexus-operator:v0.10", "nexus-operator")
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/mcouliba/nexus-operator:v0.10", "nexus-operator")
 	if err := r.Create(context.TODO(), nexusOperator); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
