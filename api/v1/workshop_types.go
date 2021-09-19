@@ -93,7 +93,8 @@ type GuideSpec struct {
 
 // NexusSpec ...
 type NexusSpec struct {
-	Enabled bool `json:"enabled"`
+	Enabled bool      `json:"enabled"`
+	Image   ImageSpec `json:"image"`
 }
 
 // PipelineSpec ...

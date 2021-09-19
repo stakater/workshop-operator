@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -30,6 +31,9 @@ func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reco
 
 // Add Nexus
 func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamespaceName string) (reconcile.Result, error) {
+
+	imageName := workshop.Spec.Infrastructure.Nexus.Image.Name
+	imageTag := workshop.Spec.Infrastructure.Nexus.Image.Tag
 
 	labels := map[string]string{
 		"app":                       "nexus",
@@ -78,7 +82,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamesp
 	}
 
 	// Create Operator
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/mcouliba/nexus-operator:v0.10", "nexus-operator")
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, imageName+":"+imageTag, "nexus-operator")
 	if err := r.Create(context.TODO(), nexusOperator); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -91,6 +95,11 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamesp
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Custom Resource", nexusCustomResource.Name)
+	}
+
+	// Wait for server to be running
+	if !kubernetes.GetK8Client().GetDeploymentStatus("nexus", nexusNamespace.Name) {
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
 	}
 
 	//Success
