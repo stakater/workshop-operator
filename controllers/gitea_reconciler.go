@@ -31,7 +31,7 @@ const (
 	GITEANAMESPACENAME         = "gitea"
 	GITEADEPLOYMENTNAME        = "gitea-server"
 	GITEAANSIBLEDEPLOYMENTNAME = "gitea-operator"
-	CLUSTERROLEKIND            = "ClusterRole"
+	CLUSTERROLEKINDNAME        = "ClusterRole"
 	GITEACRDNAME               = "giteas.gpte.opentlc.com"
 	GITEACRDGROUPNAME          = "gpte.opentlc.com"
 	GITEACRDKINDNAME           = "Gitea"
@@ -104,7 +104,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 	}
 
 	// Create Cluster Role Binding
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEASERVICEACCOUNTNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKIND)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEASERVICEACCOUNTNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKINDNAME)
 	if err := r.Create(context.TODO(), giteaClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -238,7 +238,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconci
 		log.Infof("Deleted %s gitea Operator", giteaOperator.Name)
 	}
 
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKIND)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKINDNAME)
 	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
 	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRoleBinding.Name, Namespace: giteaNamespace.Name}, giteaClusterRoleBindingFound)
 	if giteaClusterRoleBindingErr == nil {
