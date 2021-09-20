@@ -27,17 +27,22 @@ import (
 )
 
 const (
-	GITEANAMESPACE       = "gitea"
-	GITEAOPERATORNAME    = "gitea-operator"
-	GITEASERVICENAME     = "gitea-service"
-	GITEACLUSTERROLENAME = "ClusterRole"
-	GITEACRDNAME         = "giteas.gpte.opentlc.com"
-	GITEACRDGROUPNAME    = "gpte.opentlc.com"
-	GITEACRDKINDNAME     = "Gitea"
-	GITEACRDLISTKINDNAME = "GiteaList"
-	GITEACRDPLURALNAME   = "giteas"
-	GITEACRDSINGULARNAME = "gitea"
-	GITEACRDVERSIONAME   = "v1alpha1"
+	GITEANAMESPACENAME    = "gitea"
+	GITEADEPLOYMENTNAME      = "gitea-service"
+	GITEAANSIBLEDEPLOYMENTNAME   = "gitea-operator"
+	CLUSTERROLENAME  = "ClusterRole"
+	GITEACRDNAME          = "giteas.gpte.opentlc.com"
+	GITEACRDGROUPNAME     = "gpte.opentlc.com"
+	GITEACRDKINDNAME      = "Gitea"
+	GITEACRDLISTKINDNAME  = "GiteaList"
+	GITEACRDPLURALNAME    = "giteas"
+	GITEACRDSINGULARNAME  = "gitea"
+	GITEACRDVERSIONAME    = "v1alpha1"
+	GITEAROLEBINDINGNAME  = "gitea-operator"
+	GITEASERVICEACCOUNTNAME  = "gitea-operator"
+	GITEACLUSTERROLENAME  = "gitea-operator"
+
+
 )
 
 // Reconciling Gitea
@@ -45,7 +50,7 @@ func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users
 	enabledGitea := workshop.Spec.Infrastructure.Gitea.Enabled
 
 	if enabledGitea {
-		if result, err := r.addGitea(workshop, users, GITEANAMESPACE); util.IsRequeued(result, err) {
+		if result, err := r.addGitea(workshop, users); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}
@@ -55,7 +60,7 @@ func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users
 }
 
 // Add Gitea
-func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, giteaNamespaceName string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, ) (reconcile.Result, error) {
 
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
@@ -67,7 +72,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Create Project
-	giteaNamespace := kubernetes.NewNamespace(workshop, r.Scheme, giteaNamespaceName)
+	giteaNamespace := kubernetes.NewNamespace(workshop, r.Scheme, GITEANAMESPACENAME)
 	if err := r.Create(context.TODO(), giteaNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -83,7 +88,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Create Service Account
-	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels)
+	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, GITEASERVICEACCOUNTNAME, giteaNamespace.Name, labels)
 	if err := r.Create(context.TODO(), giteaServiceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -91,7 +96,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Create Cluster Role
-	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels, kubernetes.GiteaRules())
+	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, GITEACLUSTERROLENAME, giteaNamespace.Name, labels, kubernetes.GiteaRules())
 	if err := r.Create(context.TODO(), giteaClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -99,14 +104,14 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Create Cluster Role Binding
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels, GITEAOPERATORNAME, GITEAOPERATORNAME, GITEACLUSTERROLENAME)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLENAME)
 	if err := r.Create(context.TODO(), giteaClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Cluster Role Binding", giteaClusterRoleBinding.Name)
 	}
 
-	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels, imageName+":"+imageTag, GITEAOPERATORNAME)
+	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, GITEAANSIBLEDEPLOYMENTNAME, giteaNamespace.Name, labels, imageName+":"+imageTag, GITEAANSIBLEDEPLOYMENTNAME)
 
 	// Create Operator
 	if err := r.Create(context.TODO(), giteaOperator); err != nil && !errors.IsAlreadyExists(err) {
@@ -116,7 +121,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Create Custom Resource
-	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEASERVICENAME, giteaNamespace.Name, labels)
+	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEADEPLOYMENTNAME, giteaNamespace.Name, labels)
 	if err := r.Create(context.TODO(), giteaCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -124,13 +129,13 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Wait for server to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(GITEASERVICENAME, giteaNamespace.Name) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(GITEADEPLOYMENTNAME, giteaNamespace.Name) {
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
 	}
 
 	// Extract app route suffix from openshift-console
 	giteaRouteFound := &routev1.Route{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: GITEASERVICENAME, Namespace: giteaNamespace.Name}, giteaRouteFound); err != nil {
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: GITEADEPLOYMENTNAME, Namespace: giteaNamespace.Name}, giteaRouteFound); err != nil {
 		log.Errorf("Failed to find %s route", "gitea-server")
 		return reconcile.Result{}, err
 	}
@@ -198,7 +203,7 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 }
 
 // Delete Gitea
-func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNamespaceName string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
@@ -209,9 +214,9 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNam
 		"app.kubernetes.io/part-of": "gitea",
 	}
 
-	giteaNamespace := kubernetes.NewNamespace(workshop, r.Scheme, giteaNamespaceName)
+	giteaNamespace := kubernetes.NewNamespace(workshop, r.Scheme, GITEANAMESPACENAME)
 
-	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEASERVICENAME, giteaNamespace.Name, labels)
+	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEADEPLOYMENTNAME, giteaNamespace.Name, labels)
 	giteaCustomResourceFound := &gitea.Gitea{}
 	giteaCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaCustomResource.Name, Namespace: giteaNamespace.Name}, giteaCustomResourceFound)
 	if giteaCustomResourceErr == nil {
@@ -222,7 +227,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNam
 		log.Infof("Deleted %s gitea Custom Resource", giteaCustomResource.Name)
 	}
 
-	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels, imageName+":"+imageTag, GITEAOPERATORNAME)
+	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, GITEAANSIBLEDEPLOYMENTNAME, giteaNamespace.Name, labels, imageName+":"+imageTag, GITEAANSIBLEDEPLOYMENTNAME)
 	giteaOperatorFound := &appsv1.Deployment{}
 	giteaOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaOperator.Name, Namespace: giteaNamespace.Name}, giteaOperatorFound)
 	if giteaOperatorErr == nil {
@@ -233,7 +238,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNam
 		log.Infof("Deleted %s gitea Operator", giteaOperator.Name)
 	}
 
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels, GITEAOPERATORNAME, GITEAOPERATORNAME, GITEACLUSTERROLENAME)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLENAME)
 	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
 	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRoleBinding.Name, Namespace: giteaNamespace.Name}, giteaClusterRoleBindingFound)
 	if giteaClusterRoleBindingErr == nil {
@@ -244,7 +249,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNam
 		log.Infof("Deleted %s gitea Cluster  Role Binding", giteaClusterRoleBinding.Name)
 	}
 
-	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels, kubernetes.GiteaRules())
+	giteaClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, GITEACLUSTERROLENAME, giteaNamespace.Name, labels, kubernetes.GiteaRules())
 	giteaClusterRoleFound := &rbac.ClusterRole{}
 	giteaClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRole.Name, Namespace: giteaNamespace.Name}, giteaClusterRoleFound)
 	if giteaClusterRoleErr == nil {
@@ -255,7 +260,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNam
 		log.Infof("Deleted %s gitea Cluster Role", giteaClusterRole.Name)
 	}
 
-	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, GITEAOPERATORNAME, giteaNamespace.Name, labels)
+	giteaServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, GITEASERVICEACCOUNTNAME, giteaNamespace.Name, labels)
 	giteaServiceAccountFound := &corev1.ServiceAccount{}
 	giteaServiceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaServiceAccount.Name, Namespace: giteaNamespace.Name}, giteaServiceAccountFound)
 	if giteaServiceAccountErr == nil {
