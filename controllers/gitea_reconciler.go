@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const giteaNamespaceName = "gitea"
+
 // Reconciling Gitea
 func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 	enabledGitea := workshop.Spec.Infrastructure.Gitea.Enabled
