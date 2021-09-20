@@ -4,6 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -181,9 +185,9 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 	return reconcile.Result{}, nil
 }
 
-/**
+
 // Delete Gitea
-func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users int, giteaNamespaceName string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, giteaNamespaceName string) (reconcile.Result, error) {
 
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
@@ -275,4 +279,3 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop, users in
 	//Success
 	return reconcile.Result{}, nil
 }
-**/
