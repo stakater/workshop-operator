@@ -29,7 +29,7 @@ import (
 
 const (
 	GITEANAMESPACENAME         = "gitea"
-	GITEADEPLOYMENTNAME        = "gitea-service"
+	GITEADEPLOYMENTNAME        = "gitea-server"
 	GITEAANSIBLEDEPLOYMENTNAME = "gitea-operator"
 	CLUSTERROLEKIND            = "ClusterRole"
 	GITEACRDNAME               = "giteas.gpte.opentlc.com"
@@ -39,6 +39,7 @@ const (
 	GITEACRDPLURALNAME         = "giteas"
 	GITEACRDSINGULARNAME       = "gitea"
 	GITEACRDVERSIONAME         = "v1alpha1"
+	GITEACRNAME                = "gitea-server"
 	GITEAROLEBINDINGNAME       = "gitea-operator"
 	GITEASERVICEACCOUNTNAME    = "gitea-operator"
 	GITEACLUSTERROLENAME       = "gitea-operator"
@@ -110,7 +111,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 		log.Infof("Created %s Cluster Role Binding", giteaClusterRoleBinding.Name)
 	}
 
-	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, GITEAANSIBLEDEPLOYMENTNAME, giteaNamespace.Name, labels, imageName+":"+imageTag, GITEAANSIBLEDEPLOYMENTNAME)
+	giteaOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, GITEAANSIBLEDEPLOYMENTNAME, giteaNamespace.Name, labels, imageName+":"+imageTag, GITEASERVICEACCOUNTNAME)
 
 	// Create Operator
 	if err := r.Create(context.TODO(), giteaOperator); err != nil && !errors.IsAlreadyExists(err) {
@@ -120,7 +121,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 	}
 
 	// Create Custom Resource
-	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEADEPLOYMENTNAME, giteaNamespace.Name, labels)
+	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEACRNAME, giteaNamespace.Name, labels)
 	if err := r.Create(context.TODO(), giteaCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
