@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+    paths-ignore:
+      - config/samples/**      
 
 env:
   GOLANG_VERSION: 1.16

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - config/samples/**
+
 
 env:
   DOCKER_FILE_PATH: Dockerfile
