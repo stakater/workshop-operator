@@ -4,15 +4,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	rbac "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/prometheus/common/log"
@@ -27,22 +28,20 @@ import (
 )
 
 const (
-	GITEANAMESPACENAME    = "gitea"
-	GITEADEPLOYMENTNAME      = "gitea-service"
-	GITEAANSIBLEDEPLOYMENTNAME   = "gitea-operator"
-	CLUSTERROLENAME  = "ClusterRole"
-	GITEACRDNAME          = "giteas.gpte.opentlc.com"
-	GITEACRDGROUPNAME     = "gpte.opentlc.com"
-	GITEACRDKINDNAME      = "Gitea"
-	GITEACRDLISTKINDNAME  = "GiteaList"
-	GITEACRDPLURALNAME    = "giteas"
-	GITEACRDSINGULARNAME  = "gitea"
-	GITEACRDVERSIONAME    = "v1alpha1"
-	GITEAROLEBINDINGNAME  = "gitea-operator"
-	GITEASERVICEACCOUNTNAME  = "gitea-operator"
-	GITEACLUSTERROLENAME  = "gitea-operator"
-
-
+	GITEANAMESPACENAME         = "gitea"
+	GITEADEPLOYMENTNAME        = "gitea-service"
+	GITEAANSIBLEDEPLOYMENTNAME = "gitea-operator"
+	CLUSTERROLEKIND            = "ClusterRole"
+	GITEACRDNAME               = "giteas.gpte.opentlc.com"
+	GITEACRDGROUPNAME          = "gpte.opentlc.com"
+	GITEACRDKINDNAME           = "Gitea"
+	GITEACRDLISTKINDNAME       = "GiteaList"
+	GITEACRDPLURALNAME         = "giteas"
+	GITEACRDSINGULARNAME       = "gitea"
+	GITEACRDVERSIONAME         = "v1alpha1"
+	GITEAROLEBINDINGNAME       = "gitea-operator"
+	GITEASERVICEACCOUNTNAME    = "gitea-operator"
+	GITEACLUSTERROLENAME       = "gitea-operator"
 )
 
 // Reconciling Gitea
@@ -60,7 +59,7 @@ func (r *WorkshopReconciler) reconcileGitea(workshop *workshopv1.Workshop, users
 }
 
 // Add Gitea
-func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, ) (reconcile.Result, error) {
+func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
@@ -104,7 +103,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int, 
 	}
 
 	// Create Cluster Role Binding
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLENAME)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEASERVICEACCOUNTNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKIND)
 	if err := r.Create(context.TODO(), giteaClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -238,7 +237,7 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconci
 		log.Infof("Deleted %s gitea Operator", giteaOperator.Name)
 	}
 
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLENAME)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, giteaNamespace.Name, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKIND)
 	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
 	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRoleBinding.Name, Namespace: giteaNamespace.Name}, giteaClusterRoleBindingFound)
 	if giteaClusterRoleBindingErr == nil {
