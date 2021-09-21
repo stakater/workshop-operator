@@ -238,9 +238,9 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconci
 		log.Infof("Deleted %s gitea Operator", giteaOperator.Name)
 	}
 
-	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, GITEANAMESPACENAME, labels, GITEAROLEBINDINGNAME, GITEAROLEBINDINGNAME, CLUSTERROLEKINDNAME)
+	giteaClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, GITEAROLEBINDINGNAME, GITEANAMESPACENAME, labels, GITEASERVICEACCOUNTNAME, GITEACLUSTERROLENAME, CLUSTERROLEKINDNAME)
 	giteaClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
-	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: giteaClusterRoleBinding.Name, Namespace: GITEANAMESPACENAME}, giteaClusterRoleBindingFound)
+	giteaClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: GITEAROLEBINDINGNAME, Namespace: GITEANAMESPACENAME}, giteaClusterRoleBindingFound)
 	if giteaClusterRoleBindingErr == nil {
 		// Delete Cluster Role Binding
 		if err := r.Delete(context.TODO(), giteaClusterRoleBinding); err != nil {

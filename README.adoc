@@ -33,9 +33,16 @@ make run ENABLE_WEBHOOKS=false
 Perform the following tasks:
 
 [source,bash]
+
+To deploy:
 ----
 oc new-project workshop-infra
 oc apply -f https://raw.githubusercontent.com/stakater/workshop-operator/main/deploy/workshop_operator.yaml
+----
+
+To delete:
+----
+oc delete -f https://raw.githubusercontent.com/stakater/workshop-operator/main/deploy/workshop_operator.yaml
 ----
 
 == Install the Workshop Infrastructure
@@ -47,10 +54,16 @@ There is examples of custom resources (CR) in https://github.com/stakater/worksh
 For instance, to deploy the Workshop Infrastruture for the Cloud-Native Workshop, please execute the following command:
 
 [source,bash]
+
+To create:
 ----
 oc apply -n workshop-infra -f config/samples/workshop_v1_cloud_native_workshop.yaml
 ----
 
+To delete:
+----
+oc delete -n workshop-infra -f config/samples/workshop_v1_cloud_native_workshop.yaml
+----
 == Development
 
 === Build and Push the Operator Image
