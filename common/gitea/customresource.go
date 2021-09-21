@@ -1,11 +1,9 @@
 package gitea
 
 import (
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
@@ -24,9 +22,12 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	}
 
 	// Set Workshop instance as the owner and controller
+	/**
+	Error: cross-namespace owner references are disallowed
 	err := ctrl.SetControllerReference(workshop, cr, scheme)
 	if err != nil {
 		log.Errorf("Failed to set SetControllerReference for %s with %s", "gitea CR", err)
 	}
+	**/
 	return cr
 }

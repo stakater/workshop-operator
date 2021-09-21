@@ -1,12 +1,10 @@
 package kubernetes
 
 import (
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // NewCustomResourceDefinition creates a Custom Resource Definition (CRD)
@@ -36,9 +34,13 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 	}
 
 	// Set Workshop instance as the owner and controller
+	/**
+	Error: cluster-scoped resource must not have a namespace-scoped owner
 	err := ctrl.SetControllerReference(workshop, crd, scheme)
 	if err != nil {
 		log.Error(err, " - Failed to set SetControllerReference for CRD - %s", name)
 	}
+	*/
+
 	return crd
 }

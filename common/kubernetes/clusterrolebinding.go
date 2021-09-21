@@ -1,12 +1,10 @@
 package kubernetes
 
 import (
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // NewClusterRoleBindingSA creates a ClusterRoleBinding for Service Account
@@ -34,10 +32,14 @@ func NewClusterRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Sche
 	}
 
 	// Set Workshop instance as the owner and controller
+	/**
+	Error: Cross-namespace owner references are disallowed
 	err := ctrl.SetControllerReference(workshop, clusterrolebinding, scheme)
+
 	if err != nil {
 		log.Error(err, " - Failed to set SetControllerReference for ClusterRoleBinding for Service Account - %s", namespace)
 	}
+	**/
 	return clusterrolebinding
 }
 
@@ -65,9 +67,14 @@ func NewClusterRoleBinding(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 	}
 
 	// Set Workshop instance as the owner and controller
+	/**
+	Error: Cross-namespace owner references are disallowed
+	err := ctrl.SetControllerReference(workshop, clusterrolebinding, scheme)
+
 	err := ctrl.SetControllerReference(workshop, clusterrolebinding, scheme)
 	if err != nil {
 		log.Error(err, " - Failed to set SetControllerReference for ClusterRoleBinding for Users - %s", name)
 	}
+	**/
 	return clusterrolebinding
 }

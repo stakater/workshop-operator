@@ -205,6 +205,8 @@ func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL stri
 // Delete Gitea
 func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
+	log.Info("Deleting gitea")
+
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
 
@@ -290,6 +292,8 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconci
 		}
 		log.Infof("Deleted %s gitea Project ", GITEANAMESPACENAME)
 	}
+
+	log.Info("Gitea deleted succesfully")
 
 	//Success
 	return reconcile.Result{}, nil

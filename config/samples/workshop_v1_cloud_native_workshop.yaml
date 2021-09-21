@@ -34,7 +34,7 @@ spec:
         channel: stable
         clusterServiceVersion: openshift-gitops-operator.v1.2.0
     nexus:
-      enabled: true
+      enabled: false
       image:
         name: quay.io/mcouliba/nexus-operator
         tag: v0.10      
