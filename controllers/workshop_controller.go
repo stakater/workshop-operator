@@ -98,14 +98,16 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
 				return ctrl.Result{}, err
 			}
-
+			_, _ = r.handleDelete(ctx, req, workshop)
 			// Remove workshopFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(workshop, workshopFinalizer)
+			log.Info("Finalizer removed for workshop" + workshop.ObjectMeta.Name)
 			err := r.Update(ctx, workshop)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+
 		}
 		return ctrl.Result{}, nil
 	}
@@ -241,4 +243,15 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&workshopv1.Workshop{}).
 		Complete(r)
+}
+
+func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop) (ctrl.Result, error) {
+	log := r.Log.WithValues("workshop", req.NamespacedName)
+	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
+
+	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	return ctrl.Result{}, nil
 }
