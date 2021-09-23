@@ -191,7 +191,6 @@ func GetAnsibleOperatorDeployment(name string, namespace string, labels map[stri
 			},
 		},
 	}
-
 	return operator
 }
 
