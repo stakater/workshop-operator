@@ -173,6 +173,12 @@ rules:
   - workshop.stakater.com
   resources:
   - workshops
+  verbs:
+  - '*'
+- apiGroups:
+  - workshop.stakater.com
+  resources:
+  - workshops
   - workshops/finalizers
   verbs:
   - '*'
