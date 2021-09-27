@@ -105,7 +105,6 @@ func NewAnsibleOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime
 	return operator
 }
 
-
 // GetAnsibleOperatorDeployment return an Ansible Operator Deployment
 func GetAnsibleOperatorDeployment(name string, namespace string, labels map[string]string, image string, serviceAccountName string) *appsv1.Deployment {
 

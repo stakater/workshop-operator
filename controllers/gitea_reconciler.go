@@ -245,7 +245,6 @@ func (r *WorkshopReconciler) deleteGitea(workshop *workshopv1.Workshop) (reconci
 	}
 	log.Infof("Deleted %s gitea Service Account", giteaServiceAccount.Name)
 
-
 	giteaCustomResourceDefinition := kubernetes.GetCustomResourceDefinition(GITEACRDNAME, GITEACRDGROUPNAME, GITEACRDKINDNAME, GITEACRDLISTKINDNAME, GITEACRDPLURALNAME, GITEACRDSINGULARNAME, GITEACRDVERSIONAME, nil, nil)
 	// Delete CRD
 	if err := r.Delete(context.TODO(), giteaCustomResourceDefinition); err != nil {

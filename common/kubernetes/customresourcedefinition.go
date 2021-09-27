@@ -43,7 +43,6 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 	return crd
 }
 
-
 // GetCustomResourceDefinition return Custom Resource Definition (CRD)
 func GetCustomResourceDefinition(name string, group string, kind string, listKind string, plural string, singular string, version string, shortNames []string, additionalPrinterColumns []apiextensionsv1beta1.CustomResourceColumnDefinition) *apiextensionsv1beta1.CustomResourceDefinition {
 
