@@ -174,7 +174,13 @@ rules:
   resources:
   - workshops
   verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - workshop.stakater.com
   resources:

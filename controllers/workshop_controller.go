@@ -48,7 +48,7 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 
 // +kubebuilder:rbac:groups=workshop.stakater.com,resources=workshops;workshops/finalizers,verbs=*
 // +kubebuilder:rbac:groups=workshop.stakater.com,resources=workshops/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=workshop.stakater.com,resources=workshops,verbs=*
+// +kubebuilder:rbac:groups=workshop.stakater.com,resources=workshops,verbs=get;list;watch;create;update;patch;delete
 
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
