@@ -1,13 +1,11 @@
 package kubernetes
 
 import (
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // NewAnsibleOperatorDeployment creates an Ansible Operator Deployment
@@ -98,10 +96,13 @@ func NewAnsibleOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime
 	}
 
 	// Set Workshop instance as the owner and controller
+	/**
+	Error: cross-namespace owner references are disallowed
 	err := ctrl.SetControllerReference(workshop, operator, scheme)
 	if err != nil {
 		log.Error(err, " - Failed to set SetControllerReference for Ansible Operator Deployment - %s", name)
 	}
+	**/
 	return operator
 }
 
