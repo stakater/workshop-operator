@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewCustomResourceDefinition creates a Custom Resource Definition (CRD)
+// NewCustomResourceDefinition returns a Custom Resource Definition (CRD)
 func NewCustomResourceDefinition(name string, group string, kind string, listKind string, plural string, singular string, version string, shortNames []string, additionalPrinterColumns []apiextensionsv1beta1.CustomResourceColumnDefinition) *apiextensionsv1beta1.CustomResourceDefinition {
 
 	crd := &apiextensionsv1beta1.CustomResourceDefinition{

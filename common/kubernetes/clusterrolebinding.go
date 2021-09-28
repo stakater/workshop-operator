@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewClusterRoleBindingSA creates a ClusterRoleBinding for Service Account
+// NewClusterRoleBindingSA returns a ClusterRoleBinding for Service Account
 func NewClusterRoleBindingSA(name string, namespace string, labels map[string]string, serviceAccountName string, roleName string, roleKind string) *rbac.ClusterRoleBinding {
 
 	clusterrolebinding := &rbac.ClusterRoleBinding{

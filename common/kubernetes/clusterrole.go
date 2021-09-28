@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewClusterRole creates a ClusterRole
+// NewClusterRole returns a ClusterRole
 func NewClusterRole(name string, namespace string, labels map[string]string, rules []rbac.PolicyRule) *rbac.ClusterRole {
 
 	clusterrole := &rbac.ClusterRole{

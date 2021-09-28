@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewAnsibleOperatorDeployment creates an Ansible Operator Deployment
+// NewAnsibleOperatorDeployment returns an Ansible Operator Deployment
 func NewAnsibleOperatorDeployment(name string, namespace string, labels map[string]string, image string, serviceAccountName string) *appsv1.Deployment {
 
 	operator := &appsv1.Deployment{

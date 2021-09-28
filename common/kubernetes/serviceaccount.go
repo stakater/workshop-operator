@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewServiceAccount creates a Service Account
+// NewServiceAccount returns a Service Account
 func NewServiceAccount(name string, namespace string, labels map[string]string) *corev1.ServiceAccount {
 
 	serviceaccount := &corev1.ServiceAccount{

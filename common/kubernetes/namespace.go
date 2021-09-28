@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewNamespace creates a new namespace/project
+// NewNamespace returns a new namespace/project
 func NewNamespace(name string) *corev1.Namespace {
 
 	namespace := &corev1.Namespace{
