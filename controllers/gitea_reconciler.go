@@ -115,7 +115,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 	}
 
 	// Create Custom Resource
-	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme,GITEACRNAME, giteaNamespace.Name, labels)
+	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, GITEACRNAME, giteaNamespace.Name, labels)
 	if err := r.Create(context.TODO(), giteaCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {

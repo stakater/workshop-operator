@@ -98,7 +98,6 @@ func NewAnsibleOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime
 	return operator
 }
 
-
 // NewOperatorDeployment creates an Operator Deployment
 func NewOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string, image string, serviceAccountName string, metricsPort int32, commands []string, args []string, volumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *appsv1.Deployment {

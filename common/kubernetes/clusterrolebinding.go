@@ -33,7 +33,6 @@ func NewClusterRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Sche
 	return clusterrolebinding
 }
 
-
 // NewClusterRoleBinding creates a ClusterRoleBinding for Users
 func NewClusterRoleBinding(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string, username string, roleName string, roleKind string) *rbac.ClusterRoleBinding {
