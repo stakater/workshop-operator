@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// NewCustomResource return a new  CustomResource
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string) *Gitea {
 	cr := &Gitea{
@@ -20,14 +21,5 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			PostgresqlVolumeSize: "4Gi",
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cross-namespace owner references are disallowed
-	err := ctrl.SetControllerReference(workshop, cr, scheme)
-	if err != nil {
-		log.Errorf("Failed to set SetControllerReference for %s with %s", "gitea CR", err)
-	}
-	**/
 	return cr
 }

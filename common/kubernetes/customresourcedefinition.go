@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewCustomResourceDefinition creates a Custom Resource Definition (CRD)
+// NewCustomResourceDefinition returns a Custom Resource Definition (CRD)
 func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, group string, kind string, listKind string, plural string, singular string, version string, shortNames []string, additionalPrinterColumns []apiextensionsv1beta1.CustomResourceColumnDefinition) *apiextensionsv1beta1.CustomResourceDefinition {
 
@@ -32,15 +32,6 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 			AdditionalPrinterColumns: additionalPrinterColumns,
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cluster-scoped resource must not have a namespace-scoped owner
-	err := ctrl.SetControllerReference(workshop, crd, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for CRD - %s", name)
-	}
-	*/
 
 	return crd
 }

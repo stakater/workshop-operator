@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewNamespace creates a new namespace/project
+// NewNamespace returns a new namespace/project
 func NewNamespace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name string) *corev1.Namespace {
 
 	namespace := &corev1.Namespace{
@@ -15,14 +15,5 @@ func NewNamespace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name st
 			Name: name,
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cluster-scoped resource must not have a namespace-scoped owner
-	err := ctrl.SetControllerReference(workshop, namespace, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Namespace - %s", name)
-	}
-	**/
 	return namespace
 }

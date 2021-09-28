@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewClusterRole creates a ClusterRole
+// NewClusterRole returns a ClusterRole
 func NewClusterRole(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string, rules []rbac.PolicyRule) *rbac.ClusterRole {
 
@@ -19,15 +19,5 @@ func NewClusterRole(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 		},
 		Rules: rules,
 	}
-
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cross-namespace owner references are disallowed
-	err := ctrl.SetControllerReference(workshop, clusterrole, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for ClusterRole - %s", name)
-	}
-	*/
-
 	return clusterrole
 }

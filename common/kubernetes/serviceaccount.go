@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewServiceAccount creates a Service Account
+// NewServiceAccount returns a Service Account
 func NewServiceAccount(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string) *corev1.ServiceAccount {
 
@@ -18,15 +18,5 @@ func NewServiceAccount(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			Labels:    labels,
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cross-namespace owner references are disallowed
-	err := ctrl.SetControllerReference(workshop, serviceaccount, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Service Account - %s", name)
-	}
-	*/
-
 	return serviceaccount
 }

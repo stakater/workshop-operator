@@ -95,16 +95,9 @@ func NewAnsibleOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime
 		},
 	}
 
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cross-namespace owner references are disallowed
-	err := ctrl.SetControllerReference(workshop, operator, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Ansible Operator Deployment - %s", name)
-	}
-	**/
 	return operator
 }
+
 
 // NewOperatorDeployment creates an Operator Deployment
 func NewOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
@@ -171,15 +164,5 @@ func NewOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 			},
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	/**
-	Error: cross-namespace owner references are disallowed
-	err := ctrl.SetControllerReference(workshop, operator, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Operator Deployment - %s", name)
-	}
-	**/
-
 	return operator
 }
