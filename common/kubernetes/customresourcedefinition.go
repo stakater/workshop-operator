@@ -1,12 +1,15 @@
 package kubernetes
 
 import (
+	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // NewCustomResourceDefinition returns a Custom Resource Definition (CRD)
-func NewCustomResourceDefinition(name string, group string, kind string, listKind string, plural string, singular string, version string, shortNames []string, additionalPrinterColumns []apiextensionsv1beta1.CustomResourceColumnDefinition) *apiextensionsv1beta1.CustomResourceDefinition {
+func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
+	name string, group string, kind string, listKind string, plural string, singular string, version string, shortNames []string, additionalPrinterColumns []apiextensionsv1beta1.CustomResourceColumnDefinition) *apiextensionsv1beta1.CustomResourceDefinition {
 
 	crd := &apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{

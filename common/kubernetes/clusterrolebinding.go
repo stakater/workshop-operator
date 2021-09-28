@@ -8,7 +8,8 @@ import (
 )
 
 // NewClusterRoleBindingSA returns a ClusterRoleBinding for Service Account
-func NewClusterRoleBindingSA(name string, namespace string, labels map[string]string, serviceAccountName string, roleName string, roleKind string) *rbac.ClusterRoleBinding {
+func NewClusterRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
+	name string, namespace string, labels map[string]string, serviceAccountName string, roleName string, roleKind string) *rbac.ClusterRoleBinding {
 
 	clusterrolebinding := &rbac.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{

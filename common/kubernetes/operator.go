@@ -8,8 +8,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewAnsibleOperatorDeployment returns an Ansible Operator Deployment
-func NewAnsibleOperatorDeployment(name string, namespace string, labels map[string]string, image string, serviceAccountName string) *appsv1.Deployment {
+// NewAnsibleOperatorDeployment creates an Ansible Operator Deployment
+func NewAnsibleOperatorDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
+	name string, namespace string, labels map[string]string, image string, serviceAccountName string) *appsv1.Deployment {
 
 	operator := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
