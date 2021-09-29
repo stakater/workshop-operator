@@ -21,11 +21,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var 	gitealabels = map[string]string{
+var gitealabels = map[string]string{
 	"app":                       "gitea",
 	"app.kubernetes.io/name":    "gitea",
 	"app.kubernetes.io/part-of": "gitea",
 }
+
 const (
 	GITEANAMESPACENAME         = "gitea"
 	GITEADEPLOYMENTNAME        = "gitea-server"
