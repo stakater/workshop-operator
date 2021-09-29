@@ -14,14 +14,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var nexuslabels = map[string]string{
+	"app":                       "nexus",
+	"app.kubernetes.io/name":    "nexus",
+	"app.kubernetes.io/part-of": "nexus",
+}
+
+const (
+	NEXUSNAMESPACENAME         = "nexus"
+	NEXUSCRDNAME               = "nexus.gpte.opentlc.com"
+	NEXUSCRDGROUPNAME          = "gpte.opentlc.com"
+	NEXUSCRDKINDNAME           = "Nexus"
+	NEXUSCRDLISTKINDNAME       = "NexusList"
+	NEXUSCRDPLURALNAME         = "nexus"
+	NEXUSCRDSINGULARNAME       = "nexus"
+	NEXUSCRDVERSIONAME         = "v1alpha1"
+	NEXUSSERVICEACCOUNTNAME    = "nexus-operator"
+	NEXUSCRNAME                = "nexus"
+	NEXUSCLUSTERROLENAME       = "nexus-operator"
+	NEXUSROLEBINDINGSANAME     = "nexus-operator"
+	NEXUSCLUSTERROLEKINDNAME   = "ClusterRole"
+	NEXUSANSIBLEDEPLOYMENTNAME = "nexus-operator"
+	NEXUSDEPLOYMENTNAME        = "nexus"
+)
+
 // Reconciling Nexus
 func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	enabledNexus := workshop.Spec.Infrastructure.Nexus.Enabled
 
-	nexusNamespaceName := "nexus"
-
 	if enabledNexus {
-		if result, err := r.addNexus(workshop, nexusNamespaceName); util.IsRequeued(result, err) {
+		if result, err := r.addNexus(workshop); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}
@@ -30,75 +52,69 @@ func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reco
 }
 
 // Add Nexus
-func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamespaceName string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	imageName := workshop.Spec.Infrastructure.Nexus.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Nexus.Image.Tag
 
-	labels := map[string]string{
-		"app":                       "nexus",
-		"app.kubernetes.io/name":    "nexus",
-		"app.kubernetes.io/part-of": "nexus",
-	}
-
 	// Create Project
-	nexusNamespace := kubernetes.NewNamespace(workshop, r.Scheme, nexusNamespaceName)
+	nexusNamespace := kubernetes.NewNamespace(workshop, r.Scheme, NEXUSNAMESPACENAME)
 	if err := r.Create(context.TODO(), nexusNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project", nexusNamespace.Name)
+		log.Infof("Created %s nexus Project", NEXUSNAMESPACENAME)
 	}
 
 	// Create CRD
-	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "nexus.gpte.opentlc.com", "gpte.opentlc.com", "Nexus", "NexusList", "nexus", "nexus", "v1alpha1", nil, nil)
+	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, NEXUSCRDNAME, NEXUSCRDGROUPNAME, NEXUSCRDKINDNAME, NEXUSCRDLISTKINDNAME, NEXUSCRDPLURALNAME, NEXUSCRDSINGULARNAME, NEXUSCRDVERSIONAME, nil, nil)
 	if err := r.Create(context.TODO(), nexusCustomResourceDefinition); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Custom Resource Definition", nexusCustomResourceDefinition.Name)
+		log.Infof("Created %s nexus Custom Resource Definition", nexusCustomResourceDefinition.Name)
 	}
 
 	// Create Service Account
-	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels)
+	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, NEXUSSERVICEACCOUNTNAME, NEXUSNAMESPACENAME, nexuslabels)
 	if err := r.Create(context.TODO(), nexusServiceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Service Account", nexusServiceAccount.Name)
+		log.Infof("Created %s nexus Service Account", nexusServiceAccount.Name)
 	}
 
 	// Create Cluster Role
-	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, nexus.NewRules())
+	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, NEXUSCLUSTERROLENAME, NEXUSNAMESPACENAME, nexuslabels, nexus.NewRules())
 	if err := r.Create(context.TODO(), nexusClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Cluster Role", nexusClusterRole.Name)
+		log.Infof("Created %s nexus Cluster Role", nexusClusterRole.Name)
 	}
 
 	// Create Cluster Role Binding
-	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "nexus-operator", "nexus-operator", "ClusterRole")
+	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, NEXUSROLEBINDINGSANAME, NEXUSNAMESPACENAME, nexuslabels, NEXUSSERVICEACCOUNTNAME, NEXUSROLEBINDINGSANAME, NEXUSCLUSTERROLEKINDNAME)
 	if err := r.Create(context.TODO(), nexusClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Cluster Role Binding", nexusClusterRoleBinding.Name)
+		log.Infof("Created %s nexus Cluster Role Binding", nexusClusterRoleBinding.Name)
 	}
 
 	// Create Operator
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, imageName+":"+imageTag, "nexus-operator")
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, NEXUSANSIBLEDEPLOYMENTNAME, NEXUSNAMESPACENAME, nexuslabels, imageName+":"+imageTag, NEXUSSERVICEACCOUNTNAME)
 	if err := r.Create(context.TODO(), nexusOperator); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Operator", nexusOperator.Name)
+		log.Infof("Created %s nexus Operator", nexusOperator.Name)
 	}
 
 	// Create Custom Resource
-	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, "nexus", nexusNamespace.Name, labels)
+	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, NEXUSCRNAME, NEXUSNAMESPACENAME, nexuslabels)
 	if err := r.Create(context.TODO(), nexusCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Custom Resource", nexusCustomResource.Name)
+		log.Infof("Created %s nexus Custom Resource", nexusCustomResource.Name)
 	}
 
 	// Wait for server to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus("nexus", nexusNamespace.Name) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(NEXUSDEPLOYMENTNAME, NEXUSNAMESPACENAME) {
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
 	}
 
@@ -106,94 +122,63 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop, nexusNamesp
 	return reconcile.Result{}, nil
 }
 
-/**
 // Delete Nexus
-func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop, nexusNamespaceName string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
-	labels := map[string]string{
-		"app":                       "nexus",
-		"app.kubernetes.io/name":    "nexus",
-		"app.kubernetes.io/part-of": "nexus",
+	log.Info("Deleting nexus")
+
+	imageName := workshop.Spec.Infrastructure.Nexus.Image.Name
+	imageTag := workshop.Spec.Infrastructure.Nexus.Image.Tag
+
+	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, NEXUSCRNAME, NEXUSNAMESPACENAME, nexuslabels)
+	// Delete Custom Resource
+	if err := r.Delete(context.TODO(), nexusCustomResource); err != nil {
+		return reconcile.Result{}, err
 	}
-	nexusNamespace := kubernetes.NewNamespace(workshop, r.Scheme, nexusNamespaceName)
+	log.Infof("Deleted %s nexus Custom Resource", nexusCustomResource.Name)
 
-	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, "nexus", nexusNamespace.Name, labels)
-	nexusCustomResourceFound := &nexus.Nexus{}
-	nexusCustomResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResource.Name, Namespace: nexusNamespace.Name}, nexusCustomResourceFound)
-	if nexusCustomResourceErr == nil {
-		// Delete Custom Resource
-		if err := r.Delete(context.TODO(), nexusCustomResource); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Custom Resource", nexusCustomResource.Name)
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, NEXUSANSIBLEDEPLOYMENTNAME, NEXUSNAMESPACENAME, nexuslabels, imageName+":"+imageTag, NEXUSSERVICEACCOUNTNAME)
+	// Delete Operator
+	if err := r.Delete(context.TODO(), nexusOperator); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s nexus Operator", nexusOperator.Name)
 
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/stakater/nexus-operator:v0.10", "nexus-operator")
-	nexusOperatorFound := &appsv1.Deployment{}
-	nexusOperatorErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusOperator.Name, Namespace: nexusNamespace.Name}, nexusOperatorFound)
-	if nexusOperatorErr == nil {
-		// Delete Operator
-		if err := r.Delete(context.TODO(), nexusOperator); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Operator", nexusOperator.Name)
+	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, NEXUSROLEBINDINGSANAME, NEXUSNAMESPACENAME, nexuslabels, NEXUSSERVICEACCOUNTNAME, NEXUSROLEBINDINGSANAME, NEXUSCLUSTERROLEKINDNAME)
+	// Delete Cluster Role Binding
+	if err := r.Delete(context.TODO(), nexusClusterRoleBinding); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s nexus Cluster Role Binding", nexusClusterRoleBinding.Name)
 
-	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "nexus-operator", "nexus-operator", "ClusterRole")
-	nexusClusterRoleBindingFound := &rbac.ClusterRoleBinding{}
-	nexusClusterRoleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRoleBinding.Name, Namespace: nexusNamespace.Name}, nexusClusterRoleBindingFound)
-	if nexusClusterRoleBindingErr == nil {
-		// Delete Cluster Role Binding
-		if err := r.Delete(context.TODO(), nexusClusterRoleBinding); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Cluster Role Binding", nexusClusterRoleBinding.Name)
+	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, NEXUSCLUSTERROLENAME, NEXUSNAMESPACENAME, nexuslabels, nexus.NewRules())
+	// Delete Cluster Role
+	if err := r.Delete(context.TODO(), nexusClusterRole); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s nexus Cluster Role", nexusClusterRole.Name)
 
-	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, nexus.NewRules())
-	nexusClusterRoleFound := &rbac.ClusterRole{}
-	nexusClusterRoleErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusClusterRole.Name, Namespace: nexusNamespace.Name}, nexusClusterRoleFound)
-	if nexusClusterRoleErr == nil {
-		// Delete Cluster Role
-		if err := r.Delete(context.TODO(), nexusClusterRole); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Cluster Role", nexusClusterRole.Name)
+	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, NEXUSSERVICEACCOUNTNAME, NEXUSNAMESPACENAME, nexuslabels)
+	// Delete Service Account
+	if err := r.Delete(context.TODO(), nexusServiceAccount); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s nexus Service Account", nexusServiceAccount.Name)
 
-	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels)
-	nexusServiceAccountFound := &corev1.ServiceAccount{}
-	nexusServiceAccountErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusServiceAccount.Name, Namespace: nexusNamespace.Name}, nexusServiceAccountFound)
-	if nexusServiceAccountErr == nil {
-		// Delete Service Account
-		if err := r.Delete(context.TODO(), nexusServiceAccount); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Service Account", nexusServiceAccount.Name)
+	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, NEXUSCRDNAME, NEXUSCRDGROUPNAME, NEXUSCRDKINDNAME, NEXUSCRDLISTKINDNAME, NEXUSCRDPLURALNAME, NEXUSCRDSINGULARNAME, NEXUSCRDVERSIONAME, nil, nil)
+	// Delete CRD
+	if err := r.Delete(context.TODO(), nexusCustomResourceDefinition); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s nexus Custom Resource Definition", nexusCustomResourceDefinition.Name)
 
-	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "nexus.gpte.opentlc.com", "gpte.opentlc.com", "Nexus", "NexusList", "nexus", "nexus", "v1alpha1", nil, nil)
-	nexusCustomResourceDefinitionFound := &apiextensionsv1beta1.CustomResourceDefinition{}
-	nexusCustomResourceDefinitionErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusCustomResourceDefinition.Name}, nexusCustomResourceDefinitionFound)
-	if nexusCustomResourceDefinitionErr == nil {
-		// Delete CRD
-		if err := r.Delete(context.TODO(), nexusCustomResourceDefinition); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Custom Resource Definition", nexusCustomResourceDefinition.Name)
+	nexusNamespace := kubernetes.NewNamespace(workshop, r.Scheme, NEXUSNAMESPACENAME)
+	// Delete Project
+	if err := r.Delete(context.TODO(), nexusNamespace); err != nil {
+		return reconcile.Result{}, err
 	}
-
-	nexusNamespaceFound := &corev1.Namespace{}
-	nexusNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: nexusNamespace.Name}, nexusNamespaceFound)
-	if nexusNamespaceErr != nil {
-		// Delete Project
-		if err := r.Delete(context.TODO(), nexusNamespace); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Project", nexusNamespace.Name)
-	}
-
+	log.Infof("Deleted %s  nexus Project", NEXUSNAMESPACENAME)
+	log.Info("Nexus deleted successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
-**/
