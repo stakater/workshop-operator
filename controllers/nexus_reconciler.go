@@ -14,31 +14,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var nexuslabels = map[string]string{
+	"app":                       "nexus",
+	"app.kubernetes.io/name":    "nexus",
+	"app.kubernetes.io/part-of": "nexus",
+}
+
 const (
-	NEXUSNAMESPACENAME = "nexus"
-	NEXUSCRDNAME = "nexus.gpte.opentlc.com"
-	NEXUSCRDGROUPNAME= "gpte.opentlc.com"
-	NEXUSCRDKINDNAME= "Nexus"
-	NEXUSCRDLISTKINDNAME= "NexusList"
-	NEXUSCRDPLURALNAME= "nexus"
-	NEXUSCRDSINGULARNAME= "nexus"
-	NEXUSCRDVERSIONAME= "v1alpha1"
-	NEXUSSERVICEACCOUNTNAME= "nexus-operator"
-	NEXUSCRNAME= "nexus"
-	NEXUSCLUSTERROLENAME = "nexus-operator"
-	NEXUSROLEBINDINGSANAME = "nexus-operator"
-	NEXUSCLUSTERROLEKINDNAME = "ClusterRole"
+	NEXUSNAMESPACENAME         = "nexus"
+	NEXUSCRDNAME               = "nexus.gpte.opentlc.com"
+	NEXUSCRDGROUPNAME          = "gpte.opentlc.com"
+	NEXUSCRDKINDNAME           = "Nexus"
+	NEXUSCRDLISTKINDNAME       = "NexusList"
+	NEXUSCRDPLURALNAME         = "nexus"
+	NEXUSCRDSINGULARNAME       = "nexus"
+	NEXUSCRDVERSIONAME         = "v1alpha1"
+	NEXUSSERVICEACCOUNTNAME    = "nexus-operator"
+	NEXUSCRNAME                = "nexus"
+	NEXUSCLUSTERROLENAME       = "nexus-operator"
+	NEXUSROLEBINDINGSANAME     = "nexus-operator"
+	NEXUSCLUSTERROLEKINDNAME   = "ClusterRole"
 	NEXUSANSIBLEDEPLOYMENTNAME = "nexus-operator"
-	NEXUSDEPLOYMENTNAME = "nexus"
-
-
+	NEXUSDEPLOYMENTNAME        = "nexus"
 )
-
 
 // Reconciling Nexus
 func (r *WorkshopReconciler) reconcileNexus(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	enabledNexus := workshop.Spec.Infrastructure.Nexus.Enabled
-
 
 	if enabledNexus {
 		if result, err := r.addNexus(workshop); util.IsRequeued(result, err) {
@@ -54,12 +56,6 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 
 	imageName := workshop.Spec.Infrastructure.Nexus.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Nexus.Image.Tag
-
-	labels := map[string]string{
-		"app":                       "nexus",
-		"app.kubernetes.io/name":    "nexus",
-		"app.kubernetes.io/part-of": "nexus",
-	}
 
 	// Create Project
 	nexusNamespace := kubernetes.NewNamespace(workshop, r.Scheme, NEXUSNAMESPACENAME)
@@ -78,7 +74,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 	}
 
 	// Create Service Account
-	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, NEXUSSERVICEACCOUNTNAME, NEXUSNAMESPACENAME, labels)
+	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, NEXUSSERVICEACCOUNTNAME, NEXUSNAMESPACENAME, nexuslabels)
 	if err := r.Create(context.TODO(), nexusServiceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -86,7 +82,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 	}
 
 	// Create Cluster Role
-	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, NEXUSCLUSTERROLENAME, NEXUSNAMESPACENAME, labels, nexus.NewRules())
+	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, NEXUSCLUSTERROLENAME, NEXUSNAMESPACENAME, nexuslabels, nexus.NewRules())
 	if err := r.Create(context.TODO(), nexusClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -94,7 +90,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 	}
 
 	// Create Cluster Role Binding
-	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, NEXUSROLEBINDINGSANAME, NEXUSNAMESPACENAME, labels, NEXUSSERVICEACCOUNTNAME, NEXUSROLEBINDINGSANAME, NEXUSCLUSTERROLEKINDNAME)
+	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, NEXUSROLEBINDINGSANAME, NEXUSNAMESPACENAME, nexuslabels, NEXUSSERVICEACCOUNTNAME, NEXUSROLEBINDINGSANAME, NEXUSCLUSTERROLEKINDNAME)
 	if err := r.Create(context.TODO(), nexusClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -102,7 +98,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 	}
 
 	// Create Operator
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, NEXUSANSIBLEDEPLOYMENTNAME, NEXUSNAMESPACENAME, labels, imageName+":"+imageTag, NEXUSSERVICEACCOUNTNAME)
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, NEXUSANSIBLEDEPLOYMENTNAME, NEXUSNAMESPACENAME, nexuslabels, imageName+":"+imageTag, NEXUSSERVICEACCOUNTNAME)
 	if err := r.Create(context.TODO(), nexusOperator); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -110,7 +106,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 	}
 
 	// Create Custom Resource
-	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, NEXUSCRNAME, NEXUSNAMESPACENAME, labels)
+	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, NEXUSCRNAME, NEXUSNAMESPACENAME, nexuslabels)
 	if err := r.Create(context.TODO(), nexusCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -126,7 +122,6 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 	return reconcile.Result{}, nil
 }
 
-
 // Delete Nexus
 func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
@@ -135,41 +130,35 @@ func (r *WorkshopReconciler) deleteNexus(workshop *workshopv1.Workshop) (reconci
 	imageName := workshop.Spec.Infrastructure.Nexus.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Nexus.Image.Tag
 
-	labels := map[string]string{
-		"app":                       "nexus",
-		"app.kubernetes.io/name":    "nexus",
-		"app.kubernetes.io/part-of": "nexus",
-	}
-
-	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, NEXUSCRNAME, NEXUSNAMESPACENAME, labels)
+	nexusCustomResource := nexus.NewCustomResource(workshop, r.Scheme, NEXUSCRNAME, NEXUSNAMESPACENAME, nexuslabels)
 	// Delete Custom Resource
 	if err := r.Delete(context.TODO(), nexusCustomResource); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s nexus Custom Resource", nexusCustomResource.Name)
 
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, NEXUSANSIBLEDEPLOYMENTNAME, NEXUSNAMESPACENAME, labels, imageName+":"+imageTag, NEXUSSERVICEACCOUNTNAME)
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, NEXUSANSIBLEDEPLOYMENTNAME, NEXUSNAMESPACENAME, nexuslabels, imageName+":"+imageTag, NEXUSSERVICEACCOUNTNAME)
 	// Delete Operator
 	if err := r.Delete(context.TODO(), nexusOperator); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s nexus Operator", nexusOperator.Name)
 
-	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, NEXUSROLEBINDINGSANAME,NEXUSNAMESPACENAME, labels, NEXUSSERVICEACCOUNTNAME, NEXUSROLEBINDINGSANAME, NEXUSCLUSTERROLEKINDNAME)
+	nexusClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, NEXUSROLEBINDINGSANAME, NEXUSNAMESPACENAME, nexuslabels, NEXUSSERVICEACCOUNTNAME, NEXUSROLEBINDINGSANAME, NEXUSCLUSTERROLEKINDNAME)
 	// Delete Cluster Role Binding
 	if err := r.Delete(context.TODO(), nexusClusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s nexus Cluster Role Binding", nexusClusterRoleBinding.Name)
 
-	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, NEXUSCLUSTERROLENAME, NEXUSNAMESPACENAME, labels, nexus.NewRules())
+	nexusClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, NEXUSCLUSTERROLENAME, NEXUSNAMESPACENAME, nexuslabels, nexus.NewRules())
 	// Delete Cluster Role
 	if err := r.Delete(context.TODO(), nexusClusterRole); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s nexus Cluster Role", nexusClusterRole.Name)
 
-	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, NEXUSSERVICEACCOUNTNAME, NEXUSNAMESPACENAME, labels)
+	nexusServiceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, NEXUSSERVICEACCOUNTNAME, NEXUSNAMESPACENAME, nexuslabels)
 	// Delete Service Account
 	if err := r.Delete(context.TODO(), nexusServiceAccount); err != nil {
 		return reconcile.Result{}, err
