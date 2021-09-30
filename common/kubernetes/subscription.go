@@ -94,12 +94,6 @@ func NewRedHatSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 			Package:                packageName,
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, subscription, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for RedHat Subscription - %s", name)
-	}
 	return subscription
 }
 
