@@ -33,12 +33,6 @@ func NewRoleBindingSA(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, rolebinding, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Role Binding for Service Account - %s", name)
-	}
 	return rolebinding
 }
 
