@@ -59,12 +59,13 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 
 func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, userID string,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
+	log.Info("Creating bookbag")
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAGNAMESPACENAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project", namespace.Name)
+		log.Infof("Created %s bookbag Project", namespace.Name)
 	}
 
 	bookbagName := fmt.Sprintf("user%s-bookbag", userID)
@@ -84,14 +85,14 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), envConfigMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag ConfigMap", envConfigMap.Name)
+		log.Infof("Created %s bookbag env ConfigMap", envConfigMap.Name)
 	}
 
 	varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAGNAMESPACENAME, labels, nil)
 	if err := r.Create(context.TODO(), varConfigMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag ConfigMap", varConfigMap.Name)
+		log.Infof("Created %s bookbag var ConfigMap", varConfigMap.Name)
 	}
 
 	// Create Service Account
@@ -116,7 +117,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Deployment", dep.Name)
+		log.Infof("Created %s bookbag Deployment", dep.Name)
 	} else if errors.IsAlreadyExists(err) {
 		deploymentFound := &appsv1.Deployment{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: BOOKBAGNAMESPACENAME}, deploymentFound); err != nil {
@@ -127,7 +128,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 				if err := r.Update(context.TODO(), dep); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s Deployment", dep.Name)
+				log.Infof("Updated %s bookbag Deployment", dep.Name)
 			}
 		}
 	}
@@ -153,7 +154,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 }
 
 func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-	//enabled := workshop.Spec.Infrastructure.Guide.Bookbag.Enabled
+	log.Info("Deleting bookbag")
 
 	id := 1
 	for {
