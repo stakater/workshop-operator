@@ -22,28 +22,24 @@ import (
 )
 
 var (
-	secretName = "argocd-default-cluster-config"
+	secretName              = "argocd-default-cluster-config"
 	clusterConfigSecretData = map[string]string{}
-
 )
-
 
 const (
-	ARGOCDNAMESPACENAME = "argocd"
-	GITOPSNAME = "openshift-gitops-operator"
-	GITOPSOPERATORNAMESPACENAME = "openshift-operators"
-	GITOPSDEPLOYMENTSTATUSNAME = "gitops-operator"
-	GITOPSROLENAME = "argocd-manager"
-	GITOPSROLEBINDINGNAME = "argocd-manager"
-	GITOPSROLEKINDNAME = "Role"
-	GITOPSDATASECRETNAME = "argocd-secret"
-	GITOPSCONFIGMAPNAME = "argocd-cm"
+	ARGOCDNAMESPACENAME            = "argocd"
+	GITOPSNAME                     = "openshift-gitops-operator"
+	GITOPSOPERATORNAMESPACENAME    = "openshift-operators"
+	GITOPSDEPLOYMENTSTATUSNAME     = "gitops-operator"
+	GITOPSROLENAME                 = "argocd-manager"
+	GITOPSROLEBINDINGNAME          = "argocd-manager"
+	GITOPSROLEKINDNAME             = "Role"
+	GITOPSDATASECRETNAME           = "argocd-secret"
+	GITOPSCONFIGMAPNAME            = "argocd-cm"
 	GITOPSARGOCDCUSTOMRESOURCENAME = "argocd"
-	GITOPSDEPLOYMENTNAME = "argocd-server"
-
-
-
+	GITOPSDEPLOYMENTNAME           = "argocd-server"
 )
+
 // Reconciling GitOps
 func (r *WorkshopReconciler) reconcileGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
@@ -284,7 +280,6 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 	clusterConfigSecretData["namespaces"] = namespaceList
 	clusterConfigSecretData["server"] = "https://kubernetes.default.svc"
 
-
 	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, secretName, namespaceName, labels, clusterConfigSecretData)
 	if err := r.Create(context.TODO(), clusterConfigSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -309,7 +304,6 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 	return reconcile.Result{}, nil
 }
 
-
 // delete GitOps
 func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
@@ -330,8 +324,6 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	namespaceList := ""
 	secretData := map[string]string{}
 	configMapData := map[string]string{}
-
-
 
 	if result, err := r.deleteArgocdDefaultClusterConfigSecret(workshop, ARGOCDNAMESPACENAME, labels, namespaceList); util.IsRequeued(result, err) {
 		return result, err
@@ -360,7 +352,6 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s argoCD Secret", secret.Name)
-
 
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprintf("user%d", id)
@@ -456,4 +447,3 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 	//Success
 	return reconcile.Result{}, nil
 }
-
