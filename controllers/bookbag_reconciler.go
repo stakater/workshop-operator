@@ -29,7 +29,7 @@ const (
 func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 	enabled := workshop.Spec.Infrastructure.Guide.Bookbag.Enabled
-
+	log.Info("reconcileBookbag")
 	id := 1
 	for {
 		if id <= users && enabled {
@@ -49,7 +49,7 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 				break
 			}
 		}
-
+		log.Info("for loop reconcileBookbag")
 		id++
 	}
 
