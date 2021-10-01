@@ -63,7 +63,7 @@ func (r *WorkshopReconciler) reconcileCodeReadyWorkspace(workshop *workshopv1.Wo
 
 func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string) (reconcile.Result, error) {
-
+	log.Infoln("Creating CodeReadyWorkspace")
 	channel := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
@@ -598,7 +598,7 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 
 func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-
+	log.Infoln("Deleting  CodeReadyWorkspace")
 	channel := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
@@ -646,7 +646,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s codeReadyWorkspaces namespace", codeReadyWorkspacesNamespace.Name)
-
+	log.Infoln("Deleted  CodeReadyWorkspace Success")
 	//Success
 	return reconcile.Result{}, nil
 }
