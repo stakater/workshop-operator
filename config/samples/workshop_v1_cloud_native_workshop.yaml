@@ -29,7 +29,7 @@ spec:
         name: quay.io/gpte-devops-automation/gitea-operator
         tag: v0.17
     gitops:
-      enabled: false
+      enabled: true
       operatorHub:
         channel: stable
         clusterServiceVersion: openshift-gitops-operator.v1.2.0
@@ -52,7 +52,7 @@ spec:
         channel: stable
         clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
     project:
-      enabled: false
+      enabled: true
       stagingName: cn-project
     serviceMesh:
       enabled: false
