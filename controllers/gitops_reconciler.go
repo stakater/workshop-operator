@@ -59,7 +59,7 @@ func (r *WorkshopReconciler) reconcileGitOps(workshop *workshopv1.Workshop, user
 // Add GitOps
 func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-
+	log.Infoln("Creating GitOps ")
 	channel := workshop.Spec.Infrastructure.GitOps.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.GitOps.OperatorHub.ClusterServiceVersion
 
@@ -307,7 +307,7 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 // delete GitOps
 func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-
+	log.Infoln("Deleting GitOps ")
 	channel := workshop.Spec.Infrastructure.GitOps.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.GitOps.OperatorHub.ClusterServiceVersion
 	labels := map[string]string{
@@ -423,7 +423,7 @@ g, ` + username + `, ` + userRole + `
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s GitOps Subscription", subscription.Name)
-
+	log.Infoln("Deleted GitOps successful")
 	//Success
 	return reconcile.Result{}, nil
 }
