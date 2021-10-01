@@ -225,7 +225,11 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
-	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
+	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
+
+	if result, err := r.deleteGitOps(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
 
 	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
 		return result, err
@@ -235,10 +239,9 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
-	if result, err := r.deleteGitOps(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
 		return result, err
 	}
-
 	return ctrl.Result{}, nil
 }
 
