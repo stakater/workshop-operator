@@ -1,12 +1,8 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -99,7 +95,8 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
 				return ctrl.Result{}, err
 			}
-			_, _ = r.handleDelete(ctx, req, workshop)
+			users, appsHostnameSuffix, openshiftConsoleURL, _, _ := r.getVariables(workshop, ctx)
+			_, _ = r.handleDelete(ctx, req, workshop, users, appsHostnameSuffix, openshiftConsoleURL)
 			// Remove workshopFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
 			controllerutil.RemoveFinalizer(workshop, workshopFinalizer)
@@ -120,31 +117,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 	}
 
-	//////////////////////////
-	// Variables
-	//////////////////////////
-	var (
-		openshiftConsoleURL string
-		appsHostnameSuffix  string
-	)
-	// extract app route suffix from openshift-console
-	route := &routev1.Route{}
-	if err := r.Get(ctx, types.NamespacedName{Name: "console", Namespace: "openshift-console"}, route); err != nil {
-		log.Errorf("Failed to get OpenShift Console: %s", err)
-		return reconcile.Result{}, err
-	}
-	openshiftConsoleURL = "https://" + route.Spec.Host
-	log.Infof("OpenShift Console URL %s", openshiftConsoleURL)
-
-	re := regexp.MustCompile(`^console-openshift-console.(.*?)$`)
-	match := re.FindStringSubmatch(route.Spec.Host)
-	appsHostnameSuffix = match[1]
-	log.Infof("Apps Hostname Suffix %s", appsHostnameSuffix)
-
-	users := workshop.Spec.User.Number
-	if users < 0 {
-		users = 0
-	}
+	users, appsHostnameSuffix, openshiftConsoleURL, _, _ := r.getVariables(workshop, ctx)
 
 	//////////////////////////
 	// Portal
@@ -246,9 +219,14 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop) (ctrl.Result, error) {
+func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
+
+	if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
 
 	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
 		return result, err
@@ -259,4 +237,33 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *WorkshopReconciler) getVariables(workshop *workshopv1.Workshop, ctx context.Context) (int, string, string, ctrl.Result, error) {
+	//////////////////////////
+	// Variables
+	//////////////////////////
+	var (
+		openshiftConsoleURL string
+		appsHostnameSuffix  string
+	)
+	// extract app route suffix from openshift-console
+	route := &routev1.Route{}
+	if err := r.Get(ctx, types.NamespacedName{Name: "console", Namespace: "openshift-console"}, route); err != nil {
+		log.Errorf("Failed to get OpenShift Console: %s", err)
+		return 0, "", "", reconcile.Result{}, err
+	}
+	openshiftConsoleURL = "https://" + route.Spec.Host
+	log.Infof("OpenShift Console URL %s", openshiftConsoleURL)
+
+	re := regexp.MustCompile(`^console-openshift-console.(.*?)$`)
+	match := re.FindStringSubmatch(route.Spec.Host)
+	appsHostnameSuffix = match[1]
+	log.Infof("Apps Hostname Suffix %s", appsHostnameSuffix)
+
+	users := workshop.Spec.User.Number
+	if users < 0 {
+		users = 0
+	}
+	return users, appsHostnameSuffix, openshiftConsoleURL, ctrl.Result{}, nil
 }
