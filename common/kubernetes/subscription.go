@@ -76,6 +76,7 @@ func NewCommunitySubscription(workshop *workshopv1.Workshop, scheme *runtime.Sch
 func NewRedHatSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, packageName string, channel string, startingCSV string) *olmv1alpha1.Subscription {
 
+	log.Info("RedHatSubscription Pipelines")
 	subscription := &olmv1alpha1.Subscription{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -93,12 +94,6 @@ func NewRedHatSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 			InstallPlanApproval:    olmv1alpha1.ApprovalManual,
 			Package:                packageName,
 		},
-	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, subscription, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for RedHat Subscription - %s", name)
 	}
 	return subscription
 }
