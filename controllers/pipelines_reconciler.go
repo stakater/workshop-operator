@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
@@ -26,16 +25,22 @@ func (r *WorkshopReconciler) reconcilePipelines(workshop *workshopv1.Workshop) (
 	return reconcile.Result{}, nil
 }
 
+const (
+	PIPELINESSUBSCRIPTIONNAME = "openshift-pipelines-operator-rh"
+	PIPELINESNAMESPACENAME    = "openshift-operators"
+	PIPELINESPACKAGENAMENAME  = "openshift-pipelines-operator-rh"
+)
+
 // Add Pipelines
 func (r *WorkshopReconciler) addPipelines(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+	log.Info("Creating Pipelines")
 
-	name := "openshift-pipelines-operator-rh"
 	channel := workshop.Spec.Infrastructure.Pipeline.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.Pipeline.OperatorHub.ClusterServiceVersion
 
 	// Create Subscription
-	pipelineSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, name, "openshift-operators",
-		name, channel, clusterServiceVersion)
+	pipelineSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, PIPELINESSUBSCRIPTIONNAME, PIPELINESNAMESPACENAME,
+		PIPELINESPACKAGENAMENAME, channel, clusterServiceVersion)
 	if err := r.Create(context.TODO(), pipelineSubscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -43,8 +48,8 @@ func (r *WorkshopReconciler) addPipelines(workshop *workshopv1.Workshop) (reconc
 	}
 
 	// Approve the installation
-	if err := r.ApproveInstallPlan(clusterServiceVersion, name, "openshift-operators"); err != nil {
-		log.Infof("Waiting for Subscription to create InstallPlan for %s", name)
+	if err := r.ApproveInstallPlan(clusterServiceVersion, PIPELINESSUBSCRIPTIONNAME, PIPELINESNAMESPACENAME); err != nil {
+		log.Infof("Waiting for Subscription to create InstallPlan for %s", PIPELINESSUBSCRIPTIONNAME)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -52,28 +57,21 @@ func (r *WorkshopReconciler) addPipelines(workshop *workshopv1.Workshop) (reconc
 	return reconcile.Result{}, nil
 }
 
-/**
 // delete Pipelines
 func (r *WorkshopReconciler) deletePipelines(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
-	name := "openshift-pipelines-operator-rh"
+	log.Info("Deleting Pipelines")
 	channel := workshop.Spec.Infrastructure.Pipeline.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.Pipeline.OperatorHub.ClusterServiceVersion
 
 	// Create Subscription
-	pipelineSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, name, "openshift-operators",
-		name, channel, clusterServiceVersion)
-	pipelineSubscriptionFound := &olmv1alpha1.Subscription{}
-	pipelineSubscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: pipelineSubscription.Name, Namespace: pipelineSubscription.Namespace}, pipelineSubscriptionFound)
-	if pipelineSubscriptionErr == nil {
-		// Delete Subscription
-		if err := r.Delete(context.TODO(), pipelineSubscription); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Subscription", pipelineSubscription.Name)
+	pipelineSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, PIPELINESSUBSCRIPTIONNAME, PIPELINESNAMESPACENAME,
+		PIPELINESPACKAGENAMENAME, channel, clusterServiceVersion)
+	// Delete Subscription
+	if err := r.Delete(context.TODO(), pipelineSubscription); err != nil {
+		return reconcile.Result{}, err
 	}
-
+	log.Infof("Deleted %s Subscription", pipelineSubscription.Name)
+	log.Info("Pipelines deleted successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
-**/
