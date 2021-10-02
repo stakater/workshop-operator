@@ -646,7 +646,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s codeReadyWorkspaces namespace", codeReadyWorkspacesNamespace.Name)
-	log.Infoln("Deleted  CodeReadyWorkspace Success")
+	log.Infoln("Deleted  CodeReadyWorkspace successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
