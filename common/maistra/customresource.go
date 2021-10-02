@@ -3,11 +3,9 @@ package maistra
 import (
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // NewServiceMeshControlPlaneCR create a SMCP Custom Resource
@@ -46,13 +44,6 @@ func NewServiceMeshControlPlaneCR(workshop *workshopv1.Workshop, scheme *runtime
 			},
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, smcp, scheme)
-	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
-	}
-
 	return smcp
 }
 
@@ -67,12 +58,6 @@ func NewServiceMeshMemberRollCR(workshop *workshopv1.Workshop, scheme *runtime.S
 		Spec: maistrav1.ServiceMeshMemberRollSpec{
 			Members: members,
 		},
-	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, smmr, scheme)
-	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
 	}
 	return smmr
 }
