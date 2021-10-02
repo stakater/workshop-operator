@@ -35,7 +35,7 @@ const (
 	CODEREADYOPERATORGROUPNAME      = "codeready-workspaces"
 	CODEREADYREDHATSUBSCRIPTIONNAME = "codeready-workspaces"
 	CODEREADYPACKAGENAME            = "codeready-workspaces"
-	CODEREADYDEPLOYMENTNAME         = "codeready-operator"
+	CODEREADYDEPLOYMENTSTATUS         = "codeready-operator"
 	CODEREADYCUSTOMRESOURCENAME     = "codereadyworkspaces"
 	CODEREADYDEPLOYMENTSTATUSNAME   = "codeready"
 	CODEREADYCLUSTERROLENAME        = "che"
@@ -99,7 +99,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	}
 
 	// Wait for CodeReadyWorkspace Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADYDEPLOYMENTNAME, CODEREADYNAMESPACENAME) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADYDEPLOYMENTSTATUS, CODEREADYNAMESPACENAME) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
