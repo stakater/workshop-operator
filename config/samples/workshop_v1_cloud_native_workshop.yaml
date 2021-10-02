@@ -47,7 +47,7 @@ spec:
         name: hashicorp/vault-k8s
         tag: 0.13.0        
     pipeline:
-      enabled: false
+      enabled: true
       operatorHub:
         channel: stable
         clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
