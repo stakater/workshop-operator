@@ -227,14 +227,7 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
 
-	if result, err := r.deleteVaultServer(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-	if result, err := r.deleteVaultAgentInjector(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteVaultNamespace(workshop); util.IsRequeued(result, err) {
+	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 

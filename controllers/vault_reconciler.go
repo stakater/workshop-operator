@@ -250,6 +250,24 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	return reconcile.Result{}, nil
 }
 
+
+
+func (r *WorkshopReconciler) deleteVault(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+	log.Infoln("Deleting deleteVault ")
+
+	if result, err := r.deleteVaultServer(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+	if result, err := r.deleteVaultAgentInjector(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteVaultNamespace(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+	return reconcile.Result{}, nil
+}
+
 // delete Vault
 func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	log.Infoln("Deleting VaultServer Project")
