@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	extraconfigFromValues = map[string]string{
+	ExtraconfigFromValues = map[string]string{
 		"extraconfig-from-values.hcl": `disable_mlock = true
 ui = true
 
@@ -91,7 +91,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		log.Infof("Created %s Vault Project", vaultNamespace.Name)
 	}
 
-	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, extraconfigFromValues)
+	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, ExtraconfigFromValues)
 	if err := r.Create(context.TODO(), configMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -270,7 +270,7 @@ func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (r
 	}
 	log.Infof("Deleted %s VaultServer Service Account", serviceAccount.Name)
 
-	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, extraconfigFromValues)
+	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, ExtraconfigFromValues)
 	// Delete configMap
 	if err := r.Delete(context.TODO(), configMap); err != nil {
 		return reconcile.Result{}, err
