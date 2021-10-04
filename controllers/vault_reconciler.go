@@ -50,14 +50,13 @@ const (
 	VAULT_INTERNAL_SERVICE_NAME      = "vault-internal"
 	VAULT_ROLEBINDING_NAME           = "vault-server-binding"
 	VAULT_ROLEBINDING_ROLE_NAME      = "system:auth-delegator"
-	VAULT_ROLEBINDING_KIND_NAME      = "ClusterRole"
+	KIND_CLUSTER_ROLE      = "ClusterRole"
 	VAULT_SERVICEACCOUNT_NAME        = "vault"
 	VAULT_CONFIGMAP_NAME             = "vault-config"
 	VAULTAGENT_WEBHOOK_NAME          = "vault-agent-injector-cfg"
 	VAULTAGENT_DEPLOYMENT_NAME       = "vault-agent-injector"
 	VAULTAGENT_SERVICE_NAME          = "vault-agent-injector"
 	VAULTAGENT_ROLEBINDING_NAME      = "vault-agent-injector"
-	VAULTAGENT_ROLEBINDING_KIND_NAME = "ClusterRole"
 	VAULTAGENT_CLUSTERROLE_NAME      = "vault-agent-injector"
 	VAULTAGENT_SERVICEACCOUNT_NAME   = "vault-agent-injector"
 )
@@ -118,7 +117,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 
 	// Create ClusterRole Binding
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultServerlabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, VAULT_ROLEBINDING_KIND_NAME)
+		VaultServerlabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), clusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -190,7 +189,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 
 	// Create Cluster Role Binding
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULTAGENT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultAgentlabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, VAULTAGENT_ROLEBINDING_KIND_NAME)
+		VaultAgentlabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), clusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -273,7 +272,7 @@ func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (r
 	log.Infof("Deleted %s VaultServer internal Service", internalService.Name)
 
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultServerlabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, VAULT_ROLEBINDING_KIND_NAME)
+		VaultServerlabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	// Delete ClusterRole Binding
 	if err := r.Delete(context.TODO(), clusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -331,7 +330,7 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 	log.Infof("Deleted %s VaultAgent Service ", service.Name)
 
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULTAGENT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultAgentlabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, VAULTAGENT_ROLEBINDING_KIND_NAME)
+		VaultAgentlabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, KIND_CLUSTER_ROLE)
 	// Delete Cluster Role Binding
 	if err := r.Delete(context.TODO(), clusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
