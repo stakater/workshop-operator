@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ExtraconfigFromValues = map[string]string{
+	ExtraConfigFromValues = map[string]string{
 		"extraconfig-from-values.hcl": `disable_mlock = true
 ui = true
 
@@ -27,13 +27,13 @@ storage "file" {
 `,
 	}
 
-	VaultServerlabels = map[string]string{
+	VaultServerLabels = map[string]string{
 		"app":                       "vault",
 		"app.kubernetes.io/name":    "vault",
 		"app.kubernetes.io/part-of": "vault",
 		"component":                 "server",
 	}
-	VaultAgentlabels = map[string]string{
+	VaultAgentLabels = map[string]string{
 		"app":                       "vault",
 		"app.kubernetes.io/name":    "vault-agent-injector",
 		"app.kubernetes.io/part-of": "vault",
@@ -91,7 +91,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		log.Infof("Created %s Vault Project", vaultNamespace.Name)
 	}
 
-	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, ExtraconfigFromValues)
+	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels, ExtraConfigFromValues)
 	if err := r.Create(context.TODO(), configMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -99,7 +99,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 	}
 
 	// Create Service Account
-	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels)
+	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels)
 	if err := r.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -108,7 +108,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 
 	// Create ClusterRole Binding
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultServerlabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
+		VaultServerLabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), clusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -116,7 +116,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 	}
 
 	// Create Service
-	internalService := kubernetes.NewService(workshop, r.Scheme, VAULT_INTERNAL_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, []string{"http", "internal"}, []int32{8200, 8201})
+	internalService := kubernetes.NewService(workshop, r.Scheme, VAULT_INTERNAL_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels, []string{"http", "internal"}, []int32{8200, 8201})
 	if err := r.Create(context.TODO(), internalService); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -124,7 +124,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 	}
 
 	// Create Service
-	service := kubernetes.NewService(workshop, r.Scheme, VAULT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, []string{"http", "internal"}, []int32{8200, 8201})
+	service := kubernetes.NewService(workshop, r.Scheme, VAULT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels, []string{"http", "internal"}, []int32{8200, 8201})
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -132,7 +132,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 	}
 
 	// Create StatefulSet
-	stateful := vault.NewStatefulSet(workshop, r.Scheme, VAULT_STATEFULSET_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels)
+	stateful := vault.NewStatefulSet(workshop, r.Scheme, VAULT_STATEFULSET_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels)
 	if err := r.Create(context.TODO(), stateful); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -156,7 +156,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	}
 
 	// Create Service Account
-	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULTAGENT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels)
+	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULTAGENT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels)
 	if err := r.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -165,7 +165,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 
 	// Create Cluster Role
 	clusterRole := kubernetes.NewClusterRole(workshop, r.Scheme,
-		VAULTAGENT_CLUSTERROLE_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels, kubernetes.VaultAgentInjectorRules())
+		VAULTAGENT_CLUSTERROLE_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels, kubernetes.VaultAgentInjectorRules())
 	if err := r.Create(context.TODO(), clusterRole); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -174,7 +174,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 
 	// Create Cluster Role Binding
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULTAGENT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultAgentlabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, KIND_CLUSTER_ROLE)
+		VaultAgentLabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), clusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -182,7 +182,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	}
 
 	// Create Service
-	service := kubernetes.NewServiceWithTarget(workshop, r.Scheme, VAULTAGENT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels,
+	service := kubernetes.NewServiceWithTarget(workshop, r.Scheme, VAULTAGENT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels,
 		[]string{"http"}, []int32{443}, []int32{8080})
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -191,7 +191,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	}
 
 	// Create Deployment
-	ocpDeployment := vault.NewAgentInjectorDeployment(workshop, r.Scheme, VAULTAGENT_DEPLOYMENT_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels)
+	ocpDeployment := vault.NewAgentInjectorDeployment(workshop, r.Scheme, VAULTAGENT_DEPLOYMENT_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels)
 	if err := r.Create(context.TODO(), ocpDeployment); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -201,7 +201,7 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	// Create AgentInjectorWebHook
 	webhooks := vault.NewAgentInjectorWebHook(vaultNamespace.Name)
 	mutatingWebhookConfiguration := kubernetes.NewMutatingWebhookConfiguration(workshop, r.Scheme,
-		VAULTAGENT_WEBHOOK_NAME, VaultAgentlabels, webhooks)
+		VAULTAGENT_WEBHOOK_NAME, VaultAgentLabels, webhooks)
 	if err := r.Create(context.TODO(), mutatingWebhookConfiguration); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -233,23 +233,23 @@ func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (r
 	log.Infoln("Deleting VaultServer")
 
 	// last method last line
-	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels)
+	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels)
 
-	stateful := vault.NewStatefulSet(workshop, r.Scheme, VAULT_STATEFULSET_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels)
+	stateful := vault.NewStatefulSet(workshop, r.Scheme, VAULT_STATEFULSET_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels)
 	// Delete stateful
 	if err := r.Delete(context.TODO(), stateful); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s VaultServer stateful", stateful.Name)
 
-	service := kubernetes.NewService(workshop, r.Scheme, VAULT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, []string{"http", "internal"}, []int32{8200, 8201})
+	service := kubernetes.NewService(workshop, r.Scheme, VAULT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels, []string{"http", "internal"}, []int32{8200, 8201})
 	// Delete Service
 	if err := r.Delete(context.TODO(), service); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s VaultServer Service", service.Name)
 
-	internalService := kubernetes.NewService(workshop, r.Scheme, VAULT_INTERNAL_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, []string{"http", "internal"}, []int32{8200, 8201})
+	internalService := kubernetes.NewService(workshop, r.Scheme, VAULT_INTERNAL_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels, []string{"http", "internal"}, []int32{8200, 8201})
 	// Delete internal Service
 	if err := r.Delete(context.TODO(), internalService); err != nil {
 		return reconcile.Result{}, err
@@ -257,7 +257,7 @@ func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (r
 	log.Infof("Deleted %s VaultServer internal Service", internalService.Name)
 
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultServerlabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
+		VaultServerLabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	// Delete ClusterRole Binding
 	if err := r.Delete(context.TODO(), clusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -270,7 +270,7 @@ func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (r
 	}
 	log.Infof("Deleted %s VaultServer Service Account", serviceAccount.Name)
 
-	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerlabels, ExtraconfigFromValues)
+	configMap := kubernetes.NewConfigMap(workshop, r.Scheme, VAULT_CONFIGMAP_NAME, VAULT_NAMESPACE_NAME, VaultServerLabels, ExtraConfigFromValues)
 	// Delete configMap
 	if err := r.Delete(context.TODO(), configMap); err != nil {
 		return reconcile.Result{}, err
@@ -288,25 +288,25 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 
 	vaultNamespace := kubernetes.NewNamespace(workshop, r.Scheme, VAULT_NAMESPACE_NAME)
 	clusterRole := kubernetes.NewClusterRole(workshop, r.Scheme,
-		VAULTAGENT_CLUSTERROLE_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels, kubernetes.VaultAgentInjectorRules())
+		VAULTAGENT_CLUSTERROLE_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels, kubernetes.VaultAgentInjectorRules())
 
 	webhooks := vault.NewAgentInjectorWebHook(vaultNamespace.Name)
 	mutatingWebhookConfiguration := kubernetes.NewMutatingWebhookConfiguration(workshop, r.Scheme,
-		VAULTAGENT_WEBHOOK_NAME, VaultAgentlabels, webhooks)
+		VAULTAGENT_WEBHOOK_NAME, VaultAgentLabels, webhooks)
 	// Delete AgentInjectorWebHook
 	if err := r.Delete(context.TODO(), mutatingWebhookConfiguration); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s VaultAgent Mutating Webhook Configuration ", mutatingWebhookConfiguration.Name)
 
-	ocpDeployment := vault.NewAgentInjectorDeployment(workshop, r.Scheme, VAULTAGENT_DEPLOYMENT_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels)
+	ocpDeployment := vault.NewAgentInjectorDeployment(workshop, r.Scheme, VAULTAGENT_DEPLOYMENT_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels)
 	// Delete Deployment
 	if err := r.Delete(context.TODO(), ocpDeployment); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s VaultAgent Deployment ", ocpDeployment.Name)
 
-	service := kubernetes.NewServiceWithTarget(workshop, r.Scheme, VAULTAGENT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels,
+	service := kubernetes.NewServiceWithTarget(workshop, r.Scheme, VAULTAGENT_SERVICE_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels,
 		[]string{"http"}, []int32{443}, []int32{8080})
 	// Delete Service
 	if err := r.Delete(context.TODO(), service); err != nil {
@@ -315,7 +315,7 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 	log.Infof("Deleted %s VaultAgent Service ", service.Name)
 
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULTAGENT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
-		VaultAgentlabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, KIND_CLUSTER_ROLE)
+		VaultAgentLabels, VAULTAGENT_SERVICEACCOUNT_NAME, clusterRole.Name, KIND_CLUSTER_ROLE)
 	// Delete Cluster Role Binding
 	if err := r.Delete(context.TODO(), clusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -328,7 +328,7 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 	}
 	log.Infof("Deleted %s VaultAgent Cluster Role", clusterRole.Name)
 
-	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULTAGENT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultAgentlabels)
+	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULTAGENT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels)
 	// Delete  Service Account
 	if err := r.Delete(context.TODO(), serviceAccount); err != nil {
 		return reconcile.Result{}, err
