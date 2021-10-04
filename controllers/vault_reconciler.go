@@ -2,14 +2,12 @@ package controllers
 
 import (
 	"context"
-	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/util"
 	"github.com/stakater/workshop-operator/common/vault"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -44,21 +42,21 @@ storage "file" {
 )
 
 const (
-	VAULT_NAMESPACE_NAME             = "vault"
-	VAULT_STATEFULSET_NAME           = "vault"
-	VAULT_SERVICE_NAME               = "vault"
-	VAULT_INTERNAL_SERVICE_NAME      = "vault-internal"
-	VAULT_ROLEBINDING_NAME           = "vault-server-binding"
-	VAULT_ROLEBINDING_ROLE_NAME      = "system:auth-delegator"
-	KIND_CLUSTER_ROLE      = "ClusterRole"
-	VAULT_SERVICEACCOUNT_NAME        = "vault"
-	VAULT_CONFIGMAP_NAME             = "vault-config"
-	VAULTAGENT_WEBHOOK_NAME          = "vault-agent-injector-cfg"
-	VAULTAGENT_DEPLOYMENT_NAME       = "vault-agent-injector"
-	VAULTAGENT_SERVICE_NAME          = "vault-agent-injector"
-	VAULTAGENT_ROLEBINDING_NAME      = "vault-agent-injector"
-	VAULTAGENT_CLUSTERROLE_NAME      = "vault-agent-injector"
-	VAULTAGENT_SERVICEACCOUNT_NAME   = "vault-agent-injector"
+	VAULT_NAMESPACE_NAME           = "vault"
+	VAULT_STATEFULSET_NAME         = "vault"
+	VAULT_SERVICE_NAME             = "vault"
+	VAULT_INTERNAL_SERVICE_NAME    = "vault-internal"
+	VAULT_ROLEBINDING_NAME         = "vault-server-binding"
+	VAULT_ROLEBINDING_ROLE_NAME    = "system:auth-delegator"
+	KIND_CLUSTER_ROLE              = "ClusterRole"
+	VAULT_SERVICEACCOUNT_NAME      = "vault"
+	VAULT_CONFIGMAP_NAME           = "vault-config"
+	VAULTAGENT_WEBHOOK_NAME        = "vault-agent-injector-cfg"
+	VAULTAGENT_DEPLOYMENT_NAME     = "vault-agent-injector"
+	VAULTAGENT_SERVICE_NAME        = "vault-agent-injector"
+	VAULTAGENT_ROLEBINDING_NAME    = "vault-agent-injector"
+	VAULTAGENT_CLUSTERROLE_NAME    = "vault-agent-injector"
+	VAULTAGENT_SERVICEACCOUNT_NAME = "vault-agent-injector"
 )
 
 // Reconciling Vault
@@ -106,13 +104,6 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Vault Service Account", serviceAccount.Name)
-	}
-
-	// Add Vault ServiceAccountUser to priviliged SCC
-	// TODO: Create new previliged SCC for vault and use it
-	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
-		return reconcile.Result{}, err
 	}
 
 	// Create ClusterRole Binding
@@ -170,12 +161,6 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s VaultAgent Service Account", serviceAccount.Name)
-	}
-	// Add Vault ServiceAccountUser to priviliged SCC
-	// TODO: Instead of adding to existing priviliged SCC; create a new one
-	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
-		return reconcile.Result{}, err
 	}
 
 	// Create Cluster Role
