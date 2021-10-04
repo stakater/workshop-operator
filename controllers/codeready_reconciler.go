@@ -31,17 +31,20 @@ var codereadylabels = map[string]string{
 }
 
 const (
-	CODEREADYNAMESPACENAME          = "workspaces"
-	CODEREADYOPERATORGROUPNAME      = "codeready-workspaces"
-	CODEREADYREDHATSUBSCRIPTIONNAME = "codeready-workspaces"
-	CODEREADYPACKAGENAME            = "codeready-workspaces"
-	CODEREADYDEPLOYMENTSTATUS         = "codeready-operator"
-	CODEREADYCUSTOMRESOURCENAME     = "codereadyworkspaces"
-	CODEREADYDEPLOYMENTSTATUSNAME   = "codeready"
-	CODEREADYCLUSTERROLENAME        = "che"
-	CODEREADYCLUSTERROLEBINDINGNAME = "che"
-	CODEREADYSERVICEACCOUNTNAME     = "che"
-	CODEREADYCLUSTERROLEKINDNAME    = "ClusterRole"
+	CODEREADY_NAMESPACE_NAME          = "workspaces"
+	CODEREADY_OPERATORGROUP_NAME      = "codeready-workspaces"
+	CODEREADY_SUBSCRIPTION_NAME = "codeready-workspaces"
+	CODEREADY_PACKAGE_NAME            = "codeready-workspaces"
+	CODEREADY_OPERATOR_DEPLOYMENT_STATUS         = "codeready-operator"
+	CODEREADY_CUSTOM_RESOURCE_NAME     = "codereadyworkspaces"
+	CODEREADY_DEPLOYMENT_STATUS_NAME   = "codeready"
+	CODEREADY_CLUSTER_ROLE_NAME        = "che"
+	CODEREADY_CLUSTE_RROLEBINDING_NAME = "che"
+	CODEREADY_SERVICEACCOUNT_NAME     = "che"
+	KIND_CLUSTER_ROLE = "ClusterRole"
+
+	CODEREADY_USER_CODEFLAVOR_NAME     = "codeready"
+
 	CODEREADYUSERCODEFLAVORNAME     = "codeready"
 )
 
@@ -68,7 +71,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
 	// Create Project
-	codeReadyWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, CODEREADYNAMESPACENAME)
+	codeReadyWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, CODEREADY_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), codeReadyWorkspacesNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -76,7 +79,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	}
 
 	// Create OperatorGroup
-	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, CODEREADYOPERATORGROUPNAME, CODEREADYNAMESPACENAME)
+	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, CODEREADY_OPERATORGROUP_NAME, CODEREADY_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), codeReadyWorkspacesOperatorGroup); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -84,8 +87,8 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	}
 
 	// Create Subscription
-	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADYREDHATSUBSCRIPTIONNAME, CODEREADYNAMESPACENAME,
-		CODEREADYPACKAGENAME, channel, clusterServiceVersion)
+	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME,
+		CODEREADY_PACKAGE_NAME, channel, clusterServiceVersion)
 	if err := r.Create(context.TODO(), codeReadyWorkspacesSubscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -93,17 +96,17 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	}
 
 	// Approve the Installation
-	if err := r.ApproveInstallPlan(clusterServiceVersion, CODEREADYREDHATSUBSCRIPTIONNAME, CODEREADYNAMESPACENAME); err != nil {
+	if err := r.ApproveInstallPlan(clusterServiceVersion, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME); err != nil {
 		log.Warnf("Waiting for CodeReadyWorkspace Subscription to create InstallPlan for %s", "codeready-workspaces")
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Wait for CodeReadyWorkspace Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADYDEPLOYMENTSTATUS, CODEREADYNAMESPACENAME) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADY_OPERATOR_DEPLOYMENT_STATUS, CODEREADY_NAMESPACE_NAME) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADYCUSTOMRESOURCENAME, CODEREADYNAMESPACENAME)
+	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADY_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), codeReadyWorkspacesCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -111,7 +114,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	}
 
 	// Wait for CodeReadyWorkspace to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADYDEPLOYMENTSTATUSNAME, CODEREADYNAMESPACENAME) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADY_DEPLOYMENT_STATUS_NAME, CODEREADY_NAMESPACE_NAME) {
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
 	}
 
@@ -123,14 +126,14 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 
 	// Users and Workspaces
 	if !workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth {
-		masterAccessToken, result, err := getKeycloakAdminToken(workshop, CODEREADYNAMESPACENAME, appsHostnameSuffix)
+		masterAccessToken, result, err := getKeycloakAdminToken(workshop, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
 		if err != nil {
 			return result, err
 		}
 
 		// Che Cluster Role
 		cheClusterRole :=
-			kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADYCLUSTERROLENAME, CODEREADYNAMESPACENAME, codereadylabels, kubernetes.CheRules())
+			kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, kubernetes.CheRules())
 		if err := r.Create(context.TODO(), cheClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
@@ -138,7 +141,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		}
 
 		// Che Cluster Role Binding
-		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADYCLUSTERROLEBINDINGNAME, CODEREADYNAMESPACENAME, codereadylabels, CODEREADYSERVICEACCOUNTNAME, cheClusterRole.Name, CODEREADYCLUSTERROLEKINDNAME)
+		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 		if err := r.Create(context.TODO(), cheClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
@@ -148,16 +151,16 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		for id := 1; id <= users; id++ {
 			username := fmt.Sprintf("user%d", id)
 
-			if result, err := createUser(workshop, username, CODEREADYUSERCODEFLAVORNAME, CODEREADYNAMESPACENAME, appsHostnameSuffix, masterAccessToken); err != nil {
+			if result, err := createUser(workshop, username, CODEREADY_USER_CODEFLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix, masterAccessToken); err != nil {
 				return result, err
 			}
 
-			userAccessToken, result, err := getUserToken(workshop, username, CODEREADYUSERCODEFLAVORNAME, CODEREADYNAMESPACENAME, appsHostnameSuffix)
+			userAccessToken, result, err := getUserToken(workshop, username, CODEREADY_USER_CODEFLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
 			if err != nil {
 				return result, err
 			}
 
-			if result, err := initWorkspace(workshop, username, CODEREADYUSERCODEFLAVORNAME, CODEREADYNAMESPACENAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
+			if result, err := initWorkspace(workshop, username, CODEREADY_USER_CODEFLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
 				return result, err
 			}
 
@@ -166,16 +169,16 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		for id := 1; id <= users; id++ {
 			username := fmt.Sprintf("user%d", id)
 
-			userAccessToken, result, err := getOAuthUserToken(workshop, username, CODEREADYUSERCODEFLAVORNAME, CODEREADYNAMESPACENAME, appsHostnameSuffix)
+			userAccessToken, result, err := getOAuthUserToken(workshop, username, CODEREADY_USER_CODEFLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
 			if err != nil {
 				return result, err
 			}
 
-			if result, err := updateUserEmail(workshop, username, CODEREADYUSERCODEFLAVORNAME, CODEREADYNAMESPACENAME, appsHostnameSuffix); err != nil {
+			if result, err := updateUserEmail(workshop, username, CODEREADY_USER_CODEFLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix); err != nil {
 				return result, err
 			}
 
-			if result, err := initWorkspace(workshop, username, CODEREADYUSERCODEFLAVORNAME, CODEREADYNAMESPACENAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
+			if result, err := initWorkspace(workshop, username, CODEREADY_USER_CODEFLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
 				return result, err
 			}
 		}
@@ -603,9 +606,9 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
 	cheClusterRole :=
-		kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADYCLUSTERROLENAME, CODEREADYNAMESPACENAME, codereadylabels, kubernetes.CheRules())
+		kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, kubernetes.CheRules())
 
-	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADYCLUSTERROLEBINDINGNAME, CODEREADYNAMESPACENAME, codereadylabels, CODEREADYSERVICEACCOUNTNAME, cheClusterRole.Name, CODEREADYCLUSTERROLEKINDNAME)
+	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 	// Delete che Cluster RoleBinding
 	if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -618,29 +621,29 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	}
 	log.Infof("Deleted %s CodeReadyWorkspace Cluster Role ", cheClusterRole.Name)
 
-	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADYCUSTOMRESOURCENAME, CODEREADYNAMESPACENAME)
+	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADY_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
 	// Delete codeReadyWorkspaces CustomResource
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesCustomResource); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s codeReadyWorkspaces CustomResource", codeReadyWorkspacesCustomResource.Name)
 
-	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADYREDHATSUBSCRIPTIONNAME, CODEREADYNAMESPACENAME,
-		CODEREADYPACKAGENAME, channel, clusterServiceVersion)
+	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME,
+		CODEREADY_PACKAGE_NAME, channel, clusterServiceVersion)
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesSubscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s codeReadyWorkspaces Subscription", codeReadyWorkspacesSubscription.Name)
 
-	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, CODEREADYOPERATORGROUPNAME, CODEREADYNAMESPACENAME)
+	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, CODEREADY_OPERATORGROUP_NAME, CODEREADY_NAMESPACE_NAME)
 	// Delete OperatorGroup
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesOperatorGroup); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s codeReadyWorkspaces OperatorGroup", codeReadyWorkspacesOperatorGroup.Name)
 
-	codeReadyWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, CODEREADYNAMESPACENAME)
+	codeReadyWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, CODEREADY_NAMESPACE_NAME)
 	// Delete Project
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesNamespace); err != nil {
 		return reconcile.Result{}, err
