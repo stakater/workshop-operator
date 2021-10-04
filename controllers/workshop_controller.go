@@ -86,7 +86,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-
 	//////////////////////////
 	// Variables
 	//////////////////////////
@@ -146,7 +145,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 	}
-
 
 	//////////////////////////
 	// Portal
@@ -252,7 +250,7 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
 
-	if result, err := r.deleteCodeReadyWorkspace(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+	if result, err := r.deleteCodeReadyWorkspace(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
