@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var codereadylabels = map[string]string{
+var CodeReadyLabels = map[string]string{
 	"app.kubernetes.io/part-of": "codeready",
 }
 
@@ -136,7 +136,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 
 		// Che Cluster Role
 		cheClusterRole :=
-			kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, kubernetes.CheRules())
+			kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
 		if err := r.Create(context.TODO(), cheClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
@@ -144,7 +144,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		}
 
 		// Che Cluster Role Binding
-		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
+		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 		if err := r.Create(context.TODO(), cheClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
@@ -588,9 +588,9 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
 	cheClusterRole :=
-		kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, kubernetes.CheRules())
+		kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
 
-	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, codereadylabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
+	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 	// Delete che Cluster RoleBinding
 	if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
 		return reconcile.Result{}, err
