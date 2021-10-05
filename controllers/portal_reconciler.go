@@ -56,14 +56,14 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 	if err := r.Create(context.TODO(), secret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s  Secret", secret.Name)
+		log.Infof("Created %s Secret", secret.Name)
 	}
 
 	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUMECLAIM)
 	if err := r.Create(context.TODO(), persistentVolumeClaim); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s  Persistent Volume Claim", persistentVolumeClaim.Name)
+		log.Infof("Created %s Persistent Volume Claim", persistentVolumeClaim.Name)
 	}
 
 	// Deploy/Update UsernameDistribution
@@ -71,7 +71,7 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s  Deployment", dep.Name)
+		log.Infof("Created %s Deployment", dep.Name)
 	} else if errors.IsAlreadyExists(err) {
 		deploymentFound := &appsv1.Deployment{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: workshop.Namespace}, deploymentFound); err != nil {
@@ -82,7 +82,7 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 				if err := r.Update(context.TODO(), dep); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s  Deployment", dep.Name)
+				log.Infof("Updated %s Deployment", dep.Name)
 			}
 		}
 	}
@@ -92,7 +92,7 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s  Service", service.Name)
+		log.Infof("Created %s Service", service.Name)
 	}
 
 	//Success
