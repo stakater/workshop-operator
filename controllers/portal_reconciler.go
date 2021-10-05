@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	REDIS_PERSISTENT_VOLUMECLAIM  = "512Mi"
+	REDIS_PERSISTENT_VOLUMECLAIM = "512Mi"
 	REDIS_DEPLOYMENT_NAME        = "redis"
 	REDIS_SERVICE_NAME           = "redis"
 	PORTAL_SERVICE_NAME          = "portal"
@@ -101,7 +101,7 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 
 func (r *WorkshopReconciler) addUpdateUsernameDistribution(workshop *workshopv1.Workshop,
 	users int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-	log.Info("Creating UpdateUsernameDistribution")
+	log.Info("Creating portal")
 	// Deploy/Update UsernameDistribution
 	dep := usernamedistribution.NewDeployment(workshop, r.Scheme, PORTAL_SERVICE_NAME, RedisLabels, REDIS_SERVICE_NAME, users, appsHostnameSuffix, openshiftConsoleURL)
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
@@ -197,8 +197,8 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 // delete UsernameDistribution
 func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshopv1.Workshop,
 	users int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-	
-	log.Info("Deleting  UsernameDistribution ")
+
+	log.Info("Deleting  portal ")
 	route := kubernetes.NewSecuredRoute(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, RedisLabels, PORTAL_SERVICE_NAME, int32(REDIS_ROUTE_PORT))
 	// Delete Route
 	if err := r.Delete(context.TODO(), route); err != nil {
@@ -223,7 +223,7 @@ func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshop
 		}
 		log.Infof("Deleted %s Deployment", dep.Name)
 	}
-	log.Info(" Deleted UsernameDistribution  successfully")
+	log.Info(" Deleted portal  successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
