@@ -25,12 +25,12 @@ const (
 	REDIS_ROUTE_PORT             = 8080
 )
 
-var redislabels = map[string]string{
+var RedisLabels = map[string]string{
 	"app":                       REDIS_SERVICE_NAME,
 	"app.kubernetes.io/part-of": "portal",
 }
 
-var rediscredentials = map[string]string{
+var RedisCredentials = map[string]string{
 	"database-password": "redis",
 }
 
@@ -52,26 +52,26 @@ func (r *WorkshopReconciler) reconcilePortal(workshop *workshopv1.Workshop, user
 
 func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	log.Info("Creating Redis")
-	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, redislabels, rediscredentials)
+	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, RedisCredentials)
 	if err := r.Create(context.TODO(), secret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Secret", secret.Name)
+		log.Infof("Created %s  Secret", secret.Name)
 	}
 
-	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, redislabels, REDIS_PERSISTENT_VOLUMECLAIM)
+	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUMECLAIM)
 	if err := r.Create(context.TODO(), persistentVolumeClaim); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Persistent Volume Claim", persistentVolumeClaim.Name)
+		log.Infof("Created %s  Persistent Volume Claim", persistentVolumeClaim.Name)
 	}
 
 	// Deploy/Update UsernameDistribution
-	dep := redis.NewDeployment(workshop, r.Scheme, REDIS_DEPLOYMENT_NAME, workshop.Namespace, redislabels)
+	dep := redis.NewDeployment(workshop, r.Scheme, REDIS_DEPLOYMENT_NAME, workshop.Namespace, RedisLabels)
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Deployment", dep.Name)
+		log.Infof("Created %s  Deployment", dep.Name)
 	} else if errors.IsAlreadyExists(err) {
 		deploymentFound := &appsv1.Deployment{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: workshop.Namespace}, deploymentFound); err != nil {
@@ -82,17 +82,17 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 				if err := r.Update(context.TODO(), dep); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s Deployment", dep.Name)
+				log.Infof("Updated %s  Deployment", dep.Name)
 			}
 		}
 	}
 
 	// Create Service
-	service := kubernetes.NewService(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, redislabels, []string{"http"}, []int32{6379})
+	service := kubernetes.NewService(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, []string{"http"}, []int32{6379})
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Service", service.Name)
+		log.Infof("Created %s  Service", service.Name)
 	}
 
 	//Success
@@ -103,7 +103,7 @@ func (r *WorkshopReconciler) addUpdateUsernameDistribution(workshop *workshopv1.
 	users int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 	log.Info("Creating UpdateUsernameDistribution")
 	// Deploy/Update UsernameDistribution
-	dep := usernamedistribution.NewDeployment(workshop, r.Scheme, PORTAL_SERVICE_NAME, redislabels, REDIS_SERVICE_NAME, users, appsHostnameSuffix, openshiftConsoleURL)
+	dep := usernamedistribution.NewDeployment(workshop, r.Scheme, PORTAL_SERVICE_NAME, RedisLabels, REDIS_SERVICE_NAME, users, appsHostnameSuffix, openshiftConsoleURL)
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -125,7 +125,7 @@ func (r *WorkshopReconciler) addUpdateUsernameDistribution(workshop *workshopv1.
 	}
 
 	// Create Service
-	service := kubernetes.NewService(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, redislabels, []string{"http"}, []int32{8080})
+	service := kubernetes.NewService(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, RedisLabels, []string{"http"}, []int32{8080})
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -133,7 +133,7 @@ func (r *WorkshopReconciler) addUpdateUsernameDistribution(workshop *workshopv1.
 	}
 
 	// Create Route
-	route := kubernetes.NewSecuredRoute(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, redislabels, PORTAL_SERVICE_NAME, int32(REDIS_ROUTE_PORT))
+	route := kubernetes.NewSecuredRoute(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, RedisLabels, PORTAL_SERVICE_NAME, int32(REDIS_ROUTE_PORT))
 	if err := r.Create(context.TODO(), route); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -161,28 +161,28 @@ func (r *WorkshopReconciler) deletePortal(workshop *workshopv1.Workshop, userID 
 // delete Redis
 func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	log.Info("Deleting Redis")
-	service := kubernetes.NewService(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, redislabels, []string{"http"}, []int32{6379})
+	service := kubernetes.NewService(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, []string{"http"}, []int32{6379})
 	// Delete Service
 	if err := r.Delete(context.TODO(), service); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Service", service.Name)
 
-	dep := redis.NewDeployment(workshop, r.Scheme, REDIS_DEPLOYMENT_NAME, workshop.Namespace, redislabels)
+	dep := redis.NewDeployment(workshop, r.Scheme, REDIS_DEPLOYMENT_NAME, workshop.Namespace, RedisLabels)
 	// Delete Deployment
 	if err := r.Delete(context.TODO(), dep); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Deployment ", dep.Name)
 
-	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, redislabels, REDIS_PERSISTENT_VOLUMECLAIM)
+	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUMECLAIM)
 	// Delete persistentVolume Claim
 	if err := r.Delete(context.TODO(), persistentVolumeClaim); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Persistent Volume Claim", persistentVolumeClaim.Name)
 
-	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, redislabels, rediscredentials)
+	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, RedisCredentials)
 	// Delete secret
 	if err := r.Delete(context.TODO(), secret); err != nil {
 		return reconcile.Result{}, err
@@ -199,21 +199,21 @@ func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshop
 	users int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 	
 	log.Info("Deleting  UsernameDistribution ")
-	route := kubernetes.NewSecuredRoute(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, redislabels, PORTAL_SERVICE_NAME, int32(REDIS_ROUTE_PORT))
+	route := kubernetes.NewSecuredRoute(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, RedisLabels, PORTAL_SERVICE_NAME, int32(REDIS_ROUTE_PORT))
 	// Delete Route
 	if err := r.Delete(context.TODO(), route); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Route", route.Name)
 
-	service := kubernetes.NewService(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, redislabels, []string{"http"}, []int32{8080})
+	service := kubernetes.NewService(workshop, r.Scheme, PORTAL_SERVICE_NAME, workshop.Namespace, RedisLabels, []string{"http"}, []int32{8080})
 	// Delete Service
 	if err := r.Delete(context.TODO(), service); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Service", service.Name)
 
-	dep := usernamedistribution.NewDeployment(workshop, r.Scheme, PORTAL_SERVICE_NAME, redislabels, REDIS_SERVICE_NAME, users, appsHostnameSuffix, openshiftConsoleURL)
+	dep := usernamedistribution.NewDeployment(workshop, r.Scheme, PORTAL_SERVICE_NAME, RedisLabels, REDIS_SERVICE_NAME, users, appsHostnameSuffix, openshiftConsoleURL)
 	deploymentFound := &appsv1.Deployment{}
 	deploymentErr := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: workshop.Namespace}, deploymentFound)
 	if deploymentErr == nil {
