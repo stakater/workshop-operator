@@ -2,12 +2,14 @@ package controllers
 
 import (
 	"context"
+	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/util"
 	"github.com/stakater/workshop-operator/common/vault"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -106,6 +108,13 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		log.Infof("Created %s Vault Service Account", serviceAccount.Name)
 	}
 
+	// Add Vault ServiceAccountUser to priviliged SCC
+	// TODO: Create new previliged SCC for vault and use it
+	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	// Create ClusterRole Binding
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
 		VaultServerLabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
@@ -161,6 +170,12 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s VaultAgent Service Account", serviceAccount.Name)
+	}
+	// Add Vault ServiceAccountUser to priviliged SCC
+	// TODO: Instead of adding to existing priviliged SCC; create a new one
+	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	// Create Cluster Role
