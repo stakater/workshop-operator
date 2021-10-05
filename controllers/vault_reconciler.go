@@ -108,11 +108,22 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		log.Infof("Created %s Vault Service Account", serviceAccount.Name)
 	}
 
+	// Create ServiceAccountUser
+	serviceAccountUser := "system:serviceaccount:" + vaultNamespace.Name + ":" + serviceAccount.Name
+
 	// Add Vault ServiceAccountUser to priviliged SCC
 	// TODO: Create new previliged SCC for vault and use it
 	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
 		return reconcile.Result{}, err
+	}
+	if !util.StringInSlice(serviceAccountUser, privilegedSCCFound.Users) {
+		privilegedSCCFound.Users = append(privilegedSCCFound.Users, serviceAccountUser)
+		if err := r.Update(context.TODO(), privilegedSCCFound); err != nil {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Updated %s SCC", privilegedSCCFound.Name)
+		}
 	}
 
 	// Create ClusterRole Binding
