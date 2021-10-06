@@ -9,6 +9,7 @@ import (
 	"github.com/stakater/workshop-operator/common/util"
 	"github.com/stakater/workshop-operator/common/vault"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -108,49 +109,48 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		log.Infof("Created %s Vault Service Account", serviceAccount.Name)
 	}
 
+	// Add Vault ServiceAccountUser to priviliged SCC
+	// TODO: Create new previliged SCC for vault and use it
+	//privilegedSCCFound := &securityv1.SecurityContextConstraints{}
+	//if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
+	//	return reconcile.Result{}, err
+	//}
+	//if !util.StringInSlice(serviceAccountUser, privilegedSCCFound.Users) {
+	//	privilegedSCCFound.Users = append(privilegedSCCFound.Users, serviceAccountUser)
+	//	if err := r.Update(context.TODO(), privilegedSCCFound); err != nil {
+	//		return reconcile.Result{}, err
+	//	} else if err == nil {
+	//		log.Infof("Updated %s SCC", privilegedSCCFound.Name)
+	//	}
+	//}
+
 	// Create ServiceAccountUser
 	serviceAccountUser := "system:serviceaccount:" + vaultNamespace.Name + ":" + serviceAccount.Name
 
-	// Add Vault ServiceAccountUser to priviliged SCC
-	// TODO: Create new previliged SCC for vault and use it
-	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
-		return reconcile.Result{}, err
-	}
-	if !util.StringInSlice(serviceAccountUser, privilegedSCCFound.Users) {
-		privilegedSCCFound.Users = append(privilegedSCCFound.Users, serviceAccountUser)
-		if err := r.Update(context.TODO(), privilegedSCCFound); err != nil {
-			return reconcile.Result{}, err
-		} else if err == nil {
-			log.Infof("Updated %s SCC", privilegedSCCFound.Name)
-		}
-	}
+	vaultSCC := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "vault"}, vaultSCC); err != nil {
+		privilegedSCCFound := &securityv1.SecurityContextConstraints{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err == nil {
+			newVaultSCC := privilegedSCCFound.DeepCopy()
+			newVaultSCC.ObjectMeta = metav1.ObjectMeta{}
+			newVaultSCC.Name = "vault"
 
-	vaultSCC := vault.NewVaultSSC(workshop, r.Scheme, "privileged")
-	if err := r.Create(context.TODO(), vaultSCC); err != nil && errors.IsNotFound(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s Vault SCC", vaultSCC.Name)
-	}
-
-	vaultSCCFound := &securityv1.SecurityContextConstraints{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, vaultSCCFound); err != nil {
-		if util.StringInSlice(serviceAccountUser, vaultSCCFound.Users) {
-			log.Infoln("service Account User available ")
-		}
-		vaultSCC.Users = append(vaultSCC.Users, serviceAccountUser)
-		if err := r.Update(context.TODO(), vaultSCC); err != nil {
-			return reconcile.Result{}, err
-		} else if err == nil {
-			log.Infof("Updated %s SCC", vaultSCC.Name)
-		}
-	} else {
-		if !util.StringInSlice(serviceAccountUser, vaultSCCFound.Users) {
-			vaultSCC.Users = append(vaultSCC.Users, serviceAccountUser)
-			if err := r.Update(context.TODO(), vaultSCC); err != nil {
+			if !util.StringInSlice(serviceAccountUser, newVaultSCC.Users) {
+				newVaultSCC.Users = append(newVaultSCC.Users, serviceAccountUser)
+			}
+			if err := r.Create(context.TODO(), newVaultSCC); err != nil && !errors.IsAlreadyExists(err) {
 				return reconcile.Result{}, err
-			} else if err == nil {
-				log.Infof("Updated %s SCC", vaultSCC.Name)
+			} else {
+				log.Infof("Created %s SCC", newVaultSCC.Name)
+			}
+		} else {
+			if !util.StringInSlice(serviceAccountUser, vaultSCC.Users) {
+				vaultSCC.Users = append(vaultSCC.Users, serviceAccountUser)
+				if err := r.Update(context.TODO(), vaultSCC); err != nil {
+					return reconcile.Result{}, err
+				} else {
+					log.Infof("Updated %s SCC", vaultSCC.Name)
+				}
 			}
 		}
 	}
@@ -318,6 +318,14 @@ func (r *WorkshopReconciler) deleteVaultServer(workshop *workshopv1.Workshop) (r
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  VaultServer ClusterRole Binding", clusterRoleBinding.Name)
+
+	vaultSCC := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "vault"}, vaultSCC); err == nil {
+		if err := r.Delete(context.TODO(), vaultSCC); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s vaultSCC ", vaultSCC.Name)
+	}
 
 	// Delete Service Account
 	if err := r.Delete(context.TODO(), serviceAccount); err != nil {
