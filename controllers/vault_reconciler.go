@@ -126,6 +126,35 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 		}
 	}
 
+	vaultSCC := vault.NewVaultSSC(workshop, r.Scheme, "privileged")
+	if err := r.Create(context.TODO(), vaultSCC); err != nil && errors.IsNotFound(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Vault SCC", vaultSCC.Name)
+	}
+
+	vaultSCCFound := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, vaultSCCFound); err != nil {
+		if util.StringInSlice(serviceAccountUser, vaultSCCFound.Users) {
+			log.Infoln("service Account User available ")
+		}
+		vaultSCC.Users = append(vaultSCC.Users, serviceAccountUser)
+		if err := r.Update(context.TODO(), vaultSCC); err != nil {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Updated %s SCC", vaultSCC.Name)
+		}
+	} else {
+		if !util.StringInSlice(serviceAccountUser, vaultSCCFound.Users) {
+			vaultSCC.Users = append(vaultSCC.Users, serviceAccountUser)
+			if err := r.Update(context.TODO(), vaultSCC); err != nil {
+				return reconcile.Result{}, err
+			} else if err == nil {
+				log.Infof("Updated %s SCC", vaultSCC.Name)
+			}
+		}
+	}
+
 	// Create ClusterRole Binding
 	clusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, VAULT_ROLEBINDING_NAME, VAULT_NAMESPACE_NAME,
 		VaultServerLabels, serviceAccount.Name, VAULT_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
