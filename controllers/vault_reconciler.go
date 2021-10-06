@@ -108,7 +108,7 @@ func (r *WorkshopReconciler) addVaultServer(workshop *workshopv1.Workshop) (reco
 	} else if err == nil {
 		log.Infof("Created %s Vault Service Account", serviceAccount.Name)
 	}
-	
+
 	// Create ServiceAccountUser
 	serviceAccountUser := "system:serviceaccount:" + vaultNamespace.Name + ":" + serviceAccount.Name
 
@@ -196,11 +196,36 @@ func (r *WorkshopReconciler) addVaultAgentInjector(workshop *workshopv1.Workshop
 	} else if err == nil {
 		log.Infof("Created %s VaultAgent Service Account", serviceAccount.Name)
 	}
-	// Add Vault ServiceAccountUser to priviliged SCC
-	// TODO: Instead of adding to existing priviliged SCC; create a new one
-	privilegedSCCFound := &securityv1.SecurityContextConstraints{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err != nil {
-		return reconcile.Result{}, err
+
+	// Create ServiceAccountUser
+	serviceAccountUser := "system:serviceaccount:" + vaultNamespace.Name + ":" + serviceAccount.Name
+
+	vaultAgentSCC := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "vault"}, vaultAgentSCC); err != nil {
+		privilegedSCCFound := &securityv1.SecurityContextConstraints{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: "privileged"}, privilegedSCCFound); err == nil {
+			newVaultAgentSCC := privilegedSCCFound.DeepCopy()
+			newVaultAgentSCC.ObjectMeta = metav1.ObjectMeta{}
+			newVaultAgentSCC.Name = "vault"
+
+			if !util.StringInSlice(serviceAccountUser, newVaultAgentSCC.Users) {
+				newVaultAgentSCC.Users = append(newVaultAgentSCC.Users, serviceAccountUser)
+			}
+			if err := r.Create(context.TODO(), newVaultAgentSCC); err != nil && !errors.IsAlreadyExists(err) {
+				return reconcile.Result{}, err
+			} else {
+				log.Infof("Created %s SCC", newVaultAgentSCC.Name)
+			}
+		} else {
+			if !util.StringInSlice(serviceAccountUser, vaultAgentSCC.Users) {
+				vaultAgentSCC.Users = append(vaultAgentSCC.Users, serviceAccountUser)
+				if err := r.Update(context.TODO(), vaultAgentSCC); err != nil {
+					return reconcile.Result{}, err
+				} else {
+					log.Infof("Updated %s SCC", vaultAgentSCC.Name)
+				}
+			}
+		}
 	}
 
 	// Create Cluster Role
@@ -375,6 +400,14 @@ func (r *WorkshopReconciler) deleteVaultAgentInjector(workshop *workshopv1.Works
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s VaultAgent Cluster Role", clusterRole.Name)
+
+	vaultAgentSCC := &securityv1.SecurityContextConstraints{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "vault"}, vaultAgentSCC); err == nil {
+		if err := r.Delete(context.TODO(), vaultAgentSCC); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s vaultAgentSCC ", vaultAgentSCC.Name)
+	}
 
 	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, VAULTAGENT_SERVICEACCOUNT_NAME, VAULT_NAMESPACE_NAME, VaultAgentLabels)
 	// Delete  Service Account
