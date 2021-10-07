@@ -86,40 +86,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	// Handle Cleanup on Deletion
-
-	// Check if the Workshop workshop is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	isWorkshopMarkedToBeDeleted := workshop.GetDeletionTimestamp() != nil
-	if isWorkshopMarkedToBeDeleted {
-		if util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
-			// Run finalization logic for workshopFinalizer. If the
-			// finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
-			if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
-				return ctrl.Result{}, err
-			}
-			_, _ = r.handleDelete(ctx, req, workshop)
-			// Remove workshopFinalizer. Once all finalizers have been
-			// removed, the object will be deleted.
-			controllerutil.RemoveFinalizer(workshop, workshopFinalizer)
-			log.Info("Finalizer removed for workshop" + workshop.ObjectMeta.Name)
-			err := r.Update(ctx, workshop)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-		}
-		return ctrl.Result{}, nil
-	}
-
-	// Add finalizer for this CR
-	if !util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
-		if err := r.addFinalizer(reqLogger, workshop); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
 	//////////////////////////
 	// Variables
 	//////////////////////////
@@ -144,6 +110,40 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	users := workshop.Spec.User.Number
 	if users < 0 {
 		users = 0
+	}
+
+	// Handle Cleanup on Deletion
+
+	// Check if the Workshop workshop is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	isWorkshopMarkedToBeDeleted := workshop.GetDeletionTimestamp() != nil
+	if isWorkshopMarkedToBeDeleted {
+		if util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
+			// Run finalization logic for workshopFinalizer. If the
+			// finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
+				return ctrl.Result{}, err
+			}
+			_, _ = r.handleDelete(ctx, req, workshop, users, appsHostnameSuffix, openshiftConsoleURL)
+			// Remove workshopFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			controllerutil.RemoveFinalizer(workshop, workshopFinalizer)
+			log.Info("Finalizer removed for workshop" + workshop.ObjectMeta.Name)
+			err := r.Update(ctx, workshop)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+		}
+		return ctrl.Result{}, nil
+	}
+
+	// Add finalizer for this CR
+	if !util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
+		if err := r.addFinalizer(reqLogger, workshop); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	//////////////////////////
@@ -246,9 +246,13 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop) (ctrl.Result, error) {
+func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
+
+	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
 
 	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
 		return result, err
