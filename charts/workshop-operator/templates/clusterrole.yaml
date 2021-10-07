@@ -166,7 +166,9 @@ rules:
     resources:
       - securitycontextconstraints
     verbs:
+      - create
       - list
+      - patch
       - update
       - watch
   - apiGroups:
