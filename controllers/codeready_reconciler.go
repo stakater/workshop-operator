@@ -582,26 +582,31 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, appsHostnameSuffix string) (reconcile.Result, error) {
 	log.Infoln("Deleting  CodeReady Workspace")
 	channel := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
-	cheClusterRole :=
-		kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
+	if workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth {
+		log.Infoln("OpenshiftOAuth true")
+		_, result, err := getKeycloakAdminToken(workshop, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
+		if err != nil {
+			return result, err
+		}
+		cheClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, CODEREADY_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
+		// Delete che Cluster Role
+		if err := r.Delete(context.TODO(), cheClusterRole); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s CodeReady Workspace Cluster Role ", cheClusterRole.Name)
 
-	cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
-	// Delete che Cluster RoleBinding
-	if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
-		return reconcile.Result{}, err
+		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CODEREADY_CLUSTE_RROLEBINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CODEREADY_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
+		// Delete che Cluster RoleBinding
+		if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s CodeReady Workspace Cluster RoleBinding ", cheClusterRoleBinding.Name)
 	}
-	log.Infof("Deleted %s CodeReady Workspace Cluster RoleBinding ", cheClusterRoleBinding.Name)
-
-	// Delete che Cluster Role
-	if err := r.Delete(context.TODO(), cheClusterRole); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s CodeReady Workspace Cluster Role ", cheClusterRole.Name)
 
 	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADY_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
 	// Delete codeReadyWorkspaces CustomResource
