@@ -436,10 +436,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.27
+    helm.sh/chart: workshop-operator-0.0.28
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.27"
+    app.kubernetes.io/version: "0.0.28"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -491,6 +491,13 @@ rules:
       - deployments/finalizers
     verbs:
       - update
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - create
+      - delete
   - apiGroups:
       - argoproj.io
     resources:
@@ -609,7 +616,11 @@ rules:
     resources:
       - securitycontextconstraints
     verbs:
+      - create
+      - delete
+      - get
       - list
+      - patch
       - update
       - watch
   - apiGroups:
@@ -755,10 +766,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.27
+    helm.sh/chart: workshop-operator-0.0.28
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.27"
+    app.kubernetes.io/version: "0.0.28"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -778,10 +789,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.27
+    helm.sh/chart: workshop-operator-0.0.28
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.27"
+    app.kubernetes.io/version: "0.0.28"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -818,7 +829,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.27
+          image: docker.io/stakater/workshop-operator:v0.0.28
           name: manager
           resources:
             limits:
