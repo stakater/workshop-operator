@@ -53,7 +53,8 @@ rules:
     resources:
       - statefulsets
     verbs:
-      -  '*'
+      - create
+      - delete
   - apiGroups:
       - argoproj.io
     resources:
