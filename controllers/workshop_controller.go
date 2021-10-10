@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -228,13 +226,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Cert Manager
 	//////////////////////////
 	if result, err := r.reconcileCertManager(workshop, users); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	//////////////////////////
-	// Istio Workspace
-	//////////////////////////
-	if result, err := r.reconcileIstioWorkspace(workshop, users); util.IsRequeued(result, err) {
 		return result, err
 	}
 
