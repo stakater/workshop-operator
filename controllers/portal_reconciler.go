@@ -148,7 +148,7 @@ func (r *WorkshopReconciler) addUpdateUsernameDistribution(workshop *workshopv1.
 func (r *WorkshopReconciler) deletePortal(workshop *workshopv1.Workshop, userID int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
-	if result, err := r.deleteUpdateUsernameDistribution(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+	if result, err := r.deleteUsernameDistribution(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
 		return result, err
 	}
 	if result, err := r.deleteRedis(workshop); util.IsRequeued(result, err) {
@@ -195,7 +195,7 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 }
 
 // delete UsernameDistribution
-func (r *WorkshopReconciler) deleteUpdateUsernameDistribution(workshop *workshopv1.Workshop,
+func (r *WorkshopReconciler) deleteUsernameDistribution(workshop *workshopv1.Workshop,
 	users int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
 	log.Info("Deleting  portal ")
