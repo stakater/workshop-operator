@@ -126,51 +126,6 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 	return reconcile.Result{}, nil
 }
 
-// Delete Manage Roles
-func (r *WorkshopReconciler) deleteManageRoles(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
-
-	users := []rbac.Subject{}
-	userSubject := rbac.Subject{
-		Kind: rbac.UserKind,
-		Name: username,
-	}
-
-	users = append(users, userSubject)
-
-	argocdUsers := []rbac.Subject{}
-	userSubject = rbac.Subject{
-		Kind: rbac.UserKind,
-		Name: "system:serviceaccount:argocd:argocd-argocd-application-controller",
-	}
-	argocdUsers = append(argocdUsers, userSubject)
-
-	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		username+"-argocd", projectName, projectlabels, argocdUsers, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
-	// Delete Argo CD
-	if err := r.Delete(context.TODO(), argocdEditRoleBinding); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Role Binding", argocdEditRoleBinding.Name)
-
-	defaultRoleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, username+"-default", projectName, projectlabels,
-		PROJECT_SERVICEACCOUNT_NAME, VIEW_CLUSTER_ROLE_NAME, KIND_CLUSTER_ROLE)
-	// Delete default Role Binding
-	if err := r.Delete(context.TODO(), defaultRoleBinding); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s project Role Binding", defaultRoleBinding.Name)
-
-	userRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, username+"-project", projectName, projectlabels,
-		users, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
-	// Delete user Role Binding
-	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s project Role Binding", userRoleBinding.Name)
-	log.Infoln("Deleted project successful")
-	//Success
-	return reconcile.Result{}, nil
-}
 
 // Delete Project
 func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
@@ -218,6 +173,53 @@ func (r *WorkshopReconciler) deleteProjectNamespace(workshop *workshopv1.Worksho
 	if result, err := r.deleteManageRoles(workshop, projectNamespace.Name, username); err != nil {
 		return result, err
 	}
+	log.Infoln("Deleted Namespace successfully")
+	//Success
+	return reconcile.Result{}, nil
+}
+
+// Delete Manage Roles
+func (r *WorkshopReconciler) deleteManageRoles(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
+
+	users := []rbac.Subject{}
+	userSubject := rbac.Subject{
+		Kind: rbac.UserKind,
+		Name: username,
+	}
+
+	users = append(users, userSubject)
+
+	argocdUsers := []rbac.Subject{}
+	userSubject = rbac.Subject{
+		Kind: rbac.UserKind,
+		Name: "system:serviceaccount:argocd:argocd-argocd-application-controller",
+	}
+	argocdUsers = append(argocdUsers, userSubject)
+
+	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
+		username+"-argocd", projectName, projectlabels, argocdUsers, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
+	// Delete Argo CD
+	if err := r.Delete(context.TODO(), argocdEditRoleBinding); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Role Binding", argocdEditRoleBinding.Name)
+
+	defaultRoleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, username+"-default", projectName, projectlabels,
+		PROJECT_SERVICEACCOUNT_NAME, VIEW_CLUSTER_ROLE_NAME, KIND_CLUSTER_ROLE)
+	// Delete default Role Binding
+	if err := r.Delete(context.TODO(), defaultRoleBinding); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Role Binding", defaultRoleBinding.Name)
+
+	userRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, username+"-project", projectName, projectlabels,
+		users, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
+	// Delete user Role Binding
+	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Role Binding", userRoleBinding.Name)
+	log.Infoln("Deleted Manage Roles successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
