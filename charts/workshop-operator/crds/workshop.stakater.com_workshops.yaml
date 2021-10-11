@@ -167,25 +167,6 @@ spec:
                         - guideURL
                         type: object
                     type: object
-                  istioWorkspace:
-                    description: IstioWorkspaceSpec ...
-                    properties:
-                      enabled:
-                        type: boolean
-                      operatorHub:
-                        description: OperatorHubSpec ...
-                        properties:
-                          channel:
-                            type: string
-                          clusterServiceVersion:
-                            type: string
-                        required:
-                        - channel
-                        type: object
-                    required:
-                    - enabled
-                    - operatorHub
-                    type: object
                   nexus:
                     description: NexusSpec ...
                     properties:
@@ -380,8 +361,6 @@ spec:
                 type: string
               gitops:
                 type: string
-              istioWorkspace:
-                type: string
               nexus:
                 type: string
               pipeline:
@@ -402,7 +381,6 @@ spec:
             - codeReadyWorkspace
             - gitea
             - gitops
-            - istioWorkspace
             - nexus
             - pipeline
             - project
