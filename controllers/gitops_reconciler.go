@@ -27,18 +27,18 @@ var (
 )
 
 const (
-	ARGOCD_NAMESPACE_NAME           = "argocd"
-	GITOPS_SUBSCRIPTION_NAME         = "openshift-gitops-operator"
-	GITOPS_SUBSCRIPTION_PACKAGE_NAME = "openshift-gitops-operator"
+	ARGOCD_NAMESPACE_NAME             = "argocd"
+	GITOPS_SUBSCRIPTION_NAME          = "openshift-gitops-operator"
+	GITOPS_SUBSCRIPTION_PACKAGE_NAME  = "openshift-gitops-operator"
 	GITOPS_OPERATOR_NAMESPACE_NAME    = "openshift-operators"
 	GITOPS_DEPLOYMENT_STATUS_NAME     = "gitops-operator"
-	GITOPS_ROLE_NAME                 = "argocd-manager"
-	GITOPS_ROLEBINDING_NAME          = "argocd-manager"
+	GITOPS_ROLE_NAME                  = "argocd-manager"
+	GITOPS_ROLEBINDING_NAME           = "argocd-manager"
 	GITOPS_ROLE_KIND_NAME             = "Role"
-	GITOPS_SECRET_NAME           = "argocd-secret"
-	GITOPS_CONFIGMAP_NAME            = "argocd-cm"
+	GITOPS_SECRET_NAME                = "argocd-secret"
+	GITOPS_CONFIGMAP_NAME             = "argocd-cm"
 	GITOPS_ARGOCD_CUSTOMRESOURCE_NAME = "argocd"
-	ARGOCD_DEPLOYMENT_STATUS_NAME           = "argocd-server"
+	ARGOCD_DEPLOYMENT_STATUS_NAME     = "argocd-server"
 )
 
 // Reconciling GitOps
@@ -424,7 +424,7 @@ g, ` + username + `, ` + userRole + `
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Subscription", subscription.Name)
-	log.Infoln("Deleted  successfully")
+	log.Infoln("Deleted Project successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -444,7 +444,7 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Secret", clusterConfigSecret.Name)
-
+	log.Infoln("Deleted Argocd  successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
