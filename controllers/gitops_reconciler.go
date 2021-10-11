@@ -74,12 +74,12 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s GitOps Subscription", subscription.Name)
+		log.Infof("Created %s  Subscription", subscription.Name)
 	}
 
 	// Approve the installation
 	if err := r.ApproveInstallPlan(clusterServiceVersion, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME); err != nil {
-		log.Infof("Waiting for GitOps Subscription to create InstallPlan for %s", GITOPS_SUBSCRIPTION_NAME)
+		log.Infof("Waiting for  Subscription to create InstallPlan for %s", GITOPS_SUBSCRIPTION_NAME)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -93,7 +93,7 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s GitOps Project", namespace.Name)
+		log.Infof("Created %s  Project", namespace.Name)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(workshop.Spec.User.Password), bcrypt.DefaultCost)
@@ -135,7 +135,7 @@ g, ` + username + `, ` + userRole + `
 		if err := r.Create(context.TODO(), appProjectCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s GitOps Custom Resource", appProjectCustomResource.Name)
+			log.Infof("Created %s  Custom Resource", appProjectCustomResource.Name)
 		} else if errors.IsAlreadyExists(err) {
 			customResourceFound := &argocdv1.AppProject{}
 			if err := r.Get(context.TODO(), types.NamespacedName{Name: appProjectCustomResource.Name, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
@@ -146,7 +146,7 @@ g, ` + username + `, ` + userRole + `
 					if err := r.Update(context.TODO(), customResourceFound); err != nil {
 						return reconcile.Result{}, err
 					}
-					log.Infof("Updated %s GitOps Custom Resource", customResourceFound.Name)
+					log.Infof("Updated %s  Custom Resource", customResourceFound.Name)
 				}
 			}
 		}
@@ -165,7 +165,7 @@ g, ` + username + `, ` + userRole + `
 		if err := r.Create(context.TODO(), role); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s GitOps Role in %s namespace", role.Name, projectName)
+			log.Infof("Created %s  Role in %s namespace", role.Name, projectName)
 		}
 
 		roleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
@@ -173,7 +173,7 @@ g, ` + username + `, ` + userRole + `
 		if err := r.Create(context.TODO(), roleBinding); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s GitOps Role Binding in %s namespace", roleBinding.Name, projectName)
+			log.Infof("Created %s  Role Binding in %s namespace", roleBinding.Name, projectName)
 		} else if errors.IsAlreadyExists(err) {
 			found := &rbac.RoleBinding{}
 			if err := r.Get(context.TODO(), types.NamespacedName{Name: roleBinding.Name, Namespace: projectName}, found); err != nil {
@@ -184,7 +184,7 @@ g, ` + username + `, ` + userRole + `
 					if err := r.Update(context.TODO(), found); err != nil {
 						return reconcile.Result{}, err
 					}
-					log.Infof("Updated %s GitOps Role Binding in %s namespace", found.Name, projectName)
+					log.Infof("Updated %s  Role Binding in %s namespace", found.Name, projectName)
 				}
 			}
 		}
@@ -195,7 +195,7 @@ g, ` + username + `, ` + userRole + `
 	if err := r.Create(context.TODO(), secret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s GitOpsSecret", secret.Name)
+		log.Infof("Created %s  Secret", secret.Name)
 		// } else if errors.IsAlreadyExists(err) {
 		// 	secretFound := &corev1.Secret{}
 		// 	if err := r.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: namespace.Name}, secretFound); err != nil {
@@ -216,7 +216,7 @@ g, ` + username + `, ` + userRole + `
 	if err := r.Create(context.TODO(), configmap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s GitOps ConfigMap", configmap.Name)
+		log.Infof("Created %s  ConfigMap", configmap.Name)
 	} else if errors.IsAlreadyExists(err) {
 		configmapFound := &corev1.ConfigMap{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: configmap.Name, Namespace: namespace.Name}, configmapFound); err != nil {
@@ -227,7 +227,7 @@ g, ` + username + `, ` + userRole + `
 				if err := r.Update(context.TODO(), configmapFound); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s GitOps ConfigMap", configmapFound.Name)
+				log.Infof("Updated %s  ConfigMap", configmapFound.Name)
 			}
 		}
 	}
@@ -237,7 +237,7 @@ g, ` + username + `, ` + userRole + `
 	if err := r.Create(context.TODO(), argoCDCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s GitOps Custom Resource", argoCDCustomResource.Name)
+		log.Infof("Created %s  Custom Resource", argoCDCustomResource.Name)
 	} else if errors.IsAlreadyExists(err) {
 		customResourceFound := &argocdoperatorv1.ArgoCD{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: namespace.Name}, customResourceFound); err != nil {
@@ -248,7 +248,7 @@ g, ` + username + `, ` + userRole + `
 				if err := r.Update(context.TODO(), customResourceFound); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s GitOps Custom Resource", customResourceFound.Name)
+				log.Infof("Updated %s  Custom Resource", customResourceFound.Name)
 			}
 		}
 	}
@@ -336,7 +336,7 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s argoCD Custom Resource", argoCDCustomResource.Name)
+	log.Infof("Deleted %s  Custom Resource", argoCDCustomResource.Name)
 
 	labels["app.kubernetes.io/name"] = "argocd-cm"
 	configmap := kubernetes.NewConfigMap(workshop, r.Scheme, GITOPS_CONFIGMAP_NAME, ARGOCD_NAMESPACE_NAME, labels, configMapData)
@@ -344,7 +344,7 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	if err := r.Delete(context.TODO(), configmap); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s argoCD Configmap", configmap.Name)
+	log.Infof("Deleted %s  Configmap", configmap.Name)
 
 	labels["app.kubernetes.io/name"] = "argocd-secret"
 	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, GITOPS_SECRET_NAME, ARGOCD_NAMESPACE_NAME, labels, secretData)
@@ -352,7 +352,7 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	if err := r.Delete(context.TODO(), secret); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s argoCD Secret", secret.Name)
+	log.Infof("Deleted %s  Secret", secret.Name)
 
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprintf("user%d", id)
@@ -393,13 +393,13 @@ g, ` + username + `, ` + userRole + `
 		if err := r.Delete(context.TODO(), roleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s GitOps Role Binding  in %s namespace", roleBinding.Name, projectName)
+		log.Infof("Deleted %s  Role Binding  in %s namespace", roleBinding.Name, projectName)
 
 		// Delete role
 		if err := r.Delete(context.TODO(), role); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s GitOps role in %s namespace ", role.Name, projectName)
+		log.Infof("Deleted %s  role in %s namespace ", role.Name, projectName)
 
 		labels["app.kubernetes.io/name"] = "appproject-cr"
 		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
@@ -407,7 +407,7 @@ g, ` + username + `, ` + userRole + `
 		if err := r.Delete(context.TODO(), appProjectCustomResource); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s GitOps appProject Custom Resource ", appProjectCustomResource.Name)
+		log.Infof("Deleted %s  appProject Custom Resource ", appProjectCustomResource.Name)
 	}
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
@@ -415,7 +415,7 @@ g, ` + username + `, ` + userRole + `
 	if err := r.Delete(context.TODO(), namespace); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s GitOpsProject", namespace.Name)
+	log.Infof("Deleted %s  Project", namespace.Name)
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME,
 		GITOPS_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
@@ -423,8 +423,8 @@ g, ` + username + `, ` + userRole + `
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s GitOps Subscription", subscription.Name)
-	log.Infoln("Deleted GitOps successful")
+	log.Infof("Deleted %s  Subscription", subscription.Name)
+	log.Infoln("Deleted  successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -443,7 +443,7 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 	if err := r.Delete(context.TODO(), clusterConfigSecret); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Argocd Secret", clusterConfigSecret.Name)
+	log.Infof("Deleted %s  Secret", clusterConfigSecret.Name)
 
 	//Success
 	return reconcile.Result{}, nil
