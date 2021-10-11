@@ -20,10 +20,11 @@ var projectlabels = map[string]string{
 }
 
 const (
-	PROJECT_ROLEBINDING_USER_NAME = "edit"
-	PROJECT_SERVICEACCOUNT_NAME   = "default"
-	VIEW_CLUSTER_ROLE_NAME        = "view"
-	KIND_CLUSTER_ROLE             = "ClusterRole"
+	USER_ROLEBINDING_ROLE_NAME   = "edit"
+	ARGOCD_ROLEBINDING_ROLE_NAME = "edit"
+	PROJECT_SERVICEACCOUNT_NAME  = "default"
+	VIEW_CLUSTER_ROLE_NAME       = "view"
+	KIND_CLUSTER_ROLE            = "ClusterRole"
 )
 
 // Reconciling Project
@@ -90,7 +91,7 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 
 	// User
 	userRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, username+"-project", projectName, projectlabels,
-		users, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
+		users, USER_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -115,7 +116,7 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 
 	//Argo CD
 	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		username+"-argocd", projectName, projectlabels, argocdUsers, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
+		username+"-argocd", projectName, projectlabels, argocdUsers, ARGOCD_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), argocdEditRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -125,7 +126,6 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 	//Success
 	return reconcile.Result{}, nil
 }
-
 
 // Delete Project
 func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
@@ -197,7 +197,7 @@ func (r *WorkshopReconciler) deleteManageRoles(workshop *workshopv1.Workshop, pr
 	argocdUsers = append(argocdUsers, userSubject)
 
 	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		username+"-argocd", projectName, projectlabels, argocdUsers, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
+		username+"-argocd", projectName, projectlabels, argocdUsers, ARGOCD_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	// Delete Argo CD
 	if err := r.Delete(context.TODO(), argocdEditRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -213,7 +213,7 @@ func (r *WorkshopReconciler) deleteManageRoles(workshop *workshopv1.Workshop, pr
 	log.Infof("Deleted %s Role Binding", defaultRoleBinding.Name)
 
 	userRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, username+"-project", projectName, projectlabels,
-		users, PROJECT_ROLEBINDING_USER_NAME, KIND_CLUSTER_ROLE)
+		users, USER_ROLEBINDING_ROLE_NAME, KIND_CLUSTER_ROLE)
 	// Delete user Role Binding
 	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
 		return reconcile.Result{}, err
