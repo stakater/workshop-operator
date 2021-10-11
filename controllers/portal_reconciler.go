@@ -18,11 +18,12 @@ import (
 )
 
 const (
-	REDIS_PERSISTENT_VOLUMECLAIM = "512Mi"
-	REDIS_DEPLOYMENT_NAME        = "redis"
-	REDIS_SERVICE_NAME           = "redis"
-	PORTAL_SERVICE_NAME          = "portal"
-	REDIS_ROUTE_PORT             = 8080
+	REDIS_PERSISTENT_VOLUMECLAIM  = "512Mi"
+	REDIS_PERSISTENT_VOLUME_CLAIM = "512Mi"
+	REDIS_DEPLOYMENT_NAME         = "redis"
+	REDIS_SERVICE_NAME            = "redis"
+	PORTAL_SERVICE_NAME           = "portal"
+	REDIS_ROUTE_PORT              = 8080
 )
 
 var RedisLabels = map[string]string{
@@ -59,7 +60,7 @@ func (r *WorkshopReconciler) addRedis(workshop *workshopv1.Workshop) (reconcile.
 		log.Infof("Created %s Secret", secret.Name)
 	}
 
-	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUMECLAIM)
+	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUME_CLAIM)
 	if err := r.Create(context.TODO(), persistentVolumeClaim); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -175,7 +176,7 @@ func (r *WorkshopReconciler) deleteRedis(workshop *workshopv1.Workshop) (reconci
 	}
 	log.Infof("Deleted %s Deployment ", dep.Name)
 
-	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUMECLAIM)
+	persistentVolumeClaim := kubernetes.NewPersistentVolumeClaim(workshop, r.Scheme, REDIS_SERVICE_NAME, workshop.Namespace, RedisLabels, REDIS_PERSISTENT_VOLUME_CLAIM)
 	// Delete persistentVolume Claim
 	if err := r.Delete(context.TODO(), persistentVolumeClaim); err != nil {
 		return reconcile.Result{}, err
