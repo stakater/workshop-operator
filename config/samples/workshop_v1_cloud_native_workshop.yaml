@@ -39,7 +39,7 @@ spec:
         name: quay.io/mcouliba/nexus-operator
         tag: v0.10      
     vault: 
-      enabled: false
+      enabled: true
       image: 
         name: hashicorp/vault
         tag: 1.8.2

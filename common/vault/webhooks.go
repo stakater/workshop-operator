@@ -19,6 +19,9 @@ func NewAgentInjectorWebHook(namespace string) []admissionregistration.MutatingW
 					Path:      &path,
 				},
 			},
+			SideEffects:             sideEffect(),
+			FailurePolicy:           failurePolicy(),
+			AdmissionReviewVersions: []string{"v1"},
 			Rules: []admissionregistration.RuleWithOperations{
 				{
 					Operations: []admissionregistration.OperationType{
@@ -40,4 +43,14 @@ func NewAgentInjectorWebHook(namespace string) []admissionregistration.MutatingW
 			},
 		},
 	}
+}
+
+func sideEffect() *admissionregistration.SideEffectClass {
+	sideEffectClass := admissionregistration.SideEffectClassNoneOnDryRun
+	return &sideEffectClass
+}
+
+func failurePolicy() *admissionregistration.FailurePolicyType {
+	failurePolicyType := admissionregistration.Ignore
+	return &failurePolicyType
 }
