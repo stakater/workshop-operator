@@ -24,7 +24,7 @@ const (
 	PORTAL_SERVICE_NAME    = "portal"
 	PORTAL_DEPLOYMENT_NAME = "portal"
 	PORTAL_ROUTE_NAME      = "portal"
-	PORTAL_ROUTE_PORT       = 8080
+	PORTAL_ROUTE_PORT      = 8080
 )
 
 var RedisLabels = map[string]string{

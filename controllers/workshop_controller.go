@@ -111,7 +111,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		users = 0
 	}
 
-
 	// Check if the Workshop workshop is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isWorkshopMarkedToBeDeleted := workshop.GetDeletionTimestamp() != nil
@@ -123,7 +122,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
 				return ctrl.Result{}, err
 			}
-			_, _ = r.handleDelete(ctx, req, workshop,  users, appsHostnameSuffix, openshiftConsoleURL )
+			_, _ = r.handleDelete(ctx, req, workshop, users, appsHostnameSuffix, openshiftConsoleURL)
 
 			// Remove workshopFinalizer. Once all finalizers have been
 			// removed, the object will be deleted.
@@ -243,8 +242,8 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
 
 	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
-    return result, err
-  }
+		return result, err
+	}
 
 	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
 
