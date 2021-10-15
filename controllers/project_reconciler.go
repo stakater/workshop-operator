@@ -136,7 +136,7 @@ func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users 
 		username := fmt.Sprintf("user%d", id)
 		stagingProjectName := fmt.Sprintf("%s%d", workshop.Spec.Infrastructure.Project.StagingName, id)
 
-		if id <= users && enabledProject {
+		if id >= users && enabledProject {
 			// Project
 			if workshop.Spec.Infrastructure.Project.StagingName != "" {
 				if result, err := r.deleteProjectNamespace(workshop, stagingProjectName, username); util.IsRequeued(result, err) {
@@ -149,10 +149,11 @@ func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users 
 			stagingProjectNamespaceFound := &corev1.Namespace{}
 			stagingProjectNamespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: stagingProjectNamespace.Name}, stagingProjectNamespaceFound)
 
-			if stagingProjectNamespaceErr == nil {
+			if stagingProjectNamespaceErr != nil && errors.IsNotFound(stagingProjectNamespaceErr) {
 				break
 			}
 		}
+
 		id++
 	}
 
@@ -164,15 +165,17 @@ func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users 
 func (r *WorkshopReconciler) deleteProjectNamespace(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
 
 	projectNamespace := kubernetes.NewNamespace(workshop, r.Scheme, projectName)
+
+	if result, err := r.deleteManageRoles(workshop, projectNamespace.Name, username); err != nil {
+		return result, err
+	}
+
 	// Delete a Project
 	if err := r.Delete(context.TODO(), projectNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Project Namespace ", projectNamespace.Name)
 
-	if result, err := r.deleteManageRoles(workshop, projectNamespace.Name, username); err != nil {
-		return result, err
-	}
 	log.Infoln("Deleted Namespace successfully")
 	//Success
 	return reconcile.Result{}, nil
