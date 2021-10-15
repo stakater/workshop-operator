@@ -419,11 +419,19 @@ g, ` + username + `, ` + userRole + `
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME,
 		GITOPS_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
+	gitopsCSV := subscription.Spec.StartingCSV
 	// Delete subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Subscription", subscription.Name)
+
+	operatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, gitopsCSV, GITOPS_OPERATOR_NAMESPACE_NAME)
+	if err := r.Delete(context.TODO(), operatorCSV); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s  ClusterServiceVersion", operatorCSV.Name)
+
 	log.Infoln("Deleted Project successfully")
 	//Success
 	return reconcile.Result{}, nil
