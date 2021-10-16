@@ -3,21 +3,20 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"reflect"
-
 	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocdv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/argocd"
 	"github.com/stakater/workshop-operator/common/kubernetes"
+	"github.com/stakater/workshop-operator/common/util"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
-
-	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -432,6 +431,22 @@ g, ` + username + `, ` + userRole + `
 	}
 	log.Infof("Deleted %s  Project", namespace.Name)
 
+	// removing kubernetes finalizers from ArgoCD namespace
+	updateNamespace := &corev1.Namespace{}
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, updateNamespace); err != nil {
+			return err
+		}
+		updateNamespace.Spec.Finalizers = nil
+		if err := r.Update(context.TODO(), updateNamespace); err != nil {
+			return err
+		}
+		log.Infof("Updated %s  Project", updateNamespace.Name)
+		return nil
+	})
+	if err != nil {
+		log.Errorf("Failed to Update Argocd project %v", err)
+	}
 
 	log.Infoln("Deleted Project successfully")
 	//Success
