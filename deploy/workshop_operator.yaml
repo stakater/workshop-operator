@@ -173,25 +173,6 @@ spec:
                         - guideURL
                         type: object
                     type: object
-                  istioWorkspace:
-                    description: IstioWorkspaceSpec ...
-                    properties:
-                      enabled:
-                        type: boolean
-                      operatorHub:
-                        description: OperatorHubSpec ...
-                        properties:
-                          channel:
-                            type: string
-                          clusterServiceVersion:
-                            type: string
-                        required:
-                        - channel
-                        type: object
-                    required:
-                    - enabled
-                    - operatorHub
-                    type: object
                   nexus:
                     description: NexusSpec ...
                     properties:
@@ -386,8 +367,6 @@ spec:
                 type: string
               gitops:
                 type: string
-              istioWorkspace:
-                type: string
               nexus:
                 type: string
               pipeline:
@@ -408,7 +387,6 @@ spec:
             - codeReadyWorkspace
             - gitea
             - gitops
-            - istioWorkspace
             - nexus
             - pipeline
             - project
@@ -436,10 +414,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.26
+    helm.sh/chart: workshop-operator-0.0.30
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.26"
+    app.kubernetes.io/version: "0.0.30"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -491,6 +469,13 @@ rules:
       - deployments/finalizers
     verbs:
       - update
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - create
+      - delete
   - apiGroups:
       - argoproj.io
     resources:
@@ -609,7 +594,11 @@ rules:
     resources:
       - securitycontextconstraints
     verbs:
+      - create
+      - delete
+      - get
       - list
+      - patch
       - update
       - watch
   - apiGroups:
@@ -755,10 +744,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.26
+    helm.sh/chart: workshop-operator-0.0.30
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.26"
+    app.kubernetes.io/version: "0.0.30"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -778,10 +767,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.26
+    helm.sh/chart: workshop-operator-0.0.30
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.26"
+    app.kubernetes.io/version: "0.0.30"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -818,7 +807,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.26
+          image: docker.io/stakater/workshop-operator:v0.0.30
           name: manager
           resources:
             limits:

@@ -410,13 +410,6 @@ g, ` + username + `, ` + userRole + `
 		log.Infof("Deleted %s  appProject Custom Resource ", appProjectCustomResource.Name)
 	}
 
-	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
-	// Delete a Project
-	if err := r.Delete(context.TODO(), namespace); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s  Project", namespace.Name)
-
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME,
 		GITOPS_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
 	gitopsCSV := subscription.Spec.StartingCSV
@@ -431,6 +424,14 @@ g, ` + username + `, ` + userRole + `
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  ClusterServiceVersion", operatorCSV.Name)
+
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
+	// Delete a Project
+	if err := r.Delete(context.TODO(), namespace); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s  Project", namespace.Name)
+
 
 	log.Infoln("Deleted Project successfully")
 	//Success

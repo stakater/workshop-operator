@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -112,8 +110,8 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if users < 0 {
 		users = 0
 	}
-
 	// Handle Cleanup on Deletion
+
 
 	// Check if the Workshop workshop is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -231,13 +229,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return result, err
 	}
 
-	//////////////////////////
-	// Istio Workspace
-	//////////////////////////
-	if result, err := r.reconcileIstioWorkspace(workshop, users); util.IsRequeued(result, err) {
-		return result, err
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -256,6 +247,15 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	}
 
 	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
+
 		return result, err
 	}
 
