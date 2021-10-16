@@ -23,7 +23,6 @@ const (
 	EDIT_CLUSTER_ROLE_NAME      = "edit"
 	PROJECT_SERVICEACCOUNT_NAME = "default"
 	VIEW_CLUSTER_ROLE_NAME      = "view"
-	KIND_CLUSTER_ROLE           = "ClusterRole"
 )
 
 // Reconciling Project
