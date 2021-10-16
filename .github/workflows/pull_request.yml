@@ -31,6 +31,10 @@ jobs:
       with:
         go-version: ${{ env.GOLANG_VERSION }}
 
+    - name: Go mod vendor
+      run: |
+        GO111MODULE=on go mod vendor
+        
     - name: Lint
       uses: golangci/golangci-lint-action@v2.3.0
       with:
