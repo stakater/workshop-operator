@@ -31,10 +31,9 @@ jobs:
         with:
           go-version: ${{ env.GOLANG_VERSION }}
 
-      - name: Go mod tidy
+      - name: Cache Clean
         run: |
-          go clean -modcache
-          go mod tidy
+          golangci-lint cache clean
 
       - name: Lint
         uses: golangci/golangci-lint-action@v2.3.0
@@ -46,3 +45,4 @@ jobs:
           skip-build-cache: true
 
 
+        golangci-lint cache clean
