@@ -12,6 +12,7 @@ env:
   KUBERNETES_VERSION: "1.20.2"
   KIND_VERSION: "0.10.0"
   GO111MODULE: on
+  CGO_ENABLED : 0
 
 jobs:
   build:
@@ -29,10 +30,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GOLANG_VERSION }}
-
-      - name: Go mod vendor
-        run: |
-          go mod vendor
 
       - name: Lint
         uses: golangci/golangci-lint-action@v2.3.0
