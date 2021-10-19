@@ -438,13 +438,18 @@ g, ` + username + `, ` + userRole + `
 			return err
 		}
 		updateNamespace.Spec.Finalizers = nil
-		log.Infof("value of finalizers %v", updateNamespace.Spec.Finalizers)
-		//log.Infof("value of finalizers before  update %v", updateNamespace.Spec.Finalizers)
+		log.Infof("value of finalizers before  delete %v", updateNamespace.Spec.Finalizers)
+		namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
+		// Delete a Project
+		if err := r.Delete(context.TODO(), namespace); err != nil {
+			return err
+		}
+		log.Infof("value of finalizers after delete %v", updateNamespace.Spec.Finalizers)
+		log.Infof("Deleted %s  Project", namespace.Name)
 		//if err := r.Update(context.TODO(), updateNamespace); err != nil {
 		//	return err
 		//}
-		//log.Infof("value of finalizers after update %v", updateNamespace.Spec.Finalizers)
-		log.Infof("Updated %s  Project", updateNamespace.Name)
+		//log.Infof("Updated %s  Project", updateNamespace.Name)
 		return nil
 	})
 	if err != nil {
