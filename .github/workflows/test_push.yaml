@@ -31,9 +31,11 @@ jobs:
         with:
           go-version: ${{ env.GOLANG_VERSION }}
 
-      - name: Cache Clean
+      - name: Set up Go module
         run: |
-          golangci-lint cache clean
+          go clean -modcache
+          go mod vendor
+          go mod tidy
 
       - name: Lint
         uses: golangci/golangci-lint-action@v2.3.0
