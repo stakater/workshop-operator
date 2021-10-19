@@ -438,14 +438,17 @@ g, ` + username + `, ` + userRole + `
 			return err
 		}
 		updateNamespace.Spec.Finalizers = nil
-		if err := r.Update(context.TODO(), updateNamespace); err != nil {
-			return err
-		}
+		log.Infof("value of finalizers %v", updateNamespace.Spec.Finalizers)
+		//log.Infof("value of finalizers before  update %v", updateNamespace.Spec.Finalizers)
+		//if err := r.Update(context.TODO(), updateNamespace); err != nil {
+		//	return err
+		//}
+		//log.Infof("value of finalizers after update %v", updateNamespace.Spec.Finalizers)
 		log.Infof("Updated %s  Project", updateNamespace.Name)
 		return nil
 	})
 	if err != nil {
-		log.Errorf("Failed to Update Argocd project %v", err)
+		log.Errorf("Failed to Update project %v", err)
 	}
 
 	log.Infoln("Deleted Project successfully")
