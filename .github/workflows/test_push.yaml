@@ -31,11 +31,6 @@ jobs:
         with:
           go-version: ${{ env.GOLANG_VERSION }}
 
-      - name: Set up Go module
-        run: |
-          go clean -modcache
-          go mod vendor
-
       - name: Lint
         uses: golangci/golangci-lint-action@v2.3.0
         with:
