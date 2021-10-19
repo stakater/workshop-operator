@@ -15,8 +15,8 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -431,30 +431,18 @@ g, ` + username + `, ` + userRole + `
 	}
 	log.Infof("Deleted %s  Project", namespace.Name)
 
-	// removing kubernetes finalizers from ArgoCD namespace
 	updateNamespace := &corev1.Namespace{}
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, updateNamespace); err != nil {
-			return err
-		}
-		updateNamespace.Spec.Finalizers = nil
-		log.Infof("value of finalizers before  delete %v", updateNamespace.Spec.Finalizers)
-		namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
-		// Delete a Project
-		if err := r.Delete(context.TODO(), namespace); err != nil {
-			return err
-		}
-		log.Infof("value of finalizers after delete %v", updateNamespace.Spec.Finalizers)
-		log.Infof("Deleted %s  Project", namespace.Name)
-		//if err := r.Update(context.TODO(), updateNamespace); err != nil {
-		//	return err
-		//}
-		//log.Infof("Updated %s  Project", updateNamespace.Name)
-		return nil
-	})
-	if err != nil {
-		log.Errorf("Failed to Update project %v", err)
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, updateNamespace); err != nil {
+		return reconcile.Result{}, err
 	}
+	// removing kubernetes finalizers from ArgoCD namespace
+	patch := client.MergeFrom(updateNamespace.DeepCopy())
+	updateNamespace.Spec.Finalizers = nil
+	err = r.Patch(context.TODO(), updateNamespace, patch)
+	if err != nil {
+		log.Errorf("Failed to patch project %v", err)
+	}
+
 
 	log.Infoln("Deleted Project successfully")
 	//Success
