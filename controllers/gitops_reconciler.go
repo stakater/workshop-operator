@@ -432,16 +432,24 @@ g, ` + username + `, ` + userRole + `
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Project", namespace.Name)
+	namespaceFound := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, namespaceFound); err != nil {
+		return reconcile.Result{}, err
+	}
 
-	customResourceFound := &argocdoperatorv1.ArgoCD{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: GITOPS_ARGOCD_CUSTOMRESOURCE_NAME, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
-		return reconcile.Result{}, err
+	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
+		customResourceFound := &argocdoperatorv1.ArgoCD{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: GITOPS_ARGOCD_CUSTOMRESOURCE_NAME, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
+			return reconcile.Result{}, err
+		}
+
+		patch := client.MergeFrom(customResourceFound.DeepCopy())
+		customResourceFound.Finalizers = nil
+		if err := r.Patch(context.TODO(), customResourceFound, patch); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
-	patch := client.MergeFrom(customResourceFound.DeepCopy())
-	customResourceFound.Finalizers = nil
-	if err := r.Patch(context.TODO(), customResourceFound, patch); err != nil {
-		return reconcile.Result{}, err
-	}
+
 
 	log.Infoln("Deleted Project successfully")
 	//Success
