@@ -436,14 +436,22 @@ g, ` + username + `, ` + userRole + `
 		return reconcile.Result{}, err
 	}
 	// removing kubernetes finalizers from ArgoCD namespace
-	patch := client.MergeFrom(updateNamespace.DeepCopy())
-	updateNamespace.Spec.Finalizers = nil
-	err = r.Patch(context.TODO(), updateNamespace, patch)
-	if err != nil {
-		log.Errorf("Failed to patch project %v", err)
+	if namespace.Spec.Finalizers != nil {
+		log.Infof("value of finalizers before patch %v", namespace.Spec.Finalizers)
+		patch := client.MergeFrom(namespace.DeepCopy())
+		Finalizers := namespace.Spec.Finalizers
+		for index, val := range Finalizers {
+			log.Infoln("value of finalizers", index, val)
+		}
+		namespace.Spec.Finalizers[0] = ""
+		if err := r.Patch(context.TODO(), namespace, patch); err != nil {
+			return reconcile.Result{}, err
+		}
+		for index, val := range Finalizers {
+			log.Infoln("value of finalizers", index, val)
+		}
+		log.Infof("value of finalizers after patch %v", namespace.Spec.Finalizers)
 	}
-
-
 	log.Infoln("Deleted Project successfully")
 	//Success
 	return reconcile.Result{}, nil
