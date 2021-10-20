@@ -112,7 +112,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	// Handle Cleanup on Deletion
 
-
 	// Check if the Workshop workshop is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
 	isWorkshopMarkedToBeDeleted := workshop.GetDeletionTimestamp() != nil
