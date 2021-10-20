@@ -468,7 +468,6 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Secret", clusterConfigSecret.Name)
-	log.Infoln("Deleted Argocd  successfully")
 	//Success
 	return reconcile.Result{}, nil
 }
