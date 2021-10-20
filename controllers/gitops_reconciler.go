@@ -3,20 +3,22 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocdv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/argocd"
 	"github.com/stakater/workshop-operator/common/kubernetes"
-	"github.com/stakater/workshop-operator/common/util"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
+
+	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -331,14 +333,6 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 
 	labels["app.kubernetes.io/name"] = "argocd-cr"
 	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, GITOPS_ARGOCD_CUSTOMRESOURCE_NAME, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
-	customResourceFound := &argocdoperatorv1.ArgoCD{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
-		return reconcile.Result{}, err
-	}
-	if err := r.Delete(context.TODO(), customResourceFound); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	// Delete argoCD Custom Resource
 	if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil {
 		return reconcile.Result{}, err
@@ -433,33 +427,22 @@ g, ` + username + `, ` + userRole + `
 	log.Infof("Deleted %s  ClusterServiceVersion", operatorCSV.Name)
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
-	//Delete a Project
+	// Delete a Project
 	if err := r.Delete(context.TODO(), namespace); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Project", namespace.Name)
 
-	namespaceFound := &corev1.Namespace{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, namespaceFound); err != nil {
+	customResourceFound := &argocdoperatorv1.ArgoCD{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: GITOPS_ARGOCD_CUSTOMRESOURCE_NAME, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Get  %s  Project", namespace.Name)
-	Finalizers := namespaceFound.Spec.Finalizers
-	for index, val := range Finalizers {
-		log.Infof("value of finalizers index %v, value %v", index, val)
+	patch := client.MergeFrom(customResourceFound.DeepCopy())
+	customResourceFound.Finalizers = nil
+	if err := r.Patch(context.TODO(), customResourceFound, patch); err != nil {
+		return reconcile.Result{}, err
 	}
 
-	// removing kubernetes finalizers from ArgoCD namespace
-	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
-		patch := client.MergeFrom(namespaceFound.DeepCopy())
-		namespaceFound.Spec.Finalizers[0] = ""
-		if err := r.Patch(context.TODO(), namespaceFound, patch); err != nil {
-			return reconcile.Result{}, err
-		}
-		for index, val := range Finalizers {
-			log.Infof("value of finalizers index %v, value %v", index, val)
-		}
-	}
 	log.Infoln("Deleted Project successfully")
 	//Success
 	return reconcile.Result{}, nil
