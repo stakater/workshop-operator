@@ -425,28 +425,32 @@ g, ` + username + `, ` + userRole + `
 	log.Infof("Deleted %s  ClusterServiceVersion", operatorCSV.Name)
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
-	// Delete a Project
+	//Delete a Project
 	if err := r.Delete(context.TODO(), namespace); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Project", namespace.Name)
 
+	namespaceFound := &corev1.Namespace{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, namespaceFound); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Get  %s  Project", namespace.Name)
+	Finalizers := namespaceFound.Spec.Finalizers
+	for index, val := range Finalizers {
+		log.Infof("value of finalizers index %v, value %v", index, val)
+	}
+
 	// removing kubernetes finalizers from ArgoCD namespace
-	if namespace.Spec.Finalizers[0] == "kubernetes" {
-		Finalizers := namespace.Spec.Finalizers
-		log.Infof("value of finalizers before patch %v", namespace.Spec.Finalizers[0])
-		for index, val := range Finalizers {
-			log.Infoln("value of finalizers", index, val)
-		}
-		patch := client.MergeFrom(namespace.DeepCopy())
-		namespace.Spec.Finalizers[0] = ""
-		if err := r.Patch(context.TODO(), namespace, patch); err != nil {
+	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
+		patch := client.MergeFrom(namespaceFound.DeepCopy())
+		namespaceFound.Spec.Finalizers[0] = ""
+		if err := r.Patch(context.TODO(), namespaceFound, patch); err != nil {
 			return reconcile.Result{}, err
 		}
 		for index, val := range Finalizers {
-			log.Infoln("value of finalizers", index, val)
+			log.Infof("value of finalizers index %v, value %v", index, val)
 		}
-		log.Infof("value of finalizers after patch %v", namespace.Spec.Finalizers[0])
 	}
 	log.Infoln("Deleted Project successfully")
 	//Success
