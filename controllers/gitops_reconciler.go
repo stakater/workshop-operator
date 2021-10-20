@@ -431,12 +431,14 @@ g, ` + username + `, ` + userRole + `
 	}
 	log.Infof("Deleted %s  Project", namespace.Name)
 
-	updateNamespace := &corev1.Namespace{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, updateNamespace); err != nil {
+	namespaceFound := &corev1.Namespace{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, namespaceFound); err != nil {
+		log.Errorf("Failed to get namespace %s", err)
 		return reconcile.Result{}, err
 	}
+
 	// removing kubernetes finalizers from ArgoCD namespace
-	if namespace.Spec.Finalizers != nil {
+	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
 		log.Infof("value of finalizers before patch %v", namespace.Spec.Finalizers)
 		patch := client.MergeFrom(namespace.DeepCopy())
 		Finalizers := namespace.Spec.Finalizers
