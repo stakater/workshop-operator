@@ -331,6 +331,14 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 
 	labels["app.kubernetes.io/name"] = "argocd-cr"
 	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, GITOPS_ARGOCD_CUSTOMRESOURCE_NAME, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
+	customResourceFound := &argocdoperatorv1.ArgoCD{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
+		return reconcile.Result{}, err
+	}
+	if err := r.Delete(context.TODO(), customResourceFound); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	// Delete argoCD Custom Resource
 	if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil {
 		return reconcile.Result{}, err
