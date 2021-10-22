@@ -49,6 +49,13 @@ rules:
   verbs:
   - update
 - apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+- apiGroups:
   - argoproj.io
   resources:
   - appprojects
@@ -166,7 +173,11 @@ rules:
   resources:
   - securitycontextconstraints
   verbs:
+  - create
+  - delete
+  - get
   - list
+  - patch
   - update
   - watch
 - apiGroups:
