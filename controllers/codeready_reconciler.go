@@ -45,9 +45,9 @@ const (
 	CODEREADY_CUSTOM_RESOURCE_NAME       = "codereadyworkspaces"
 	CODEREADY_DEPLOYMENT_STATUS_NAME     = "codeready"
 	CHE_CLUSTER_ROLE_NAME                = "che"
-	CHE_CLUSTE_RROLE_BINDING_NAME   = "che"
-	CHE_SERVICEACCOUNT_NAME        = "che"
-	CHE_CODE_FLAVOR_NAME            = "codeready"
+	CHE_CLUSTE_RROLE_BINDING_NAME        = "che"
+	CHE_SERVICEACCOUNT_NAME              = "che"
+	CHE_CODE_FLAVOR_NAME                 = "codeready"
 )
 
 // Reconciling CodeReadyWorkspace
@@ -581,16 +581,27 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, appsHostnameSuffix string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Workshop, users int, appsHostnameSuffix string) (reconcile.Result, error) {
 	log.Infoln("Deleting  CodeReady Workspace")
 	channel := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.CodeReadyWorkspace.OperatorHub.ClusterServiceVersion
 
-	if workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth {
+	if !workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth {
 		log.Infoln("OpenshiftOAuth true")
-		_, result, err := getKeycloakAdminToken(workshop, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
-		if err != nil {
-			return result, err
+
+		for id := 1; id <= users; id++ {
+			log.Infoln("user for loop")
+			username := fmt.Sprintf("user%d", id)
+
+			//userAccessToken, result, err := getOAuthUserToken(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
+			//if err != nil {
+			//	return result, err
+			//}
+			log.Infoln("getUserToken function call")
+			_, result, err := getUserToken(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
+			if err != nil {
+				return result, err
+			}
 		}
 		cheClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
 		// Delete che Cluster Role
