@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"reflect"
 
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
@@ -20,31 +19,31 @@ import (
 )
 
 const (
-	ELASTICSEARCHOPERATORNAMESPACENAME    = "openshift-operators-redhat"
-	ELASTICSEARCHOPERATORSUBSCRIPTIONNAME = "openshift-operators-redhat"
-	ELASTICSEARCHOPERATORPACKAGENAME      = "elasticsearch-operator"
-	JAEGEROPERATORNAMESPACENAME           = "openshift-operators"
-	JAEGEROPERATORNAME                    = "jaeger-product"
-	JAEGEROPERATORNAMEPACKAGENAME         = "jaeger-product"
-	KIALIOPERATORNAMESPACENAME            = "openshift-operators"
-	KIALIOPERATORNAME                     = "kiali-ossm"
-	KIALIOPERATORPACKAGENAME              = "kiali-ossm"
-	OPERATORNAMESPACE                     = "openshift-operators"
-	SERVICEMESHPACKAGENAME                = "servicemeshoperator"
-	SERVICEMESHSUBSCRIPTIONNAME           = "servicemeshoperator"
-	JAEGERROLENAME                        = "jaeger-user"
-	JAEGERROLENAMESPACENAME               = "istio-system"
-	ISTIONAMESPACENAME                    = "istio-system"
-	JAEGERROLEROLEBINDINGNAME             = "jaeger-users"
-	JAEGERROLEROLEBINDINGNAMESPACENAME    = "istio-system"
-	JAEGERROLEROLEBINDINGKINDNAME         = "Role"
-	MESHROLEBINDINGNAME                   = "mesh-users"
-	MESHROLEBINDINGNAMESPACENAME          = "istio-system"
-	MESHROLEBINDINGROLENAME               = "mesh-user"
-	MESHROLEBINDINGKINDNAME               = "Role"
-	SERVICEMESHMEMBERROLLCRNAME           = "default"
-	SERVICEMESHCONTROLPLANECRNAME         = "basic"
-	SERVICEMESHDEPLOYMENTSTATUSNAME       = "istio-operator"
+	REDHAT_OPERATOR_NAMESPACE_NAME            = "openshift-operators-redhat"
+	ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME = "openshift-operators-redhat"
+	ELASTICSEARCH_PACKAGE_NAME                = "elasticsearch-operator"
+	JAEGER_SUBSCRIPTION_NAMESPACE_NAME        = "openshift-operators"
+	JAEGER_SUBSCRIPTION_NAME                  = "jaeger-product"
+	JAEGER_PACKAGE_NAME                       = "jaeger-product"
+	JAEGER_ROLE_NAME                          = "jaeger-user"
+	JAEGER_ROLE_NAMESPACE_NAME                = "istio-system"
+	JAEGER_ROLE_BINDING_NAME                  = "jaeger-users"
+	JAEGER_ROLE_BINDING_NAMESPACE_NAME        = "istio-system"
+	JAEGER_ROLE_KIND_NAME                     = "Role"
+	KIALI_SUBSCRIPTION_NAMESPACE_NAME         = "openshift-operators"
+	KIALI_SUBSCRIPTION_NAME                   = "kiali-ossm"
+	KIALI_PACKAGE_NAME                        = "kiali-ossm"
+	SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME  = "openshift-operators"
+	SERVICE_MESH_PACKAGE_NAME                 = "servicemeshoperator"
+	SERVICE_MESH_SUBSCRIPTION_NAME            = "servicemeshoperator"
+	SERVICE_MESH_NAMESPACE_NAME               = "istio-system"
+	SERVICE_MESH_MEMBER_ROLL_CR_NAME          = "default"
+	SERVICE_MESH_CONTROL_PLANE_CR_NAME        = "basic"
+	SERVICE_MESH_DEPLOYMENT_NAME              = "istio-operator"
+	SERVICE_MESH_ROLE_BINDING_NAME            = "mesh-users"
+	SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME  = "istio-system"
+	SERVICE_MESH_ROLE_NAME                    = "mesh-user"
+	SERVICE_MESH_ROLE_KIND_NAME               = "Role"
 )
 
 // Reconciling ServiceMesh
@@ -82,30 +81,30 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICEMESHSUBSCRIPTIONNAME, OPERATORNAMESPACE,
-		SERVICEMESHPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICE_MESH_SUBSCRIPTION_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME,
+		SERVICE_MESH_PACKAGE_NAME, channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s ServiceMesh Subscription", subscription.Name)
+		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, SERVICEMESHSUBSCRIPTIONNAME, OPERATORNAMESPACE); err != nil {
-		log.Infof("Waiting for ServiceMesh Subscription to create InstallPlan for %s", subscription.Name)
+	if err := r.ApproveInstallPlan(clusterserviceversion, SERVICE_MESH_SUBSCRIPTION_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME); err != nil {
+		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Wait for Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(SERVICEMESHDEPLOYMENTSTATUSNAME, OPERATORNAMESPACE) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(SERVICE_MESH_DEPLOYMENT_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Deploy Service Mesh
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIONAMESPACENAME)
+	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVICE_MESH_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), istioSystemNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s istio Namespace", istioSystemNamespace.Name)
+		log.Infof("Created %s Namespace", istioSystemNamespace.Name)
 	}
 
 	istioMembers := []string{}
@@ -138,19 +137,19 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	}
 
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
-		JAEGERROLENAME, JAEGERROLENAMESPACENAME, labels, kubernetes.JaegerUserRules())
+		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, labels, kubernetes.JaegerUserRules())
 	if err := r.Create(context.TODO(), jaegerRole); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s jaeger Role", jaegerRole.Name)
+		log.Infof("Created %s Role", jaegerRole.Name)
 	}
 
 	jaegerRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		JAEGERROLEROLEBINDINGNAME, JAEGERROLEROLEBINDINGNAMESPACENAME, labels, istioUsers, jaegerRole.Name, JAEGERROLEROLEBINDINGKINDNAME)
+		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, labels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
 	if err := r.Create(context.TODO(), jaegerRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s jaeger Role Binding", jaegerRoleBinding.Name)
+		log.Infof("Created %s Role Binding", jaegerRoleBinding.Name)
 	} else if errors.IsAlreadyExists(err) {
 		found := &rbac.RoleBinding{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: jaegerRoleBinding.Name, Namespace: istioSystemNamespace.Name}, found); err != nil {
@@ -161,33 +160,33 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 				if err := r.Update(context.TODO(), found); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s jaeger Role Binding", found.Name)
+				log.Infof("Updated %s Role Binding", found.Name)
 			}
 		}
 	}
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		MESHROLEBINDINGNAME, MESHROLEBINDINGNAMESPACENAME, labels, istioUsers, MESHROLEBINDINGROLENAME, MESHROLEBINDINGKINDNAME)
+		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, labels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
 
 	if err := r.Create(context.TODO(), meshUserRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Mesh Role Binding", meshUserRoleBinding.Name)
+		log.Infof("Created %s Role Binding", meshUserRoleBinding.Name)
 	}
 
-	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICEMESHCONTROLPLANECRNAME, istioSystemNamespace.Name)
+	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_CR_NAME, istioSystemNamespace.Name)
 	if err := r.Create(context.TODO(), serviceMeshControlPlaneCR); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Service Mesh Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
+		log.Infof("Created %s Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
 	}
 
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
-		SERVICEMESHMEMBERROLLCRNAME, istioSystemNamespace.Name, istioMembers)
+		SERVICE_MESH_MEMBER_ROLL_CR_NAME, istioSystemNamespace.Name, istioMembers)
 	if err := r.Create(context.TODO(), serviceMeshMemberRollCR); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Service Mesh Custom Resource", serviceMeshMemberRollCR.Name)
+		log.Infof("Created %s Custom Resource", serviceMeshMemberRollCR.Name)
 	} else if errors.IsAlreadyExists(err) {
 		serviceMeshMemberRollCRFound := &maistrav1.ServiceMeshMemberRoll{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: serviceMeshMemberRollCR.Name, Namespace: istioSystemNamespace.Name}, serviceMeshMemberRollCRFound); err != nil {
@@ -198,7 +197,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 				if err := r.Update(context.TODO(), serviceMeshMemberRollCRFound); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s Service Mesh Member Roll Custom Resource", serviceMeshMemberRollCRFound.Name)
+				log.Infof("Updated %s Member Roll Custom Resource", serviceMeshMemberRollCRFound.Name)
 			}
 		}
 	}
@@ -214,23 +213,23 @@ func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Works
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.ClusterServiceVersion
 	subcriptionName := fmt.Sprintf("elasticsearch-operator-%s", channel)
 
-	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ELASTICSEARCHOPERATORNAMESPACENAME)
+	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, REDHAT_OPERATOR_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), redhatOperatorsNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s ElasticSearchOperator Namespace", redhatOperatorsNamespace.Name)
+		log.Infof("Created %s Namespace", redhatOperatorsNamespace.Name)
 	}
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, ELASTICSEARCHOPERATORSUBSCRIPTIONNAME,
-		ELASTICSEARCHOPERATORPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME,
+		ELASTICSEARCH_PACKAGE_NAME, channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s ElasticSearchOperator Subscription", subscription.Name)
+		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, subcriptionName, ELASTICSEARCHOPERATORSUBSCRIPTIONNAME); err != nil {
-		log.Infof("Waiting for ElasticSearchOperator Subscription to create InstallPlan for %s", subscription.Name)
+	if err := r.ApproveInstallPlan(clusterserviceversion, subcriptionName, ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME); err != nil {
+		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -244,16 +243,16 @@ func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (r
 	channel := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, JAEGEROPERATORNAME, JAEGEROPERATORNAMESPACENAME,
-		JAEGEROPERATORNAMEPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, JAEGER_SUBSCRIPTION_NAME, JAEGER_SUBSCRIPTION_NAMESPACE_NAME,
+		JAEGER_PACKAGE_NAME, channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s jaeger Subscription", subscription.Name)
+		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, JAEGEROPERATORNAME, JAEGEROPERATORNAMESPACENAME); err != nil {
-		log.Infof("Waiting for jaeger Subscription to create InstallPlan for %s", subscription.Name)
+	if err := r.ApproveInstallPlan(clusterserviceversion, JAEGER_SUBSCRIPTION_NAME, JAEGER_SUBSCRIPTION_NAMESPACE_NAME); err != nil {
+		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -267,16 +266,16 @@ func (r *WorkshopReconciler) addKialiOperator(workshop *workshopv1.Workshop) (re
 	channel := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, KIALIOPERATORNAME, KIALIOPERATORNAMESPACENAME,
-		KIALIOPERATORPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, KIALI_SUBSCRIPTION_NAME, KIALI_SUBSCRIPTION_NAMESPACE_NAME,
+		KIALI_PACKAGE_NAME, channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s kiali Subscription", subscription.Name)
+		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, KIALIOPERATORNAME, KIALIOPERATORNAMESPACENAME); err != nil {
-		log.Infof("Waiting for kiali Subscription to create InstallPlan for %s", subscription.Name)
+	if err := r.ApproveInstallPlan(clusterserviceversion, KIALI_SUBSCRIPTION_NAME, KIALI_SUBSCRIPTION_NAMESPACE_NAME); err != nil {
+		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -284,10 +283,26 @@ func (r *WorkshopReconciler) addKialiOperator(workshop *workshopv1.Workshop) (re
 	return reconcile.Result{}, nil
 }
 
+func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Workshop, userID int) (reconcile.Result, error) {
+
+	if result, err := r.deleteServiceMesh(workshop, userID); util.IsRequeued(result, err) {
+		return result, err
+	}
+	if result, err := r.deleteKialiOperator(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+	if result, err := r.deleteJaegerOperator(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteElasticSearchOperator(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+	return reconcile.Result{}, nil
+}
+
 // Delete ServiceMesh
 func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
-
-	log.Infoln("Deleting ServiceMesh")
 
 	// Service Mesh Operator
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
@@ -321,62 +336,62 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	labels := map[string]string{
 		"app.kubernetes.io/part-of": "istio",
 	}
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIONAMESPACENAME)
+	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVICE_MESH_NAMESPACE_NAME)
 
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
-		JAEGERROLENAME, JAEGERROLENAMESPACENAME, labels, kubernetes.JaegerUserRules())
+		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, labels, kubernetes.JaegerUserRules())
 
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
-		SERVICEMESHMEMBERROLLCRNAME, istioSystemNamespace.Name, istioMembers)
+		SERVICE_MESH_MEMBER_ROLL_CR_NAME, istioSystemNamespace.Name, istioMembers)
 	// Delete service MeshMember Roll CR
 	if err := r.Delete(context.TODO(), serviceMeshMemberRollCR); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Service Mesh Custom Resource", serviceMeshMemberRollCR.Name)
+	log.Infof("Deleted %s Custom Resource", serviceMeshMemberRollCR.Name)
 
-	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICEMESHCONTROLPLANECRNAME, istioSystemNamespace.Name)
+	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_CR_NAME, istioSystemNamespace.Name)
 	// Delete Service Mesh Control Plane Custom Resource
 	if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Service Mesh Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
+	log.Infof("Deleted %s Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		MESHROLEBINDINGNAME, MESHROLEBINDINGNAMESPACENAME, labels, istioUsers, MESHROLEBINDINGROLENAME, MESHROLEBINDINGKINDNAME)
+		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, labels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
 	// Delete meshUser RoleBinding
 	if err := r.Delete(context.TODO(), meshUserRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Mesh Role Binding", meshUserRoleBinding.Name)
+	log.Infof("Deleted %s Role Binding", meshUserRoleBinding.Name)
 
 	jaegerRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		JAEGERROLEROLEBINDINGNAME, JAEGERROLEROLEBINDINGNAMESPACENAME, labels, istioUsers, jaegerRole.Name, JAEGERROLEROLEBINDINGKINDNAME)
+		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, labels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
 	// Delete jaeger RoleBinding
 	if err := r.Delete(context.TODO(), jaegerRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s jaeger Role Binding", jaegerRoleBinding.Name)
+	log.Infof("Deleted %s Role Binding", jaegerRoleBinding.Name)
 
 	// Delete jaeger Role
 	if err := r.Delete(context.TODO(), jaegerRole); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s jaeger Role", jaegerRole.Name)
+	log.Infof("Deleted %s Role", jaegerRole.Name)
 
 	// Delete istioSystem Namespace
 	if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s istio Namespace", istioSystemNamespace.Name)
+	log.Infof("Deleted %s Namespace", istioSystemNamespace.Name)
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICEMESHSUBSCRIPTIONNAME, OPERATORNAMESPACE,
-		SERVICEMESHPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICE_MESH_SUBSCRIPTION_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME,
+		SERVICE_MESH_PACKAGE_NAME, channel, clusterserviceversion)
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Subscription", subscription.Name)
-	log.Infoln("Deleted Service Mesh Successfully")
+
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -384,66 +399,60 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 // Delete ElasticSearchOperator1
 func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
-	log.Info("Deleting ElasticSearchOperator")
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.ClusterServiceVersion
 	subcriptionName := fmt.Sprintf("elasticsearch-operator-%s", channel)
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, ELASTICSEARCHOPERATORSUBSCRIPTIONNAME,
-		ELASTICSEARCHOPERATORPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME,
+		ELASTICSEARCH_PACKAGE_NAME, channel, clusterserviceversion)
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s ElasticSearchOperator Subscription", subscription.Name)
+	log.Infof("Deleted %s Subscription", subscription.Name)
 
-	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ELASTICSEARCHOPERATORNAMESPACENAME)
+	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, REDHAT_OPERATOR_NAMESPACE_NAME)
 	// Delete Namespace
 	if err := r.Delete(context.TODO(), redhatOperatorsNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s ElasticSearchOperator Namespace", redhatOperatorsNamespace.Name)
-	log.Info("Deleted ElasticSearchOperator Successfully")
+	log.Infof("Deleted %s Namespace", redhatOperatorsNamespace.Name)
 	//Success
 	return reconcile.Result{}, nil
 }
 
 // Delete JaegerOperator
 func (r *WorkshopReconciler) deleteJaegerOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Infoln("Deleting jaeger")
+
 	channel := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, JAEGEROPERATORNAME, JAEGEROPERATORNAMESPACENAME,
-		JAEGEROPERATORNAMEPACKAGENAME, channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, JAEGER_SUBSCRIPTION_NAME, JAEGER_SUBSCRIPTION_NAMESPACE_NAME,
+		JAEGER_PACKAGE_NAME, channel, clusterserviceversion)
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s jaeger Subscription", subscription.Name)
-	log.Infoln("Deleted jaeger Successfully")
+	log.Infof("Deleted %s Subscription", subscription.Name)
+
 	//Success
 	return reconcile.Result{}, nil
 }
 
 // Delete KialiOperator
 func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Infoln("Deleting KialiOperator")
+
 	channel := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, KIALIOPERATORNAME, KIALIOPERATORNAMESPACENAME,
-		KIALIOPERATORPACKAGENAME, channel, clusterserviceversion)
-	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name, Namespace: subscription.Namespace}, subscriptionFound)
-	if subscriptionErr == nil {
-		// Delete Subscription
-		if err := r.Delete(context.TODO(), subscription); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s KialiOperator Subscription", subscription.Name)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, KIALI_SUBSCRIPTION_NAME, KIALI_SUBSCRIPTION_NAMESPACE_NAME,
+		KIALI_PACKAGE_NAME, channel, clusterserviceversion)
+	// Delete Subscription
+	if err := r.Delete(context.TODO(), subscription); err != nil {
+		return reconcile.Result{}, err
 	}
-	log.Infoln("Deleted KialiOperator Successfully")
+	log.Infof("Deleted %s Subscription", subscription.Name)
+
 	//Success
 	return reconcile.Result{}, nil
 }
