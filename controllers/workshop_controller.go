@@ -240,7 +240,6 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
 
-
 	if result, err := r.deletePipelines(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
