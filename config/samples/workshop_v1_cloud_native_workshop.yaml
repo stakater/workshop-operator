@@ -39,7 +39,7 @@ spec:
         name: quay.io/mcouliba/nexus-operator
         tag: v0.10      
     vault: 
-      enabled: true
+      enabled: false
       image: 
         name: hashicorp/vault
         tag: 1.8.2
@@ -47,7 +47,7 @@ spec:
         name: hashicorp/vault-k8s
         tag: 0.13.0        
     pipeline:
-      enabled: true
+      enabled: false
       operatorHub:
         channel: stable
         clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
