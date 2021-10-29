@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -50,11 +48,12 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 // +kubebuilder:rbac:groups=workshop.stakater.com,resources=workshops/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=workshop.stakater.com,resources=workshops,verbs=get;list;watch;create;update;patch;delete
 
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=create;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=pods;services;endpoints;persistentvolumeclaims;events;configmaps;secrets;namespaces;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=list;watch;update
+// +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=create;list;watch;update;patch;get;delete
 // +kubebuilder:rbac:groups=project.openshift.io,resources=projectrequests,verbs=create
 
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=*
@@ -111,9 +110,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if users < 0 {
 		users = 0
 	}
-
-
-	// Handle Cleanup on Deletion
 
 	// Check if the Workshop workshop is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -231,13 +227,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return result, err
 	}
 
-	//////////////////////////
-	// Istio Workspace
-	//////////////////////////
-	if result, err := r.reconcileIstioWorkspace(workshop, users); util.IsRequeued(result, err) {
-		return result, err
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -251,7 +240,15 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
 
+
 	if result, err := r.deletePipelines(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
