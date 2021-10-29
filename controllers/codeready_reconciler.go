@@ -37,17 +37,17 @@ var (
 )
 
 const (
-	CODEREADY_NAMESPACE_NAME             = "workspaces"
-	CODEREADY_OPERATORGROUP_NAME         = "codeready-workspaces"
-	CODEREADY_SUBSCRIPTION_NAME          = "codeready-workspaces"
-	CODEREADY_PACKAGE_NAME               = "codeready-workspaces"
-	CODEREADY_OPERATOR_DEPLOYMENT_STATUS = "codeready-operator"
-	CODEREADY_CUSTOM_RESOURCE_NAME       = "codereadyworkspaces"
-	CODEREADY_DEPLOYMENT_STATUS_NAME     = "codeready"
-	CHE_CLUSTER_ROLE_NAME                = "che"
-	CHE_CLUSTE_RROLE_BINDING_NAME        = "che"
-	CHE_SERVICEACCOUNT_NAME              = "che"
-	CHE_CODE_FLAVOR_NAME                 = "codeready"
+	CODEREADY_NAMESPACE_NAME           = "workspaces"
+	CODEREADY_OPERATORGROUP_NAME       = "codeready-workspaces"
+	CODEREADY_SUBSCRIPTION_NAME        = "codeready-workspaces"
+	CODEREADY_PACKAGE_NAME             = "codeready-workspaces"
+	CODEREADY_OPERATOR_DEPLOYMENT_NAME = "codeready-operator"
+	CHE_CUSTOM_RESOURCE_NAME           = "codereadyworkspaces"
+	CODEREADY_DEPLOYMENT_NAME          = "codeready"
+	CHE_CLUSTER_ROLE_NAME              = "che"
+	CHE_CLUSTE_RROLE_BINDING_NAME      = "che"
+	CHE_SERVICEACCOUNT_NAME            = "che"
+	CHE_CODE_FLAVOR_NAME               = "codeready"
 )
 
 // Reconciling CodeReadyWorkspace
@@ -77,7 +77,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	if err := r.Create(context.TODO(), codeReadyWorkspacesNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s CodeReady Workspace Project", codeReadyWorkspacesNamespace.Name)
+		log.Infof("Created %s Project", codeReadyWorkspacesNamespace.Name)
 	}
 
 	// Create OperatorGroup
@@ -85,7 +85,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	if err := r.Create(context.TODO(), codeReadyWorkspacesOperatorGroup); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s CodeReady Workspace OperatorGroup", codeReadyWorkspacesOperatorGroup.Name)
+		log.Infof("Created %s OperatorGroup", codeReadyWorkspacesOperatorGroup.Name)
 	}
 
 	// Create Subscription
@@ -94,29 +94,29 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	if err := r.Create(context.TODO(), codeReadyWorkspacesSubscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s CodeReady Workspace Subscription", codeReadyWorkspacesSubscription.Name)
+		log.Infof("Created %s Subscription", codeReadyWorkspacesSubscription.Name)
 	}
 
 	// Approve the Installation
 	if err := r.ApproveInstallPlan(clusterServiceVersion, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME); err != nil {
-		log.Warnf("Waiting for CodeReady Workspace Subscription to create InstallPlan for %s", "codeready-workspaces")
+		log.Warnf("Waiting for Subscription to create InstallPlan for %s", "codeready-workspaces")
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Wait for CodeReadyWorkspace Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADY_OPERATOR_DEPLOYMENT_STATUS, CODEREADY_NAMESPACE_NAME) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADY_OPERATOR_DEPLOYMENT_NAME, CODEREADY_NAMESPACE_NAME) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADY_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
+	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CHE_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), codeReadyWorkspacesCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s CodeReady Workspace Custom Resource", codeReadyWorkspacesCustomResource.Name)
+		log.Infof("Created %s Custom Resource", codeReadyWorkspacesCustomResource.Name)
 	}
 
 	// Wait for CodeReadyWorkspace to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADY_DEPLOYMENT_STATUS_NAME, CODEREADY_NAMESPACE_NAME) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(CODEREADY_DEPLOYMENT_NAME, CODEREADY_NAMESPACE_NAME) {
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
 	}
 
@@ -132,14 +132,14 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		if err != nil {
 			return result, err
 		}
-
+		log.Infoln("masterAccessToken", masterAccessToken)
 		// Che Cluster Role
 		cheClusterRole :=
 			kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
 		if err := r.Create(context.TODO(), cheClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s CodeReady Workspace Cluster Role", cheClusterRole.Name)
+			log.Infof("Created %s Cluster Role", cheClusterRole.Name)
 		}
 
 		// Che Cluster Role Binding
@@ -147,7 +147,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		if err := r.Create(context.TODO(), cheClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s CodeReady Workspace Cluster Role Binding", cheClusterRoleBinding.Name)
+			log.Infof("Created %s Cluster Role Binding", cheClusterRoleBinding.Name)
 		}
 
 		for id := 1; id <= users; id++ {
@@ -156,13 +156,21 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 			if result, err := createUser(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix, masterAccessToken); err != nil {
 				return result, err
 			}
-
+			log.Infoln("user created")
+			if result, err := getUser(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix, masterAccessToken); err != nil {
+				return result, err
+			}
+			log.Infoln("get user ")
 			userAccessToken, result, err := getUserToken(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
 			if err != nil {
 				return result, err
 			}
-
+			log.Infoln("userAccessToken", userAccessToken)
 			if result, err := initWorkspace(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
+				return result, err
+			}
+			log.Infoln("if")
+			if result, err := getWorkspace(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
 				return result, err
 			}
 
@@ -179,8 +187,12 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 			if result, err := updateUserEmail(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix); err != nil {
 				return result, err
 			}
-
+			log.Infoln("Updated user user ")
 			if result, err := initWorkspace(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
+				return result, err
+			}
+			log.Infoln("else")
+			if result, err := getWorkspace(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
 				return result, err
 			}
 		}
@@ -266,7 +278,8 @@ func createUser(workshop *workshopv1.Workshop, username string, codeflavor strin
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
+	log.Infoln("keycloakCheUserURL", keycloakCheUserURL)
+	log.Infoln("body", string(body))
 	httpRequest, err = http.NewRequest("POST", keycloakCheUserURL, bytes.NewBuffer(body))
 	if err != nil {
 		log.Error(err, "Failed http POST Request")
@@ -280,6 +293,49 @@ func createUser(workshop *workshopv1.Workshop, username string, codeflavor strin
 	}
 	if httpResponse.StatusCode == http.StatusCreated {
 		log.Infof("Created %s in CodeReady Workspaces", username)
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func getUser(workshop *workshopv1.Workshop, username string, codeflavor string,
+	namespace string, appsHostnameSuffix string, masterToken string) (reconcile.Result, error) {
+
+	var (
+		openshiftUserPassword = workshop.Spec.User.Password
+		body                  []byte
+		keycloakCheUserURL    = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/admin/realms/" + codeflavor + "/users"
+
+		client = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+			// Do not follow Redirect
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	)
+
+	body, err = json.Marshal(codeready.NewUser(username, openshiftUserPassword))
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infoln("keycloakCheUserURL", keycloakCheUserURL)
+	log.Infoln("body", string(body))
+	httpRequest, err = http.NewRequest("GET", keycloakCheUserURL, bytes.NewBuffer(body))
+	if err != nil {
+		log.Error(err, "Failed http GET Request")
+	}
+	httpRequest.Header.Set("Authorization", "Bearer "+masterToken)
+	httpRequest.Header.Set("Content-Type", "application/json")
+
+	httpResponse, err = client.Do(httpRequest)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if httpResponse.StatusCode == http.StatusOK {
+		log.Infof("Get %s in CodeReady Workspaces", username)
 	}
 
 	return reconcile.Result{}, nil
@@ -303,7 +359,10 @@ func getUserToken(workshop *workshopv1.Workshop, username string, codeflavor str
 			},
 		}
 	)
-
+	log.Infoln("keycloak Che Token URL", keycloakCheTokenURL)
+	log.Infoln("username", username)
+	log.Infoln("password", openshiftUserPassword)
+	log.Infoln("client_id", codeflavor+"-public")
 	// Get User Access Token
 	data := url.Values{}
 	data.Set("username", username)
@@ -550,8 +609,7 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 
 	var (
 		devfileWorkspaceURL = "https://" + codeflavor + "-" + namespace + "." + appsHostnameSuffix + "/api/workspace/devfile?start-after-create=true&namespace=" + username
-
-		client = &http.Client{
+		client              = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
@@ -561,11 +619,12 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 			},
 		}
 	)
-
+	log.Infoln("dev file Workspace URL", devfileWorkspaceURL)
 	httpRequest, err = http.NewRequest("POST", devfileWorkspaceURL, strings.NewReader(devfile))
 	if err != nil {
 		log.Error(err, "Failed http POST Request")
 	}
+
 	httpRequest.Header.Set("Authorization", "Bearer "+userAccessToken)
 	httpRequest.Header.Set("Content-Type", "application/json")
 	httpRequest.Header.Set("Accept", "application/json")
@@ -576,7 +635,49 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 		return reconcile.Result{}, err
 	}
 	defer httpResponse.Body.Close()
+	// Display httpResponse Results
+	log.Infoln("response Status : ", httpResponse.Status)
+	log.Infoln("response Headers : ", httpResponse.Header)
+	//Success
+	return reconcile.Result{}, nil
+}
 
+// getWorkspace
+func getWorkspace(workshop *workshopv1.Workshop, username string,
+	codeflavor string, namespace string, userAccessToken string, devfile string,
+	appsHostnameSuffix string) (reconcile.Result, error) {
+
+	var (
+		devfileWorkspaceURL = "https://" + codeflavor + "-" + namespace + "." + appsHostnameSuffix + "/api/workspace/"
+		client              = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+			// Do not follow Redirect
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	)
+	log.Infoln("dev file Workspace URL", devfileWorkspaceURL)
+	httpRequest, err = http.NewRequest("GET", devfileWorkspaceURL, strings.NewReader(devfile))
+	if err != nil {
+		log.Error(err, "Failed http GET Request")
+	}
+
+	httpRequest.Header.Set("Authorization", "Bearer "+userAccessToken)
+	httpRequest.Header.Set("Content-Type", "application/json")
+	httpRequest.Header.Set("Accept", "application/json")
+
+	httpResponse, err = client.Do(httpRequest)
+	if err != nil {
+		log.Errorf("Error when creating the workspace for %s: %v", username, err)
+		return reconcile.Result{}, err
+	}
+	defer httpResponse.Body.Close()
+	// Display httpResponse Results
+	log.Infoln("response Status : ", httpResponse.Status)
+	log.Infoln("response Headers : ", httpResponse.Header)
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -588,42 +689,50 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 
 	if !workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth {
 		log.Infoln("OpenshiftOAuth true")
+		masterAccessToken, result, err := KeycloakAdminToken(workshop, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
+		if err != nil {
+			return result, err
+		}
+		devfile, result, err := getDevFile(workshop)
+		if err != nil {
+			return result, err
+		}
 
+		log.Infoln("masterAccessToken", masterAccessToken)
 		for id := 1; id <= users; id++ {
 			log.Infoln("user for loop")
 			username := fmt.Sprintf("user%d", id)
-
-			//userAccessToken, result, err := getOAuthUserToken(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
-			//if err != nil {
-			//	return result, err
-			//}
-			log.Infoln("getUserToken function call")
-			_, result, err := getUserToken(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
+			userAccessToken, result, err := getUserToken(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix)
 			if err != nil {
 				return result, err
 			}
+			log.Infoln("userAccessToken", userAccessToken)
+			if result, err := deleteWorkspace(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, userAccessToken, devfile, appsHostnameSuffix); err != nil {
+				return result, err
+			}
+
 		}
 		cheClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
 		// Delete che Cluster Role
 		if err := r.Delete(context.TODO(), cheClusterRole); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s CodeReady Workspace Cluster Role ", cheClusterRole.Name)
+		log.Infof("Deleted %s Cluster Role ", cheClusterRole.Name)
 
 		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CHE_CLUSTE_RROLE_BINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CHE_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 		// Delete che Cluster RoleBinding
 		if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s CodeReady Workspace Cluster RoleBinding ", cheClusterRoleBinding.Name)
+		log.Infof("Deleted %s Cluster RoleBinding ", cheClusterRoleBinding.Name)
 	}
 
-	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CODEREADY_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
+	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CHE_CUSTOM_RESOURCE_NAME, CODEREADY_NAMESPACE_NAME)
 	// Delete codeReadyWorkspaces CustomResource
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesCustomResource); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s CodeReady Workspace CustomResource", codeReadyWorkspacesCustomResource.Name)
+	log.Infof("Deleted %s  CustomResource", codeReadyWorkspacesCustomResource.Name)
 
 	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME,
 		CODEREADY_PACKAGE_NAME, channel, clusterServiceVersion)
@@ -631,21 +740,97 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesSubscription); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s CodeReady Workspace Subscription", codeReadyWorkspacesSubscription.Name)
+	log.Infof("Deleted %s Subscription", codeReadyWorkspacesSubscription.Name)
 
 	codeReadyWorkspacesOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, CODEREADY_OPERATORGROUP_NAME, CODEREADY_NAMESPACE_NAME)
 	// Delete OperatorGroup
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesOperatorGroup); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s CodeReady Workspace OperatorGroup", codeReadyWorkspacesOperatorGroup.Name)
+	log.Infof("Deleted %s OperatorGroup", codeReadyWorkspacesOperatorGroup.Name)
 
 	codeReadyWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, CODEREADY_NAMESPACE_NAME)
 	// Delete Project
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s CodeReady Workspace Namespace", codeReadyWorkspacesNamespace.Name)
+	log.Infof("Deleted %s Namespace", codeReadyWorkspacesNamespace.Name)
+	//Success
+	return reconcile.Result{}, nil
+}
+
+// Get KeyCloak Admin Token
+func KeycloakAdminToken(workshop *workshopv1.Workshop, namespace string, appsHostnameSuffix string) (string, reconcile.Result, error) {
+	var (
+		keycloakCheTokenURL = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/realms/master/protocol/openid-connect/token"
+
+		masterToken util.Token
+		client      = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+			// Do not follow Redirect
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	)
+
+	httpRequest, err = http.NewRequest("POST", keycloakCheTokenURL, strings.NewReader("username=admin&password=admin&grant_type=password&client_id=admin-cli"))
+	if err != nil {
+		log.Error(err, "Failed http POST Request")
+	}
+	httpRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	httpResponse, err = client.Do(httpRequest)
+	if err != nil {
+		return "", reconcile.Result{}, err
+	}
+	defer httpResponse.Body.Close()
+	if httpResponse.StatusCode == http.StatusOK {
+		if err := json.NewDecoder(httpResponse.Body).Decode(&masterToken); err != nil {
+			return "", reconcile.Result{}, err
+		}
+	}
+
+	return masterToken.AccessToken, reconcile.Result{}, nil
+}
+
+func deleteWorkspace(workshop *workshopv1.Workshop, username string,
+	codeflavor string, namespace string, userAccessToken string, devfile string,
+	appsHostnameSuffix string) (reconcile.Result, error) {
+
+	var (
+		devfileWorkspaceURL = "https://" + codeflavor + "-" + namespace + "." + appsHostnameSuffix + "/api/workspace/devfile?start-after-create=true&namespace=" + username
+		client              = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+			// Do not follow Redirect
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+	)
+	log.Infoln("dev file Workspace URL", devfileWorkspaceURL)
+	httpRequest, err = http.NewRequest("DELETE", devfileWorkspaceURL, nil)
+	if err != nil {
+		log.Error(err, "Failed http DELETE Request")
+	}
+
+	httpRequest.Header.Set("Authorization", "Bearer "+userAccessToken)
+	httpRequest.Header.Set("Content-Type", "application/json")
+	httpRequest.Header.Set("Accept", "application/json")
+
+	httpResponse, err = client.Do(httpRequest)
+	if err != nil {
+		log.Errorf("Error when deleting the workspace for %s: %v", username, err)
+		return reconcile.Result{}, err
+	}
+	defer httpResponse.Body.Close()
+	// Display httpResponse Results
+	log.Infoln("response Status : ", httpResponse.Status)
+	log.Infoln("response Headers : ", httpResponse.Header)
+
 	//Success
 	return reconcile.Result{}, nil
 }
