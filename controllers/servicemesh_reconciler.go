@@ -76,7 +76,7 @@ func (r *WorkshopReconciler) reconcileServiceMesh(workshop *workshopv1.Workshop,
 
 // Add ServiceMesh
 func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
-
+	log.Infoln("start addServiceMesh method ")
 	// Service Mesh Operator
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.ClusterServiceVersion
@@ -208,7 +208,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 
 // Add ElasticSearchOperator
 func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
+	log.Infoln("start addElasticSearchOperator method ")
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.ClusterServiceVersion
 	subcriptionName := fmt.Sprintf("elasticsearch-operator-%s", channel)
@@ -239,7 +239,7 @@ func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Works
 
 // Add JaegerOperator
 func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
+	log.Infoln("start addJaegerOperator method ")
 	channel := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.ClusterServiceVersion
 
@@ -262,7 +262,7 @@ func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (r
 
 // Add KialiOperator
 func (r *WorkshopReconciler) addKialiOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
+	log.Infoln("start addKialiOperator method ")
 	channel := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.ClusterServiceVersion
 
@@ -296,6 +296,10 @@ func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Works
 	}
 
 	if result, err := r.deleteElasticSearchOperator(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteServiceMeshServiceNamespace(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 	return reconcile.Result{}, nil
@@ -378,19 +382,20 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 	log.Infof("Deleted %s Role", jaegerRole.Name)
 
-	// Delete istioSystem Namespace
-	if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Namespace", istioSystemNamespace.Name)
-
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICE_MESH_SUBSCRIPTION_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME,
 		SERVICE_MESH_PACKAGE_NAME, channel, clusterserviceversion)
+	servicemeshCSV := subscription.Spec.StartingCSV
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Subscription", subscription.Name)
+
+	operatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, servicemeshCSV, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME)
+	if err := r.Delete(context.TODO(), operatorCSV); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s ClusterServiceVersion", operatorCSV.Name)
 
 	//Success
 	return reconcile.Result{}, nil
@@ -405,18 +410,19 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME,
 		ELASTICSEARCH_PACKAGE_NAME, channel, clusterserviceversion)
+	elasticsearchCSV := subscription.Spec.StartingCSV
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Subscription", subscription.Name)
 
-	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, REDHAT_OPERATOR_NAMESPACE_NAME)
-	// Delete Namespace
-	if err := r.Delete(context.TODO(), redhatOperatorsNamespace); err != nil {
+	operatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, elasticsearchCSV, ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME)
+	if err := r.Delete(context.TODO(), operatorCSV); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Namespace", redhatOperatorsNamespace.Name)
+	log.Infof("Deleted %s ClusterServiceVersion", operatorCSV.Name)
+
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -429,11 +435,18 @@ func (r *WorkshopReconciler) deleteJaegerOperator(workshop *workshopv1.Workshop)
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, JAEGER_SUBSCRIPTION_NAME, JAEGER_SUBSCRIPTION_NAMESPACE_NAME,
 		JAEGER_PACKAGE_NAME, channel, clusterserviceversion)
+	jaegerCSV := subscription.Spec.StartingCSV
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Subscription", subscription.Name)
+
+	operatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, jaegerCSV, JAEGER_SUBSCRIPTION_NAMESPACE_NAME)
+	if err := r.Delete(context.TODO(), operatorCSV); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s ClusterServiceVersion", operatorCSV.Name)
 
 	//Success
 	return reconcile.Result{}, nil
@@ -447,12 +460,37 @@ func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) 
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, KIALI_SUBSCRIPTION_NAME, KIALI_SUBSCRIPTION_NAMESPACE_NAME,
 		KIALI_PACKAGE_NAME, channel, clusterserviceversion)
+	kialiCSV := subscription.Spec.StartingCSV
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), subscription); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Subscription", subscription.Name)
 
+	operatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, kialiCSV, KIALI_SUBSCRIPTION_NAMESPACE_NAME)
+	if err := r.Delete(context.TODO(), operatorCSV); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s ClusterServiceVersion", operatorCSV.Name)
+
+	//Success
+	return reconcile.Result{}, nil
+}
+
+func (r *WorkshopReconciler) deleteServiceMeshServiceNamespace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVICE_MESH_NAMESPACE_NAME)
+	// Delete istioSystem Namespace
+	if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Namespace", istioSystemNamespace.Name)
+
+	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, REDHAT_OPERATOR_NAMESPACE_NAME)
+	// Delete Namespace
+	if err := r.Delete(context.TODO(), redhatOperatorsNamespace); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Namespace", redhatOperatorsNamespace.Name)
 	//Success
 	return reconcile.Result{}, nil
 }
