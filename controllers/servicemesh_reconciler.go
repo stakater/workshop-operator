@@ -36,7 +36,7 @@ const (
 	SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME  = "openshift-operators"
 	SERVICE_MESH_PACKAGE_NAME                 = "servicemeshoperator"
 	SERVICE_MESH_SUBSCRIPTION_NAME            = "servicemeshoperator"
-	SERVICE_MESH_NAMESPACE_NAME               = "istio-system"
+	ISTIO_NAMESPACE_NAME                      = "istio-system"
 	SERVICE_MESH_MEMBER_ROLL_CR_NAME          = "default"
 	SERVICE_MESH_CONTROL_PLANE_CR_NAME        = "basic"
 	SERVICE_MESH_DEPLOYMENT_NAME              = "istio-operator"
@@ -76,7 +76,7 @@ func (r *WorkshopReconciler) reconcileServiceMesh(workshop *workshopv1.Workshop,
 
 // Add ServiceMesh
 func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
-	log.Infoln("start addServiceMesh method ")
+
 	// Service Mesh Operator
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.ClusterServiceVersion
@@ -100,7 +100,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	}
 
 	// Deploy Service Mesh
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVICE_MESH_NAMESPACE_NAME)
+	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), istioSystemNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -208,7 +208,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 
 // Add ElasticSearchOperator
 func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Infoln("start addElasticSearchOperator method ")
+
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.ClusterServiceVersion
 	subcriptionName := fmt.Sprintf("elasticsearch-operator-%s", channel)
@@ -239,7 +239,7 @@ func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Works
 
 // Add JaegerOperator
 func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Infoln("start addJaegerOperator method ")
+
 	channel := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.ClusterServiceVersion
 
@@ -262,7 +262,7 @@ func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (r
 
 // Add KialiOperator
 func (r *WorkshopReconciler) addKialiOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Infoln("start addKialiOperator method ")
+
 	channel := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.ClusterServiceVersion
 
@@ -340,7 +340,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	labels := map[string]string{
 		"app.kubernetes.io/part-of": "istio",
 	}
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVICE_MESH_NAMESPACE_NAME)
+	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
 
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
 		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, labels, kubernetes.JaegerUserRules())
@@ -401,7 +401,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	return reconcile.Result{}, nil
 }
 
-// Delete ElasticSearchOperator1
+// Delete ElasticSearchOperator
 func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.Channel
@@ -478,7 +478,7 @@ func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) 
 }
 
 func (r *WorkshopReconciler) deleteServiceMeshServiceNamespace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVICE_MESH_NAMESPACE_NAME)
+	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
 	// Delete istioSystem Namespace
 	if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
 		return reconcile.Result{}, err
