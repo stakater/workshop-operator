@@ -509,21 +509,21 @@ func (r *WorkshopReconciler) deleteOperatorCSV(workshop *workshopv1.Workshop, se
 
 	servicemeshOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, servicemeshCSV, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), servicemeshOperatorCSV); err != nil {
-		log.Error("ServicemeshOperatorCSV not delete")
+		log.Errorf("Failed to delete ClusterServiceVersion %s", servicemeshOperatorCSV.Name)
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", servicemeshOperatorCSV.Name)
 
 	kialiOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, kialiCSV, KIALI_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), kialiOperatorCSV); err != nil {
-		log.Error("KialiOperatorCSV not delete")
+		log.Errorf("Failed to delete ClusterServiceVersion %s", kialiOperatorCSV.Name)
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", kialiOperatorCSV.Name)
 
 	JaegerOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, JaegerCSV, JAEGER_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), JaegerOperatorCSV); err != nil {
-		log.Error("JaegerOperatorCSV not delete")
+		log.Errorf("Failed to delete ClusterServiceVersion %s", JaegerOperatorCSV.Name)
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", JaegerOperatorCSV.Name)
@@ -568,10 +568,10 @@ func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reco
 	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
 		servicemeshcontrolplanes := &maistrav2.ServiceMeshControlPlane{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: SERVICE_MESH_CONTROL_PLANE_CR_NAME, Namespace: ISTIO_NAMESPACE_NAME}, servicemeshcontrolplanes); err != nil {
-			log.Error("Failed to found servicemeshcontrolplanes ")
+			log.Errorf("Failed to get servicemeshcontrolplanes %s", servicemeshcontrolplanes.Name)
 			return reconcile.Result{}, err
 		}
-		log.Infof("Get servicemeshcontrolplanes %s", servicemeshcontrolplanes.Name)
+		log.Infof("Got servicemeshcontrolplanes %s", servicemeshcontrolplanes.Name)
 
 		patch := client.MergeFrom(servicemeshcontrolplanes.DeepCopy())
 		servicemeshcontrolplanes.Finalizers = nil
