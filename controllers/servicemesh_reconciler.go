@@ -3,19 +3,21 @@ package controllers
 import (
 	"context"
 	"fmt"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	"reflect"
-
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
+	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	"github.com/stakater/workshop-operator/common/kubernetes"
 	"github.com/stakater/workshop-operator/common/maistra"
 	"github.com/stakater/workshop-operator/common/util"
-
+	admissionregistration "k8s.io/api/admissionregistration/v1"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -313,6 +315,10 @@ func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Works
 		return result, err
 	}
 
+	if result, err := r.deleteWebhooks(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
 	return reconcile.Result{}, nil
 }
 
@@ -353,6 +359,13 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
 		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, IstioLabels, kubernetes.JaegerUserRules())
 
+	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_CR_NAME, istioSystemNamespace.Name)
+	// Delete Service Mesh Control Plane Custom Resource
+	if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
+
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
 		SERVICE_MESH_MEMBER_ROLL_CR_NAME, istioSystemNamespace.Name, istioMembers)
 	// Delete service MeshMember Roll CR
@@ -360,13 +373,6 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Custom Resource", serviceMeshMemberRollCR.Name)
-
-	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_CR_NAME, istioSystemNamespace.Name)
-	// Delete Service Mesh Control Plane Custom Resource
-	if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, IstioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
@@ -415,7 +421,6 @@ func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) 
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Subscription", subscription.Name)
-
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -501,7 +506,6 @@ func (r *WorkshopReconciler) getoperatorCSV(workshop *workshopv1.Workshop) (stri
 }
 
 func (r *WorkshopReconciler) deleteOperatorCSV(workshop *workshopv1.Workshop, servicemeshCSV string, kialiCSV string, JaegerCSV string) (reconcile.Result, error) {
-	log.Info("start deleteOperatorCSV method ")
 
 	servicemeshOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, servicemeshCSV, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), servicemeshOperatorCSV); err != nil {
@@ -524,5 +528,59 @@ func (r *WorkshopReconciler) deleteOperatorCSV(workshop *workshopv1.Workshop, se
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", JaegerOperatorCSV.Name)
 
+	return reconcile.Result{}, nil
+}
+
+func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+
+	namespaceFound := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
+	// Delete istioSystem Namespace
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ISTIO_NAMESPACE_NAME}, namespaceFound); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	vwc := &admissionregistration.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "openshift-operators.servicemesh-resources.maistra.io",
+			Namespace: "openshift-operators",
+		},
+	}
+
+	if err := r.Delete(context.TODO(), vwc); err != nil {
+		log.Errorf("Failed to delete ValidatingWebhookConfiguration %s", vwc.Name)
+		return reconcile.Result{}, err
+	}
+	log.Infof("deleted %s ValidatingWebhookConfiguration", vwc.Name)
+
+	mwc := &admissionregistration.MutatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "openshift-operators.servicemesh-resources.maistra.io",
+			Namespace: "openshift-operators",
+		},
+	}
+
+	if err := r.Delete(context.TODO(), mwc); err != nil {
+		log.Errorf("Failed to delete MutatingWebhookConfiguration %s", mwc.Name)
+		return reconcile.Result{}, err
+	}
+	log.Infof("deleted %s MutatingWebhookConfiguration", mwc.Name)
+
+	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
+		servicemeshcontrolplanes := &maistrav2.ServiceMeshControlPlane{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: SERVICE_MESH_CONTROL_PLANE_CR_NAME, Namespace: ISTIO_NAMESPACE_NAME}, servicemeshcontrolplanes); err != nil {
+			log.Error("Failed to found servicemeshcontrolplanes ")
+			return reconcile.Result{}, err
+		}
+		log.Infof("Get servicemeshcontrolplanes %s", servicemeshcontrolplanes.Name)
+
+		patch := client.MergeFrom(servicemeshcontrolplanes.DeepCopy())
+		servicemeshcontrolplanes.Finalizers = nil
+		if err := r.Patch(context.TODO(), servicemeshcontrolplanes, patch); err != nil {
+			log.Errorf("Failed to patch ServiceMeshControlPlane %s", servicemeshcontrolplanes.Name)
+			return reconcile.Result{}, err
+		}
+		log.Infof("patched %s ServiceMeshControlPlane", servicemeshcontrolplanes.Name)
+	}
+	//Success
 	return reconcile.Result{}, nil
 }
