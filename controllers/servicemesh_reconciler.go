@@ -568,7 +568,6 @@ func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reco
 	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
 		servicemeshcontrolplanes := &maistrav2.ServiceMeshControlPlane{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: SERVICE_MESH_CONTROL_PLANE_CR_NAME, Namespace: ISTIO_NAMESPACE_NAME}, servicemeshcontrolplanes); err != nil {
-			log.Errorf("Failed to get servicemeshcontrolplanes %s", servicemeshcontrolplanes.Name)
 			return reconcile.Result{}, err
 		}
 		log.Infof("Got servicemeshcontrolplanes %s", servicemeshcontrolplanes.Name)
