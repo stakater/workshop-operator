@@ -359,13 +359,6 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
 		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, IstioLabels, kubernetes.JaegerUserRules())
 
-	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_CR_NAME, istioSystemNamespace.Name)
-	// Delete Service Mesh Control Plane Custom Resource
-	if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
-
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
 		SERVICE_MESH_MEMBER_ROLL_CR_NAME, istioSystemNamespace.Name, istioMembers)
 	// Delete service MeshMember Roll CR
@@ -373,6 +366,13 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Custom Resource", serviceMeshMemberRollCR.Name)
+
+	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_CR_NAME, istioSystemNamespace.Name)
+	// Delete Service Mesh Control Plane Custom Resource
+	if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, IstioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
@@ -580,6 +580,23 @@ func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reco
 		}
 		log.Infof("patched %s ServiceMeshControlPlane", servicemeshcontrolplanes.Name)
 	}
+
+	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
+		serviceMeshMemberRoll := &maistrav1.ServiceMeshMemberRoll{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: SERVICE_MESH_MEMBER_ROLL_CR_NAME, Namespace: ISTIO_NAMESPACE_NAME}, serviceMeshMemberRoll); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Got ServiceMeshMemberRoll %s", serviceMeshMemberRoll.Name)
+
+		patch := client.MergeFrom(serviceMeshMemberRoll.DeepCopy())
+		serviceMeshMemberRoll.Finalizers = nil
+		if err := r.Patch(context.TODO(), serviceMeshMemberRoll, patch); err != nil {
+			log.Errorf("Failed to patch ServiceMeshMemberRoll %s", serviceMeshMemberRoll.Name)
+			return reconcile.Result{}, err
+		}
+		log.Infof("patched %s ServiceMeshMemberRoll", serviceMeshMemberRoll.Name)
+	}
+
 	//Success
 	return reconcile.Result{}, nil
 }
