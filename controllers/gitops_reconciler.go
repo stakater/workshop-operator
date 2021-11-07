@@ -23,8 +23,7 @@ import (
 )
 
 var (
-	secretName              = "argocd-default-cluster-config"
-	clusterConfigSecretData = map[string]string{}
+	secretName = "argocd-default-cluster-config"
 )
 
 const (
@@ -276,6 +275,7 @@ g, ` + username + `, ` + userRole + `
 func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *workshopv1.Workshop, namespaceName string,
 	labels map[string]string, namespaceList string) (reconcile.Result, error) {
 
+	clusterConfigSecretData := map[string]string{}
 	clusterConfigSecretData["config"] = "{\"tlsClientConfig\":{\"insecure\":false}}"
 	clusterConfigSecretData["name"] = "in-cluster"
 	clusterConfigSecretData["namespaces"] = namespaceList
@@ -456,6 +456,7 @@ g, ` + username + `, ` + userRole + `
 func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *workshopv1.Workshop, namespaceName string,
 	labels map[string]string, namespaceList string) (reconcile.Result, error) {
 
+	clusterConfigSecretData := map[string]string{}
 	clusterConfigSecretData["config"] = "{\"tlsClientConfig\":{\"insecure\":false}}"
 	clusterConfigSecretData["name"] = "in-cluster"
 	clusterConfigSecretData["namespaces"] = namespaceList

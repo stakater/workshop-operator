@@ -36,7 +36,6 @@ func (r *WorkshopReconciler) reconcileProject(workshop *workshopv1.Workshop, use
 		stagingProjectName := fmt.Sprintf("%s%d", workshop.Spec.Infrastructure.Project.StagingName, id)
 
 		if id <= users && enabledProject {
-			// Project
 			if workshop.Spec.Infrastructure.Project.StagingName != "" {
 				if result, err := r.addProject(workshop, stagingProjectName, username); util.IsRequeued(result, err) {
 					return result, err
@@ -66,7 +65,7 @@ func (r *WorkshopReconciler) addProject(workshop *workshopv1.Workshop, projectNa
 	if err := r.Create(context.TODO(), projectNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project Namespace", projectNamespace.Name)
+		log.Infof("Created %s Namespace", projectNamespace.Name)
 	}
 
 	if result, err := r.manageRoles(workshop, projectNamespace.Name, username); err != nil {
@@ -88,22 +87,22 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 
 	users = append(users, userSubject)
 
-	// User
+	// Create User Role Binding
 	userRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, username+"-project", projectName, projectLabels,
 		users, USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project Role Binding", userRoleBinding.Name)
+		log.Infof("Created %s Role Binding", userRoleBinding.Name)
 	}
 
-	// Default
+	// Create Default Role Binding
 	defaultRoleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, username+"-default", projectName, projectLabels,
 		PROJECT_SERVICEACCOUNT_NAME, DEFAULT_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), defaultRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project Role Binding", defaultRoleBinding.Name)
+		log.Infof("Created %s Role Binding", defaultRoleBinding.Name)
 	}
 
 	argocdUsers := []rbac.Subject{}
@@ -113,13 +112,13 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 	}
 	argocdUsers = append(argocdUsers, userSubject)
 
-	//Argo CD
+	//Create Argo CD Role Binding
 	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		username+"-argocd", projectName, projectLabels, argocdUsers, ARGOCD_EDIT_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), argocdEditRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project Role Binding", argocdEditRoleBinding.Name)
+		log.Infof("Created %s Role Binding", argocdEditRoleBinding.Name)
 	}
 
 	//Success
@@ -127,7 +126,7 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 }
 
 // Delete Project
-func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, userId int) (reconcile.Result, error) {
 	enabledProject := workshop.Spec.Infrastructure.Project.Enabled
 	log.Infoln("Deleting Project ")
 	id := 1
@@ -135,8 +134,7 @@ func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users 
 		username := fmt.Sprintf("user%d", id)
 		stagingProjectName := fmt.Sprintf("%s%d", workshop.Spec.Infrastructure.Project.StagingName, id)
 
-		if id >= users && enabledProject {
-			// Project
+		if id >= userId && enabledProject {
 			if workshop.Spec.Infrastructure.Project.StagingName != "" {
 				if result, err := r.deleteProjectNamespace(workshop, stagingProjectName, username); util.IsRequeued(result, err) {
 					return result, err
@@ -160,7 +158,7 @@ func (r *WorkshopReconciler) deleteProject(workshop *workshopv1.Workshop, users 
 	return reconcile.Result{}, nil
 }
 
-// Add Project
+// delete Project
 func (r *WorkshopReconciler) deleteProjectNamespace(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
 
 	projectNamespace := kubernetes.NewNamespace(workshop, r.Scheme, projectName)
@@ -173,7 +171,7 @@ func (r *WorkshopReconciler) deleteProjectNamespace(workshop *workshopv1.Worksho
 	if err := r.Delete(context.TODO(), projectNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Project Namespace ", projectNamespace.Name)
+	log.Infof("Deleted %s Namespace ", projectNamespace.Name)
 
 	log.Infoln("Deleted Namespace successfully")
 	//Success
@@ -200,7 +198,7 @@ func (r *WorkshopReconciler) deleteManageRoles(workshop *workshopv1.Workshop, pr
 
 	argocdEditRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		username+"-argocd", projectName, projectLabels, argocdUsers, ARGOCD_EDIT_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
-	// Delete Argo CD
+	// Delete Argo CD Role Binding
 	if err := r.Delete(context.TODO(), argocdEditRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
