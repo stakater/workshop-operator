@@ -26,29 +26,22 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var CodeReadyLabels = map[string]string{
+var codeReadyLabels = map[string]string{
 	"app.kubernetes.io/part-of": "codeready",
 }
 
-var (
-	err          error
-	httpResponse *http.Response
-	httpRequest  *http.Request
-)
-
 const (
-	CODEREADY_NAMESPACE_NAME           = "workspaces"
-	CODEREADY_OPERATORGROUP_NAME       = "codeready-workspaces"
-	CODEREADY_SUBSCRIPTION_NAME        = "codeready-workspaces"
-	CODEREADY_PACKAGE_NAME             = "codeready-workspaces"
-	CODEREADY_OPERATOR_DEPLOYMENT_NAME = "codeready-operator"
-	CHE_CUSTOM_RESOURCE_NAME           = "codereadyworkspaces"
-	CODEREADY_DEPLOYMENT_NAME          = "codeready"
-	CHE_CLUSTER_ROLE_NAME              = "che"
-	CHE_CLUSTER_ROLE_BINDING_NAME      = "che"
-	CHE_SERVICEACCOUNT_NAME            = "che"
-	CHE_CODE_FLAVOR_NAME               = "codeready"
-	CHE_WORKSPACE_NAME                 = "workspace"
+	CODEREADY_NAMESPACE_NAME            = "workspaces"
+	CODEREADY_OPERATORGROUP_NAME        = "codeready-workspaces"
+	CODEREADY_SUBSCRIPTION_NAME         = "codeready-workspaces"
+	CODEREADY_SUBSCRIPTION_PACKAGE_NAME = "codeready-workspaces"
+	CODEREADY_OPERATOR_DEPLOYMENT_NAME  = "codeready-operator"
+	CHE_CUSTOM_RESOURCE_NAME            = "codereadyworkspaces"
+	CODEREADY_DEPLOYMENT_NAME           = "codeready"
+	CHE_CLUSTER_ROLE_NAME               = "che"
+	CHE_CLUSTER_ROLE_BINDING_NAME       = "che"
+	CHE_SERVICEACCOUNT_NAME             = "che"
+	CHE_CODE_FLAVOR_NAME                = "codeready"
 )
 
 // Reconciling CodeReadyWorkspace
@@ -91,7 +84,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 
 	// Create Subscription
 	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME,
-		CODEREADY_PACKAGE_NAME, channel, clusterServiceVersion)
+		CODEREADY_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
 	if err := r.Create(context.TODO(), codeReadyWorkspacesSubscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -134,17 +127,17 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 			return result, err
 		}
 
-		// Che Cluster Role
+		// Create Che Cluster Role
 		cheClusterRole :=
-			kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
+			kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, codeReadyLabels, kubernetes.CheRules())
 		if err := r.Create(context.TODO(), cheClusterRole); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
 			log.Infof("Created %s Cluster Role", cheClusterRole.Name)
 		}
 
-		// Che Cluster Role Binding
-		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CHE_CLUSTER_ROLE_BINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CHE_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
+		//Create Che Cluster Role Binding
+		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CHE_CLUSTER_ROLE_BINDING_NAME, CODEREADY_NAMESPACE_NAME, codeReadyLabels, CHE_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 		if err := r.Create(context.TODO(), cheClusterRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
@@ -153,9 +146,7 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 
 		for id := 1; id <= users; id++ {
 			username := fmt.Sprintf("user%d", id)
-			log.Infoln("user name ", username)
-			log.Infoln("namespace name", CODEREADY_NAMESPACE_NAME)
-			log.Infoln(username + CODEREADY_NAMESPACE_NAME)
+
 			if result, err := createUser(workshop, username, CHE_CODE_FLAVOR_NAME, CODEREADY_NAMESPACE_NAME, appsHostnameSuffix, masterAccessToken); err != nil {
 				return result, err
 			}
@@ -197,8 +188,10 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 func getDevFile(workshop *workshopv1.Workshop) (string, reconcile.Result, error) {
 
 	var (
-		devfile string
-		client  = &http.Client{
+		httpResponse *http.Response
+		httpRequest  *http.Request
+		devfile      string
+		client       = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
@@ -252,6 +245,9 @@ func createUser(workshop *workshopv1.Workshop, username string, codeflavor strin
 	var (
 		openshiftUserPassword = workshop.Spec.User.Password
 		body                  []byte
+		err                   error
+		httpResponse          *http.Response
+		httpRequest           *http.Request
 		keycloakCheUserURL    = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/admin/realms/" + codeflavor + "/users"
 
 		client = &http.Client{
@@ -293,6 +289,9 @@ func getUserToken(workshop *workshopv1.Workshop, username string, codeflavor str
 
 	var (
 		openshiftUserPassword = workshop.Spec.User.Password
+		err                   error
+		httpResponse          *http.Response
+		httpRequest           *http.Request
 		keycloakCheTokenURL   = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/realms/" + codeflavor + "/protocol/openid-connect/token"
 
 		userToken util.Token
@@ -345,6 +344,9 @@ func getOAuthUserToken(workshop *workshopv1.Workshop, username string,
 	codeflavor string, namespace string, appsHostnameSuffix string) (string, reconcile.Result, error) {
 	var (
 		openshiftUserPassword = workshop.Spec.User.Password
+		err                   error
+		httpResponse          *http.Response
+		httpRequest           *http.Request
 		keycloakCheTokenURL   = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/realms/" + codeflavor + "/protocol/openid-connect/token"
 		oauthOpenShiftURL     = "https://oauth-openshift." + appsHostnameSuffix + "/oauth/authorize?client_id=openshift-challenging-client&response_type=token"
 
@@ -422,6 +424,9 @@ func getOAuthUserToken(workshop *workshopv1.Workshop, username string,
 // Get KeyCloak Admin Token
 func getKeycloakAdminToken(workshop *workshopv1.Workshop, namespace string, appsHostnameSuffix string) (string, reconcile.Result, error) {
 	var (
+		err                 error
+		httpResponse        *http.Response
+		httpRequest         *http.Request
 		keycloakCheTokenURL = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/realms/master/protocol/openid-connect/token"
 
 		masterToken util.Token
@@ -460,6 +465,9 @@ func getKeycloakAdminToken(workshop *workshopv1.Workshop, namespace string, apps
 func updateUserEmail(workshop *workshopv1.Workshop, username string,
 	codeflavor string, namespace string, appsHostnameSuffix string) (reconcile.Result, error) {
 	var (
+		err                    error
+		httpResponse           *http.Response
+		httpRequest            *http.Request
 		keycloakMasterTokenURL = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/realms/master/protocol/openid-connect/token"
 		keycloakUserURL        = "https://keycloak-" + namespace + "." + appsHostnameSuffix + "/auth/admin/realms/" + codeflavor + "/users"
 		masterToken            util.Token
@@ -552,6 +560,9 @@ func initWorkspace(workshop *workshopv1.Workshop, username string,
 	appsHostnameSuffix string) (reconcile.Result, error) {
 
 	var (
+		err                 error
+		httpResponse        *http.Response
+		httpRequest         *http.Request
 		devfileWorkspaceURL = "https://" + codeflavor + "-" + namespace + "." + appsHostnameSuffix + "/api/workspace/devfile?start-after-create=true&namespace=" + username
 		client              = &http.Client{
 			Transport: &http.Transport{
@@ -605,14 +616,14 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 
 		}
 
-		cheClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, kubernetes.CheRules())
+		cheClusterRole := kubernetes.NewClusterRole(workshop, r.Scheme, CHE_CLUSTER_ROLE_NAME, CODEREADY_NAMESPACE_NAME, codeReadyLabels, kubernetes.CheRules())
 		// Delete che Cluster Role
 		if err := r.Delete(context.TODO(), cheClusterRole); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Cluster Role ", cheClusterRole.Name)
 
-		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CHE_CLUSTER_ROLE_BINDING_NAME, CODEREADY_NAMESPACE_NAME, CodeReadyLabels, CHE_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
+		cheClusterRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme, CHE_CLUSTER_ROLE_BINDING_NAME, CODEREADY_NAMESPACE_NAME, codeReadyLabels, CHE_SERVICEACCOUNT_NAME, cheClusterRole.Name, KIND_CLUSTER_ROLE)
 		// Delete che Cluster RoleBinding
 		if err := r.Delete(context.TODO(), cheClusterRoleBinding); err != nil {
 			return reconcile.Result{}, err
@@ -629,7 +640,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 	log.Infof("Deleted %s  CustomResource", codeReadyWorkspacesCustomResource.Name)
 
 	codeReadyWorkspacesSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, CODEREADY_SUBSCRIPTION_NAME, CODEREADY_NAMESPACE_NAME,
-		CODEREADY_PACKAGE_NAME, channel, clusterServiceVersion)
+		CODEREADY_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
 	// Delete Subscription
 	if err := r.Delete(context.TODO(), codeReadyWorkspacesSubscription); err != nil {
 		return reconcile.Result{}, err
