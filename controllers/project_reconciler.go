@@ -76,7 +76,7 @@ func (r *WorkshopReconciler) addProject(workshop *workshopv1.Workshop, projectNa
 	return reconcile.Result{}, nil
 }
 
-// Manage Roles
+// create Manage Roles
 func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
 
 	users := []rbac.Subject{}

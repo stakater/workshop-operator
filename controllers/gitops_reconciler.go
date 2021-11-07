@@ -22,9 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var (
-	secretName = "argocd-default-cluster-config"
-)
+var secretName = "argocd-default-cluster-config"
 
 const (
 	ARGOCD_NAMESPACE_NAME            = "argocd"
