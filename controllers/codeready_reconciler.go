@@ -608,7 +608,7 @@ func (r *WorkshopReconciler) deleteCodeReadyWorkspace(workshop *workshopv1.Works
 			userWorkspacesNamespace := kubernetes.NewNamespace(workshop, r.Scheme, userWorkspacesNamespaceName)
 			// Delete Project
 			if err := r.Delete(context.TODO(), userWorkspacesNamespace); err != nil {
-				log.Errorf("Failed to Deleted %s Namespace", userWorkspacesNamespace.Name)
+				log.Errorf("Failed to Delete %s Namespace", userWorkspacesNamespace.Name)
 
 				return reconcile.Result{}, err
 			}
