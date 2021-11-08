@@ -22,8 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var secretName = "argocd-default-cluster-config"
-
 const (
 	ARGOCD_NAMESPACE_NAME            = "argocd"
 	GITOPS_SUBSCRIPTION_NAME         = "openshift-gitops-operator"
@@ -37,6 +35,7 @@ const (
 	ARGOCD_CONFIGMAP_NAME            = "argocd-cm"
 	ARGOCD_CUSTOMRESOURCE_NAME       = "argocd"
 	ARGOCD_DEPLOYMENT_NAME           = "argocd-server"
+	ARGOCD_CONFIG_SECRET_NAME        = "argocd-default-cluster-config"
 )
 
 // Reconciling GitOps
@@ -279,7 +278,7 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 	clusterConfigSecretData["namespaces"] = namespaceList
 	clusterConfigSecretData["server"] = "https://kubernetes.default.svc"
 
-	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, secretName, namespaceName, labels, clusterConfigSecretData)
+	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, ARGOCD_CONFIG_SECRET_NAME, namespaceName, labels, clusterConfigSecretData)
 	if err := r.Create(context.TODO(), clusterConfigSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -461,7 +460,7 @@ func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *wo
 	clusterConfigSecretData["server"] = "https://kubernetes.default.svc"
 	labels["app.kubernetes.io/name"] = "argocd-default-cluster-config"
 
-	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, secretName, namespaceName, labels, clusterConfigSecretData)
+	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, ARGOCD_CONFIG_SECRET_NAME, namespaceName, labels, clusterConfigSecretData)
 	// delete cluster Config Secret
 	if err := r.Delete(context.TODO(), clusterConfigSecret); err != nil {
 		return reconcile.Result{}, err
