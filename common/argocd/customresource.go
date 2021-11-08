@@ -3,11 +3,9 @@ package argocd
 import (
 	argocdoperator "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocd "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 // NewArgoCDCustomResource create a ArgoCD Custom Resource
@@ -41,12 +39,6 @@ func NewArgoCDCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Sche
 			},
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, cr, scheme)
-	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
-	}
 	return cr
 }
 
@@ -71,12 +63,6 @@ func NewAppProjectCustomResource(workshop *workshopv1.Workshop, scheme *runtime.
 				"*",
 			},
 		},
-	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, cr, scheme)
-	if err != nil {
-		log.Error(err, "Failed to set SetControllerReference")
 	}
 	return cr
 }

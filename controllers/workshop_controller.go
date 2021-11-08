@@ -110,6 +110,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if users < 0 {
 		users = 0
 	}
+	// Handle Cleanup on Deletion
 
 	// Check if the Workshop workshop is marked to be deleted, which is
 	// indicated by the deletion timestamp being set.
@@ -238,7 +239,15 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
-	log.Info("Deleting workshop" + workshop.ObjectMeta.Name)
+	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
+
+	if result, err := r.deleteGitOps(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
+		return result, err
+	}
 
 	if result, err := r.deleteCodeReadyWorkspace(workshop, userID, appsHostnameSuffix); util.IsRequeued(result, err) {
 		return result, err
