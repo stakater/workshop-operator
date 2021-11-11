@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	//maistrav3 "github.com/maistra/istio-operator/pkg/apis/external/kiali/v1alpha1"
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -205,6 +206,21 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		}
 	}
 
+	//serviceMeshMemberRoll := &maistrav1.ServiceMeshMemberRoll{}
+	//log.Info(serviceMeshMemberRoll.DeepCopy())
+	//if err := r.Get(context.TODO(), types.NamespacedName{Name: SERVICE_MESH_MEMBER_ROLL_CR_NAME, Namespace: ISTIO_NAMESPACE_NAME}, serviceMeshMemberRoll); err != nil {
+	//	return reconcile.Result{}, err
+	//}
+	//log.Infof("Got ServiceMeshMemberRoll %s", serviceMeshMemberRoll.Name)
+	//
+	//kiali := &maistrav3.Kiali{}
+	//newkiali := kiali.DeepCopy()
+	//log.Info(newkiali)
+	//if err := r.Get(context.TODO(), types.NamespacedName{Name: "kiali"}, newkiali); err != nil {
+	//	log.Info("Failed to get kiali")
+	//	return reconcile.Result{}, err
+	//}
+
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -296,18 +312,10 @@ func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Works
 	if result, err := r.deleteServiceMesh(workshop, userID); util.IsRequeued(result, err) {
 		return result, err
 	}
-	if result, err := r.deleteKialiOperator(workshop); util.IsRequeued(result, err) {
+	if result, err := r.deleteKialiSubscription(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
-	if result, err := r.deleteJaegerOperator(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteElasticSearchOperator(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteServiceMeshServiceNamespace(workshop); util.IsRequeued(result, err) {
+	if result, err := r.deleteJaegerSubscription(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -315,7 +323,15 @@ func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Works
 		return result, err
 	}
 
-	if result, err := r.deleteWebhooks(workshop); util.IsRequeued(result, err) {
+	if result, err := r.PatchIstioProject(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteElasticSearchOperator(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteIstioSystemNamespace(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -324,10 +340,6 @@ func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Works
 
 // Delete ServiceMesh
 func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
-
-	// Service Mesh Operator
-	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
-	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.ClusterServiceVersion
 
 	istioMembers := []string{}
 	istioUsers := []rbac.Subject{}
@@ -396,20 +408,40 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 	log.Infof("Deleted %s Role", jaegerRole.Name)
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICE_MESH_SUBSCRIPTION_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME,
-		SERVICE_MESH_PACKAGE_NAME, channel, clusterserviceversion)
-	// Delete Subscription
-	if err := r.Delete(context.TODO(), subscription); err != nil {
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ISTIO_NAMESPACE_NAME}, istioSystemNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
-	log.Infof("Deleted %s Subscription", subscription.Name)
+
+	vwc := &admissionregistration.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "openshift-operators.servicemesh-resources.maistra.io",
+			Namespace: "openshift-operators",
+		},
+	}
+
+	if err := r.Delete(context.TODO(), vwc); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("deleted %s ValidatingWebhookConfiguration", vwc.Name)
+
+	mwc := &admissionregistration.MutatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "openshift-operators.servicemesh-resources.maistra.io",
+			Namespace: "openshift-operators",
+		},
+	}
+
+	if err := r.Delete(context.TODO(), mwc); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("deleted %s MutatingWebhookConfiguration", mwc.Name)
 
 	//Success
 	return reconcile.Result{}, nil
 }
 
 // Delete KialiOperator
-func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteKialiSubscription(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	channel := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.KialiOperatorHub.ClusterServiceVersion
@@ -426,7 +458,7 @@ func (r *WorkshopReconciler) deleteKialiOperator(workshop *workshopv1.Workshop) 
 }
 
 // Delete JaegerOperator
-func (r *WorkshopReconciler) deleteJaegerOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteJaegerSubscription(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	channel := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.ClusterServiceVersion
@@ -450,6 +482,13 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.ClusterServiceVersion
 	subcriptionName := fmt.Sprintf("elasticsearch-operator-%s", channel)
 
+	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, REDHAT_OPERATOR_NAMESPACE_NAME)
+	// Delete Namespace
+	if err := r.Delete(context.TODO(), redhatOperatorsNamespace); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Namespace", redhatOperatorsNamespace.Name)
+
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, ELASTICSEARCH_SUBSCRIPTION_NAMESPACE_NAME,
 		ELASTICSEARCH_PACKAGE_NAME, channel, clusterserviceversion)
 	// Delete Subscription
@@ -461,7 +500,7 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) deleteServiceMeshServiceNamespace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteIstioSystemNamespace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
 	// Delete istioSystem Namespace
@@ -469,13 +508,6 @@ func (r *WorkshopReconciler) deleteServiceMeshServiceNamespace(workshop *worksho
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Namespace", istioSystemNamespace.Name)
-
-	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, REDHAT_OPERATOR_NAMESPACE_NAME)
-	// Delete Namespace
-	if err := r.Delete(context.TODO(), redhatOperatorsNamespace); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Namespace", redhatOperatorsNamespace.Name)
 
 	//Success
 	return reconcile.Result{}, nil
@@ -509,21 +541,21 @@ func (r *WorkshopReconciler) deleteOperatorCSV(workshop *workshopv1.Workshop, se
 
 	servicemeshOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, servicemeshCSV, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), servicemeshOperatorCSV); err != nil {
-		log.Errorf("Failed to delete ClusterServiceVersion %s", servicemeshOperatorCSV.Name)
+		//log.Errorf("Failed to delete ClusterServiceVersion %s", servicemeshOperatorCSV.Name)
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", servicemeshOperatorCSV.Name)
 
 	kialiOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, kialiCSV, KIALI_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), kialiOperatorCSV); err != nil {
-		log.Errorf("Failed to delete ClusterServiceVersion %s", kialiOperatorCSV.Name)
+		//log.Errorf("Failed to delete ClusterServiceVersion %s", kialiOperatorCSV.Name)
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", kialiOperatorCSV.Name)
 
 	JaegerOperatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, JaegerCSV, JAEGER_SUBSCRIPTION_NAMESPACE_NAME)
 	if err := r.Delete(context.TODO(), JaegerOperatorCSV); err != nil {
-		log.Errorf("Failed to delete ClusterServiceVersion %s", JaegerOperatorCSV.Name)
+		//log.Errorf("Failed to delete ClusterServiceVersion %s", JaegerOperatorCSV.Name)
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s ClusterServiceVersion", JaegerOperatorCSV.Name)
@@ -531,39 +563,13 @@ func (r *WorkshopReconciler) deleteOperatorCSV(workshop *workshopv1.Workshop, se
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+func (r *WorkshopReconciler) PatchIstioProject(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	namespaceFound := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
-	// Delete istioSystem Namespace
+
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: ISTIO_NAMESPACE_NAME}, namespaceFound); err != nil {
 		return reconcile.Result{}, err
 	}
-
-	vwc := &admissionregistration.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "openshift-operators.servicemesh-resources.maistra.io",
-			Namespace: "openshift-operators",
-		},
-	}
-
-	if err := r.Delete(context.TODO(), vwc); err != nil {
-		log.Errorf("Failed to delete ValidatingWebhookConfiguration %s", vwc.Name)
-		return reconcile.Result{}, err
-	}
-	log.Infof("deleted %s ValidatingWebhookConfiguration", vwc.Name)
-
-	mwc := &admissionregistration.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "openshift-operators.servicemesh-resources.maistra.io",
-			Namespace: "openshift-operators",
-		},
-	}
-
-	if err := r.Delete(context.TODO(), mwc); err != nil {
-		log.Errorf("Failed to delete MutatingWebhookConfiguration %s", mwc.Name)
-		return reconcile.Result{}, err
-	}
-	log.Infof("deleted %s MutatingWebhookConfiguration", mwc.Name)
 
 	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
 		servicemeshcontrolplanes := &maistrav2.ServiceMeshControlPlane{}
@@ -575,7 +581,7 @@ func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reco
 		patch := client.MergeFrom(servicemeshcontrolplanes.DeepCopy())
 		servicemeshcontrolplanes.Finalizers = nil
 		if err := r.Patch(context.TODO(), servicemeshcontrolplanes, patch); err != nil {
-			log.Errorf("Failed to patch ServiceMeshControlPlane %s", servicemeshcontrolplanes.Name)
+			//log.Errorf("Failed to patch ServiceMeshControlPlane %s", servicemeshcontrolplanes.Name)
 			return reconcile.Result{}, err
 		}
 		log.Infof("patched %s ServiceMeshControlPlane", servicemeshcontrolplanes.Name)
@@ -591,7 +597,7 @@ func (r *WorkshopReconciler) deleteWebhooks(workshop *workshopv1.Workshop) (reco
 		patch := client.MergeFrom(serviceMeshMemberRoll.DeepCopy())
 		serviceMeshMemberRoll.Finalizers = nil
 		if err := r.Patch(context.TODO(), serviceMeshMemberRoll, patch); err != nil {
-			log.Errorf("Failed to patch ServiceMeshMemberRoll %s", serviceMeshMemberRoll.Name)
+			//log.Errorf("Failed to patch ServiceMeshMemberRoll %s", serviceMeshMemberRoll.Name)
 			return reconcile.Result{}, err
 		}
 		log.Infof("patched %s ServiceMeshMemberRoll", serviceMeshMemberRoll.Name)
