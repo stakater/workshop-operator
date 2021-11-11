@@ -2,11 +2,9 @@ package codeready
 
 import (
 	che "github.com/eclipse/che-operator/pkg/apis/org/v1"
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type codeReadyUser struct {
@@ -84,12 +82,6 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 				PreCreateSubPaths: true,
 			},
 		},
-	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, cr, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference %s", name)
 	}
 	return cr
 }

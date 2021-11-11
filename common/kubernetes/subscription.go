@@ -131,11 +131,11 @@ func NewCustomSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 func NewRedHatClusterServiceVersion(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	startingCSV string, namespace string) *olmv1alpha1.ClusterServiceVersion {
 
-	CSV := &olmv1alpha1.ClusterServiceVersion{
+	csv := &olmv1alpha1.ClusterServiceVersion{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      startingCSV,
 			Namespace: namespace,
 		},
 	}
-	return CSV
+	return csv
 }
