@@ -350,20 +350,18 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 		istioUsers = append(istioUsers, userSubject)
 	}
 
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
-
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
 		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, IstioLabels, kubernetes.JaegerUserRules())
 
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
-		SERVICE_MESH_MEMBER_ROLL_NAME, istioSystemNamespace.Name, istioMembers)
+		SERVICE_MESH_MEMBER_ROLL_NAME, ISTIO_NAMESPACE_NAME, istioMembers)
 	// Delete Service MeshMember Roll Custom Resource
 	if err := r.Delete(context.TODO(), serviceMeshMemberRollCR); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Service MeshMember Roll Custom Resource", serviceMeshMemberRollCR.Name)
 
-	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_NAME, istioSystemNamespace.Name)
+	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, SERVICE_MESH_CONTROL_PLANE_NAME, ISTIO_NAMESPACE_NAME)
 	// Delete Service Mesh Control Plane Custom Resource
 	if err := r.Delete(context.TODO(), serviceMeshControlPlaneCR); err != nil {
 		return reconcile.Result{}, err
@@ -392,16 +390,18 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 	log.Infof("Deleted %s Role", jaegerRole.Name)
 
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: ISTIO_NAMESPACE_NAME}, istioSystemNamespace); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	vwc := &admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "openshift-operators.servicemesh-resources.maistra.io",
 			Namespace: "openshift-operators",
 		},
 	}
+
+	vwc1 := &admissionregistration.ValidatingWebhookConfiguration{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "openshift-operators.servicemesh-resources.maistra.io", Namespace: "openshift-operators"}, vwc1); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Info(vwc1.Name)
 	// Delete ValidatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), vwc); err != nil {
 		return reconcile.Result{}, err
@@ -414,6 +414,12 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 			Namespace: "openshift-operators",
 		},
 	}
+	mwc1 := &admissionregistration.MutatingWebhookConfiguration{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "openshift-operators.servicemesh-resources.maistra.io", Namespace: "openshift-operators"}, mwc1); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Info(mwc1.Name)
+
 	// Delete MutatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), mwc); err != nil {
 		return reconcile.Result{}, err
@@ -489,7 +495,7 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 func (r *WorkshopReconciler) deleteIstioSystemNamespace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
-	// Delete istioSystem Namespace
+	// Delete istio-system Namespace
 	if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
