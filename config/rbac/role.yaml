@@ -10,6 +10,7 @@ rules:
   - admissionregistration.k8s.io
   resources:
   - mutatingwebhookconfigurations
+  - validatingwebhookconfiguration
   verbs:
   - create
   - delete

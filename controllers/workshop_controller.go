@@ -58,7 +58,7 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=org.eclipse.che,resources=checlusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=maistra.io,resources=servicemeshcontrolplanes;servicemeshmemberrolls,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations;validatingwebhookconfiguration,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=gpte.opentlc.com,resources=nexus;giteas,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=operatorgroups;subscriptions;clusterserviceversions;installplans,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=argoproj.io,resources=argocds;appprojects,verbs=get;list;watch;create;update;patch;delete
