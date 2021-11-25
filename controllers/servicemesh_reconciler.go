@@ -205,6 +205,19 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 			}
 		}
 	}
+
+	mwc1 := &admissionregistration.MutatingWebhookConfiguration{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "openshift-operators.servicemesh-resources.maistra.io", Namespace: "openshift-operators"}, mwc1); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Info(mwc1.Name)
+
+	vwc1 := &admissionregistration.ValidatingWebhookConfiguration{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "openshift-operators.servicemesh-resources.maistra.io", Namespace: "openshift-operators"}, vwc1); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Info(vwc1.Name)
+
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -396,12 +409,6 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 			Namespace: "openshift-operators",
 		},
 	}
-
-	vwc1 := &admissionregistration.ValidatingWebhookConfiguration{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "openshift-operators.servicemesh-resources.maistra.io", Namespace: "openshift-operators"}, vwc1); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Info(vwc1.Name)
 	// Delete ValidatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), vwc); err != nil {
 		return reconcile.Result{}, err
@@ -414,12 +421,6 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 			Namespace: "openshift-operators",
 		},
 	}
-	mwc1 := &admissionregistration.MutatingWebhookConfiguration{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "openshift-operators.servicemesh-resources.maistra.io", Namespace: "openshift-operators"}, mwc1); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Info(mwc1.Name)
-
 	// Delete MutatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), mwc); err != nil {
 		return reconcile.Result{}, err
