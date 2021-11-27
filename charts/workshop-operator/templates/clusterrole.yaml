@@ -103,6 +103,12 @@ rules:
       - update
       - watch
   - apiGroups:
+      - kiali.io
+    resources:
+      - kialis
+    verbs:
+      - patch
+  - apiGroups:
       - maistra.io
     resources:
       - servicemeshcontrolplanes
