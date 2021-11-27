@@ -107,7 +107,10 @@ rules:
     resources:
       - kialis
     verbs:
+      - get
+      - list
       - patch
+      - watch
   - apiGroups:
       - maistra.io
     resources:
