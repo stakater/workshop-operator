@@ -398,7 +398,6 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 	// Delete ValidatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), vwc); err != nil {
-		log.Info("failed to Delete ValidatingWebhookConfiguration")
 		return reconcile.Result{}, err
 	}
 	log.Infof("deleted %s ValidatingWebhookConfiguration", vwc.Name)
@@ -411,7 +410,6 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 	// Delete MutatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), mwc); err != nil {
-		log.Info("failed to Delete MutatingWebhookConfiguration")
 		return reconcile.Result{}, err
 	}
 	log.Infof("deleted %s MutatingWebhookConfiguration", mwc.Name)
