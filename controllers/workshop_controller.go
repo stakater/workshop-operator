@@ -257,7 +257,6 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
-
 	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
 		return result, err
 	}

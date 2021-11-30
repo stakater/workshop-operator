@@ -76,7 +76,6 @@ func NewCommunitySubscription(workshop *workshopv1.Workshop, scheme *runtime.Sch
 func NewRedHatSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, packageName string, channel string, startingCSV string) *olmv1alpha1.Subscription {
 
-	log.Info("RedHatSubscription Pipelines")
 	subscription := &olmv1alpha1.Subscription{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
