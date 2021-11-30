@@ -52,7 +52,7 @@ const (
 	ISTIO_NAMESPACE_NAME                      = "istio-system"
 )
 
-var IstioLabels = map[string]string{
+var istioLabels = map[string]string{
 	"app.kubernetes.io/part-of": "istio",
 }
 
@@ -141,7 +141,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	}
 
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
-		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, IstioLabels, kubernetes.JaegerUserRules())
+		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, istioLabels, kubernetes.JaegerUserRules())
 	if err := r.Create(context.TODO(), jaegerRole); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -149,7 +149,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	}
 
 	jaegerRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, IstioLabels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
+		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, istioLabels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
 	if err := r.Create(context.TODO(), jaegerRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -170,7 +170,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	}
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, IstioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
+		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, istioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
 
 	if err := r.Create(context.TODO(), meshUserRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -351,7 +351,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
-		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, IstioLabels, kubernetes.JaegerUserRules())
+		JAEGER_ROLE_NAME, JAEGER_ROLE_NAMESPACE_NAME, istioLabels, kubernetes.JaegerUserRules())
 
 	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
 		SERVICE_MESH_MEMBER_ROLL_NAME, ISTIO_NAMESPACE_NAME, istioMembers)
@@ -369,7 +369,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	log.Infof("Deleted %s Service Mesh Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, IstioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
+		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, istioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
 	// Delete meshUser RoleBinding
 	if err := r.Delete(context.TODO(), meshUserRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -377,7 +377,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	log.Infof("Deleted %s Role Binding", meshUserRoleBinding.Name)
 
 	jaegerRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, IstioLabels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
+		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, istioLabels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
 	// Delete jaeger RoleBinding
 	if err := r.Delete(context.TODO(), jaegerRoleBinding); err != nil {
 		return reconcile.Result{}, err
