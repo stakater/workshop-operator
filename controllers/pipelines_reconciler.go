@@ -66,7 +66,6 @@ func (r *WorkshopReconciler) deletePipelines(workshop *workshopv1.Workshop) (rec
 	channel := workshop.Spec.Infrastructure.Pipeline.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.Pipeline.OperatorHub.ClusterServiceVersion
 
-
 	pipelineSubscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, PIPELINES_SUBSCRIPTION_NAME, PIPELINES_NAMESPACE_NAME,
 		PIPELINES_PACKAGE_NAME, channel, clusterServiceVersion)
 	// Delete Subscription
