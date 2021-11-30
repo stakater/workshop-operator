@@ -325,6 +325,9 @@ func (r *WorkshopReconciler) deleteServiceMeshService(workshop *workshopv1.Works
 // Delete ServiceMesh
 func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
+	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
+	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.ClusterServiceVersion
+
 	istioMembers := []string{}
 	istioUsers := []rbac.Subject{}
 
@@ -390,12 +393,21 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 	}
 	log.Infof("Deleted %s Role", jaegerRole.Name)
 
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVICE_MESH_SUBSCRIPTION_NAME, SERVICE_MESH_SUBSCRIPTION_NAMESPACE_NAME,
+		SERVICE_MESH_SUBSCRIPTION_PACKAGE_NAME, channel, clusterserviceversion)
+	// Delete Subscription
+	if err := r.Delete(context.TODO(), subscription); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Subscription", subscription.Name)
+
 	vwc := &admissionregistration.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "openshift-operators.servicemesh-resources.maistra.io",
 			Namespace: "openshift-operators",
 		},
 	}
+
 	// Delete ValidatingWebhookConfiguration
 	if err := r.Delete(context.TODO(), vwc); err != nil {
 		return reconcile.Result{}, err
