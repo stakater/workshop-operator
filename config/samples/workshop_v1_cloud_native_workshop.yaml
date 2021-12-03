@@ -12,8 +12,13 @@ spec:
     gitBranch: "5.1"
   infrastructure:
     guide:
+      bookbag:
+        enabled: false
+        image:
+          name: docker.io/maazil3861/workshop-operator-bookbag
+          tag: 1.0
       scholars:
-        enabled: true
+        enabled: false
         guideURL: 
           "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/5.0/index.html"
           "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/5.0/index.html" 
