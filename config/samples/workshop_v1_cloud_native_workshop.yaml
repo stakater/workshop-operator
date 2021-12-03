@@ -24,7 +24,7 @@ spec:
         clusterServiceVersion: crwoperator.v2.10.1
       openshiftOAuth: false
     gitea:
-      enabled: true
+      enabled: false
       image:
         name: quay.io/gpte-devops-automation/gitea-operator
         tag: v0.17

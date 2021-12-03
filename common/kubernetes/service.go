@@ -97,11 +97,5 @@ func NewServiceWithTarget(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			Selector: labels,
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, service, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for Service with specific target - %s", name)
-	}
 	return service
 }

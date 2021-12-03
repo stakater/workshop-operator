@@ -52,7 +52,6 @@ type InfrastructureSpec struct {
 	Gitea              GiteaSpec              `json:"gitea,omitempty"`
 	GitOps             GitOpsSpec             `json:"gitops,omitempty"`
 	Guide              GuideSpec              `json:"guide,omitempty"`
-	IstioWorkspace     IstioWorkspaceSpec     `json:"istioWorkspace,omitempty"`
 	Nexus              NexusSpec              `json:"nexus,omitempty"`
 	Pipeline           PipelineSpec           `json:"pipeline,omitempty"`
 	Project            ProjectSpec            `json:"project,omitempty"`
@@ -138,12 +137,6 @@ type CodeReadyWorkspaceSpec struct {
 	PluginRegistryImage ImageSpec       `json:"pluginRegistryImage,omitempty"`
 }
 
-// IstioWorkspaceSpec ...
-type IstioWorkspaceSpec struct {
-	Enabled     bool            `json:"enabled"`
-	OperatorHub OperatorHubSpec `json:"operatorHub"`
-}
-
 // OperatorHubSpec ...
 type OperatorHubSpec struct {
 	Channel               string `json:"channel"`
@@ -173,7 +166,6 @@ type WorkshopStatus struct {
 	CodeReadyWorkspace   string `json:"codeReadyWorkspace"`
 	Gitea                string `json:"gitea"`
 	GitOps               string `json:"gitops"`
-	IstioWorkspace       string `json:"istioWorkspace"`
 	Nexus                string `json:"nexus"`
 	Pipeline             string `json:"pipeline"`
 	Project              string `json:"project"`
