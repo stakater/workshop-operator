@@ -48,7 +48,6 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 				break
 			}
 		}
-		log.Info("for loop reconcileBookbag")
 		id++
 	}
 
@@ -58,13 +57,13 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 
 func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, userID string,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-	log.Info("Creating bookbag")
+
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAGNAMESPACENAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag Project", namespace.Name)
+		log.Infof("Created %s Project", namespace.Name)
 	}
 
 	bookbagName := fmt.Sprintf("user%s-bookbag", userID)
@@ -84,14 +83,14 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), envConfigMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag env ConfigMap", envConfigMap.Name)
+		log.Infof("Created %s ConfigMap", envConfigMap.Name)
 	}
 
 	varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAGNAMESPACENAME, labels, nil)
 	if err := r.Create(context.TODO(), varConfigMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag var ConfigMap", varConfigMap.Name)
+		log.Infof("Created %s ConfigMap", varConfigMap.Name)
 	}
 
 	// Create Service Account
@@ -99,7 +98,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag Service Account", serviceAccount.Name)
+		log.Infof("Created %s Service Account", serviceAccount.Name)
 	}
 
 	// Create Role Binding
@@ -108,7 +107,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), roleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag Role Binding", roleBinding.Name)
+		log.Infof("Created %s Role Binding", roleBinding.Name)
 	}
 
 	// Deploy/Update Bookbag
@@ -116,7 +115,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag Deployment", dep.Name)
+		log.Infof("Created %s Deployment", dep.Name)
 	} else if errors.IsAlreadyExists(err) {
 		deploymentFound := &appsv1.Deployment{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: BOOKBAGNAMESPACENAME}, deploymentFound); err != nil {
@@ -127,7 +126,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 				if err := r.Update(context.TODO(), dep); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s bookbag Deployment", dep.Name)
+				log.Infof("Updated %s Deployment", dep.Name)
 			}
 		}
 	}
@@ -137,7 +136,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag Service", service.Name)
+		log.Infof("Created %s Service", service.Name)
 	}
 
 	// Create Route
@@ -145,7 +144,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	if err := r.Create(context.TODO(), route); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s bookbag  Route", route.Name)
+		log.Infof("Created %s Route", route.Name)
 	}
 
 	//Success
@@ -153,7 +152,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 }
 
 func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-	log.Info("Deleting bookbag")
+
 
 	id := 1
 	for {
@@ -174,21 +173,21 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 		if err := r.Delete(context.TODO(), route); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag route", route.Name)
+		log.Infof("Deleted %s Route", route.Name)
 
 		service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, []string{"http"}, []int32{BOOKBAGRouteNUMBER})
 		// Delete Service
 		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag Service", service.Name)
+		log.Infof("Deleted %s Service", service.Name)
 
 		dep := bookbag.NewDeployment(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, strconv.Itoa(userID), appsHostnameSuffix, openshiftConsoleURL)
 		// Delete Deployment
 		if err := r.Delete(context.TODO(), dep); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag Deployment", dep.Name)
+		log.Infof("Deleted %s Deployment", dep.Name)
 
 		serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels)
 
@@ -198,27 +197,27 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 		if err := r.Delete(context.TODO(), roleBinding); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag roleBinding", roleBinding.Name)
+		log.Infof("Deleted %s RoleBinding", roleBinding.Name)
 
 		// Delete  Service Account
 		if err := r.Delete(context.TODO(), serviceAccount); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag Service Account", serviceAccount.Name)
+		log.Infof("Deleted %s Service Account", serviceAccount.Name)
 
 		varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAGNAMESPACENAME, labels, nil)
 		// Delete  var ConfigMap
 		if err := r.Delete(context.TODO(), varConfigMap); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag var ConfigMap", varConfigMap.Name)
+		log.Infof("Deleted %s ConfigMap", varConfigMap.Name)
 
 		envConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-env", BOOKBAGNAMESPACENAME, labels, data)
 		// Delete  env ConfigMap
 		if err := r.Delete(context.TODO(), envConfigMap); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s bookbag env ConfigMap", envConfigMap.Name)
+		log.Infof("Deleted %s ConfigMap", envConfigMap.Name)
 
 		if true {
 			bookbagName := fmt.Sprintf("bookbag-%d", id)
