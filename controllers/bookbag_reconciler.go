@@ -22,7 +22,7 @@ const (
 	BOOKBAG_NAMESPACE_NAME    = "workshop-guides"
 	BOOKBAG_ROLE_BINDING_NAME = "adim"
 	BOOKBAG_ROLE_KIND_NAME    = "Role"
-	BOOKBAG_ROUTE             = 10080
+	BOOKBAG_PORT             = 10080
 )
 
 var bookbagConfigData = map[string]string{
@@ -133,7 +133,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create Service
-	service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, []string{"http"}, []int32{BOOKBAG_ROUTE})
+	service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, []string{"http"}, []int32{BOOKBAG_PORT})
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -141,7 +141,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create Route
-	route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, bookbagName, BOOKBAG_ROUTE)
+	route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, bookbagName, BOOKBAG_PORT)
 	if err := r.Create(context.TODO(), route); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -162,14 +162,14 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 			"app.kubernetes.io/part-of": "bookbag",
 		}
 
-		route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, bookbagName, BOOKBAG_ROUTE)
+		route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, bookbagName, BOOKBAG_PORT)
 		// Delete route
 		if err := r.Delete(context.TODO(), route); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Route", route.Name)
 
-		service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, []string{"http"}, []int32{BOOKBAG_ROUTE})
+		service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, []string{"http"}, []int32{BOOKBAG_PORT})
 		// Delete Service
 		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
