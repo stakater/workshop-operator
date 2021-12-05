@@ -21,12 +21,6 @@ func NewStringDataSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 		},
 		StringData: stringData,
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, secret, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for String Data Secret - %s", name)
-	}
 	return secret
 }
 

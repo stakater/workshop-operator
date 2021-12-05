@@ -94,12 +94,6 @@ func NewRedHatSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 			Package:                packageName,
 		},
 	}
-
-	// Set Workshop instance as the owner and controller
-	err := ctrl.SetControllerReference(workshop, subscription, scheme)
-	if err != nil {
-		log.Error(err, " - Failed to set SetControllerReference for RedHat Subscription - %s", name)
-	}
 	return subscription
 }
 
@@ -131,4 +125,17 @@ func NewCustomSubscription(workshop *workshopv1.Workshop, scheme *runtime.Scheme
 		log.Error(err, " - Failed to set SetControllerReference for Custom Subscription - %s", name)
 	}
 	return subscription
+}
+
+// NewRedHatClusterServiceVersion return  a Red Hat Cluster Service Version
+func NewRedHatClusterServiceVersion(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
+	startingCSV string, namespace string) *olmv1alpha1.ClusterServiceVersion {
+
+	csv := &olmv1alpha1.ClusterServiceVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      startingCSV,
+			Namespace: namespace,
+		},
+	}
+	return csv
 }
