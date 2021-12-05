@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocdv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
@@ -21,15 +22,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const (
+	ARGOCD_NAMESPACE_NAME            = "argocd"
+	GITOPS_SUBSCRIPTION_NAME         = "openshift-gitops-operator"
+	GITOPS_SUBSCRIPTION_PACKAGE_NAME = "openshift-gitops-operator"
+	GITOPS_OPERATOR_NAMESPACE_NAME   = "openshift-operators"
+	GITOPS_DEPLOYMENT_NAME           = "gitops-operator"
+	ARGOCD_ROLE_NAME                 = "argocd-manager"
+	ARGOCD_ROLE_BINDING_NAME         = "argocd-manager"
+	ARGOCD_ROLE_KIND_NAME            = "Role"
+	ARGOCD_SECRET_NAME               = "argocd-secret"
+	ARGOCD_CONFIGMAP_NAME            = "argocd-cm"
+	ARGOCD_CUSTOMRESOURCE_NAME       = "argocd"
+	ARGOCD_DEPLOYMENT_NAME           = "argocd-server"
+	ARGOCD_CONFIG_SECRET_NAME        = "argocd-default-cluster-config"
+)
+
 // Reconciling GitOps
 func (r *WorkshopReconciler) reconcileGitOps(workshop *workshopv1.Workshop, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
 	enabledGitOps := workshop.Spec.Infrastructure.GitOps.Enabled
-	argocdNamespaceName := "argocd"
 
 	if enabledGitOps {
-		if result, err := r.addGitOps(workshop, users, appsHostnameSuffix, openshiftConsoleURL, argocdNamespaceName); util.IsRequeued(result, err) {
+		if result, err := r.addGitOps(workshop, users, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
 			return result, err
 		}
 	}
@@ -40,10 +56,8 @@ func (r *WorkshopReconciler) reconcileGitOps(workshop *workshopv1.Workshop, user
 
 // Add GitOps
 func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
-	appsHostnameSuffix string, openshiftConsoleURL string, argocdNamespaceName string) (reconcile.Result, error) {
-
-	name := "openshift-gitops-operator"
-	operatorNamespace := "openshift-operators"
+	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
+	log.Infoln("Creating GitOps ")
 	channel := workshop.Spec.Infrastructure.GitOps.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.GitOps.OperatorHub.ClusterServiceVersion
 
@@ -52,31 +66,31 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 	}
 
 	// Create subscription
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, name, operatorNamespace,
-		name, channel, clusterServiceVersion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME,
+		GITOPS_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Subscription", subscription.Name)
+		log.Infof("Created %s  Subscription", subscription.Name)
 	}
 
 	// Approve the installation
-	if err := r.ApproveInstallPlan(clusterServiceVersion, name, operatorNamespace); err != nil {
-		log.Infof("Waiting for Subscription to create InstallPlan for %s", name)
+	if err := r.ApproveInstallPlan(clusterServiceVersion, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME); err != nil {
+		log.Infof("Waiting for  Subscription to create InstallPlan for %s", GITOPS_SUBSCRIPTION_NAME)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Wait for Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus("gitops-operator", operatorNamespace) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(GITOPS_DEPLOYMENT_NAME, GITOPS_OPERATOR_NAMESPACE_NAME) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Create a Project
-	namespace := kubernetes.NewNamespace(workshop, r.Scheme, argocdNamespaceName)
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Project", namespace.Name)
+		log.Infof("Created %s  Project", namespace.Name)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(workshop.Spec.User.Password), bcrypt.DefaultCost)
@@ -114,14 +128,14 @@ g, ` + username + `, ` + userRole + `
 		configMapData[fmt.Sprintf("accounts.%s", username)] = "login"
 
 		labels["app.kubernetes.io/name"] = "appproject-cr"
-		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, namespace.Name, labels, argocdPolicy)
+		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
 		if err := r.Create(context.TODO(), appProjectCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s Custom Resource", appProjectCustomResource.Name)
+			log.Infof("Created %s  Custom Resource", appProjectCustomResource.Name)
 		} else if errors.IsAlreadyExists(err) {
 			customResourceFound := &argocdv1.AppProject{}
-			if err := r.Get(context.TODO(), types.NamespacedName{Name: appProjectCustomResource.Name, Namespace: namespace.Name}, customResourceFound); err != nil {
+			if err := r.Get(context.TODO(), types.NamespacedName{Name: appProjectCustomResource.Name, Namespace: ARGOCD_NAMESPACE_NAME}, customResourceFound); err != nil {
 				return reconcile.Result{}, err
 			} else if err == nil {
 				if !reflect.DeepEqual(appProjectCustomResource.Spec, customResourceFound.Spec) {
@@ -129,7 +143,7 @@ g, ` + username + `, ` + userRole + `
 					if err := r.Update(context.TODO(), customResourceFound); err != nil {
 						return reconcile.Result{}, err
 					}
-					log.Infof("Updated %s Custom Resource", customResourceFound.Name)
+					log.Infof("Updated %s  Custom Resource", customResourceFound.Name)
 				}
 			}
 		}
@@ -144,19 +158,18 @@ g, ` + username + `, ` + userRole + `
 		subjects = append(subjects, argocdSubject)
 
 		role := kubernetes.NewRole(workshop, r.Scheme,
-			"argocd-manager", projectName, labels, kubernetes.ArgoCDRules())
+			ARGOCD_ROLE_NAME, projectName, labels, kubernetes.ArgoCDRules())
 		if err := r.Create(context.TODO(), role); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s Role in %s namespace", role.Name, projectName)
+			log.Infof("Created %s  Role in %s namespace", role.Name, projectName)
 		}
 
-		roleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-			"argocd-manager", projectName, labels, subjects, role.Name, "Role")
+		roleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, ARGOCD_ROLE_BINDING_NAME, projectName, labels, subjects, role.Name, ARGOCD_ROLE_KIND_NAME)
 		if err := r.Create(context.TODO(), roleBinding); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s Role Binding in %s namespace", roleBinding.Name, projectName)
+			log.Infof("Created %s  Role Binding in %s namespace", roleBinding.Name, projectName)
 		} else if errors.IsAlreadyExists(err) {
 			found := &rbac.RoleBinding{}
 			if err := r.Get(context.TODO(), types.NamespacedName{Name: roleBinding.Name, Namespace: projectName}, found); err != nil {
@@ -167,18 +180,18 @@ g, ` + username + `, ` + userRole + `
 					if err := r.Update(context.TODO(), found); err != nil {
 						return reconcile.Result{}, err
 					}
-					log.Infof("Updated %s Role Binding in %s namespace", found.Name, projectName)
+					log.Infof("Updated %s  Role Binding in %s namespace", found.Name, projectName)
 				}
 			}
 		}
 	}
 
 	labels["app.kubernetes.io/name"] = "argocd-secret"
-	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, "argocd-secret", namespace.Name, labels, secretData)
+	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, ARGOCD_SECRET_NAME, ARGOCD_NAMESPACE_NAME, labels, secretData)
 	if err := r.Create(context.TODO(), secret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Secret", secret.Name)
+		log.Infof("Created %s  Secret", secret.Name)
 		// } else if errors.IsAlreadyExists(err) {
 		// 	secretFound := &corev1.Secret{}
 		// 	if err := r.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: namespace.Name}, secretFound); err != nil {
@@ -195,11 +208,11 @@ g, ` + username + `, ` + userRole + `
 	}
 
 	labels["app.kubernetes.io/name"] = "argocd-cm"
-	configmap := kubernetes.NewConfigMap(workshop, r.Scheme, "argocd-cm", namespace.Name, labels, configMapData)
+	configmap := kubernetes.NewConfigMap(workshop, r.Scheme, ARGOCD_CONFIGMAP_NAME, ARGOCD_NAMESPACE_NAME, labels, configMapData)
 	if err := r.Create(context.TODO(), configmap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s ConfigMap", configmap.Name)
+		log.Infof("Created %s  ConfigMap", configmap.Name)
 	} else if errors.IsAlreadyExists(err) {
 		configmapFound := &corev1.ConfigMap{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: configmap.Name, Namespace: namespace.Name}, configmapFound); err != nil {
@@ -210,17 +223,17 @@ g, ` + username + `, ` + userRole + `
 				if err := r.Update(context.TODO(), configmapFound); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s ConfigMap", configmapFound.Name)
+				log.Infof("Updated %s  ConfigMap", configmapFound.Name)
 			}
 		}
 	}
 
 	labels["app.kubernetes.io/name"] = "argocd-cr"
-	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, "argocd", namespace.Name, labels, argocdPolicy)
+	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, ARGOCD_CUSTOMRESOURCE_NAME, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
 	if err := r.Create(context.TODO(), argoCDCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Custom Resource", argoCDCustomResource.Name)
+		log.Infof("Created %s  Custom Resource", argoCDCustomResource.Name)
 	} else if errors.IsAlreadyExists(err) {
 		customResourceFound := &argocdoperatorv1.ArgoCD{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: namespace.Name}, customResourceFound); err != nil {
@@ -231,7 +244,7 @@ g, ` + username + `, ` + userRole + `
 				if err := r.Update(context.TODO(), customResourceFound); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s Custom Resource", customResourceFound.Name)
+				log.Infof("Updated %s  Custom Resource", customResourceFound.Name)
 			}
 		}
 	}
@@ -242,7 +255,7 @@ g, ` + username + `, ` + userRole + `
 	// }
 
 	// Wait for ArgoCD Server to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus("argocd-server", namespace.Name) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus(ARGOCD_DEPLOYMENT_NAME, namespace.Name) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -259,19 +272,17 @@ g, ` + username + `, ` + userRole + `
 func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *workshopv1.Workshop, namespaceName string,
 	labels map[string]string, namespaceList string) (reconcile.Result, error) {
 
-	secretName := "argocd-default-cluster-config"
 	clusterConfigSecretData := map[string]string{}
-
 	clusterConfigSecretData["config"] = "{\"tlsClientConfig\":{\"insecure\":false}}"
 	clusterConfigSecretData["name"] = "in-cluster"
 	clusterConfigSecretData["namespaces"] = namespaceList
 	clusterConfigSecretData["server"] = "https://kubernetes.default.svc"
 
-	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, secretName, namespaceName, labels, clusterConfigSecretData)
+	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, ARGOCD_CONFIG_SECRET_NAME, namespaceName, labels, clusterConfigSecretData)
 	if err := r.Create(context.TODO(), clusterConfigSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Secret", clusterConfigSecret.Name)
+		log.Infof("Created %s Argocd Secret", clusterConfigSecret.Name)
 	} else if errors.IsAlreadyExists(err) {
 		clusterConfigSecretFound := &corev1.Secret{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: clusterConfigSecret.Name, Namespace: namespaceName}, clusterConfigSecretFound); err != nil {
@@ -282,7 +293,7 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 				if err := r.Update(context.TODO(), clusterConfigSecretFound); err != nil {
 					return reconcile.Result{}, err
 				}
-				log.Infof("Updated %s Secret", clusterConfigSecretFound.Name)
+				log.Infof("Updated %s Argocd Secret", clusterConfigSecretFound.Name)
 			}
 		}
 	}
@@ -291,13 +302,10 @@ func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *wo
 	return reconcile.Result{}, nil
 }
 
-/**
 // delete GitOps
 func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users int,
-	appsHostnameSuffix string, openshiftConsoleURL string, argocdNamespaceName string) (reconcile.Result, error) {
-
-	name := "openshift-gitops-operator"
-	operatorNamespace := "openshift-operators"
+	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
+	log.Infoln("Deleting GitOps ")
 	channel := workshop.Spec.Infrastructure.GitOps.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.GitOps.OperatorHub.ClusterServiceVersion
 	labels := map[string]string{
@@ -315,47 +323,33 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	secretData := map[string]string{}
 	configMapData := map[string]string{}
 
-	namespace := kubernetes.NewNamespace(workshop, r.Scheme, argocdNamespaceName)
-
-	if result, err := r.deleteArgocdDefaultClusterConfigSecret(workshop, namespace.Name, labels, namespaceList); util.IsRequeued(result, err) {
+	if result, err := r.deleteArgocdDefaultClusterConfigSecret(workshop, ARGOCD_NAMESPACE_NAME, labels, namespaceList); util.IsRequeued(result, err) {
 		return result, err
 	}
 
 	labels["app.kubernetes.io/name"] = "argocd-cr"
-	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, "argocd", namespace.Name, labels, argocdPolicy)
-	customResourceFound := &argocdoperatorv1.ArgoCD{}
-	customResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: namespace.Name}, customResourceFound)
-	if customResourceErr == nil {
-		// Delete argoCD Custom Resource
-		if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s argoCD Custom Resource", argoCDCustomResource.Name)
+	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, ARGOCD_CUSTOMRESOURCE_NAME, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
+	// Delete argoCD Custom Resource
+	if err := r.Delete(context.TODO(), argoCDCustomResource); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s  Custom Resource", argoCDCustomResource.Name)
 
 	labels["app.kubernetes.io/name"] = "argocd-cm"
-	configmap := kubernetes.NewConfigMap(workshop, r.Scheme, "argocd-cm", namespace.Name, labels, configMapData)
-	configmapFound := &corev1.ConfigMap{}
-	configmapErr := r.Get(context.TODO(), types.NamespacedName{Name: configmap.Name, Namespace: namespace.Name}, configmapFound)
-	if configmapErr != nil {
-		// Delete Configmap
-		if err := r.Delete(context.TODO(), configmap); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Configmap", configmap.Name)
+	configmap := kubernetes.NewConfigMap(workshop, r.Scheme, ARGOCD_CONFIGMAP_NAME, ARGOCD_NAMESPACE_NAME, labels, configMapData)
+	// Delete Configmap
+	if err := r.Delete(context.TODO(), configmap); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s  Configmap", configmap.Name)
 
 	labels["app.kubernetes.io/name"] = "argocd-secret"
-	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, "argocd-secret", namespace.Name, labels, secretData)
-	secretFound := &corev1.Secret{}
-	secretErr := r.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: namespace.Name}, secretFound)
-	if secretErr == nil {
-		// Delete Secret
-		if err := r.Delete(context.TODO(), secret); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Secret", secret.Name)
+	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, ARGOCD_SECRET_NAME, ARGOCD_NAMESPACE_NAME, labels, secretData)
+	// Delete Secret
+	if err := r.Delete(context.TODO(), secret); err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Infof("Deleted %s  Secret", secret.Name)
 
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprintf("user%d", id)
@@ -388,66 +382,69 @@ g, ` + username + `, ` + userRole + `
 
 		subjects = append(subjects, argocdSubject)
 
-		role := kubernetes.NewRole(workshop, r.Scheme, "argocd-manager", projectName, labels, kubernetes.ArgoCDRules())
+		role := kubernetes.NewRole(workshop, r.Scheme, ARGOCD_ROLE_NAME, projectName, labels, kubernetes.ArgoCDRules())
 
-		roleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-			"argocd-manager", projectName, labels, subjects, role.Name, "Role")
-
-		roleBindingfound := &rbac.RoleBinding{}
-		roleBindingErr := r.Get(context.TODO(), types.NamespacedName{Name: roleBinding.Name, Namespace: projectName}, roleBindingfound)
-		if roleBindingErr == nil {
-			// Delete roleBinding
-			if err := r.Delete(context.TODO(), roleBinding); err != nil {
-				return reconcile.Result{}, err
-			}
-			log.Infof("Deleted %s Role Binding  in %s namespace", roleBinding.Name, projectName)
+		roleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme, ARGOCD_ROLE_BINDING_NAME, projectName, labels, subjects, role.Name, ARGOCD_ROLE_KIND_NAME)
+		// Delete roleBinding
+		if err := r.Delete(context.TODO(), roleBinding); err != nil {
+			return reconcile.Result{}, err
 		}
+		log.Infof("Deleted %s  Role Binding  in %s namespace", roleBinding.Name, projectName)
 
-		roleFound := &rbac.Role{}
-		roleErr := r.Get(context.TODO(), types.NamespacedName{Name: role.Name, Namespace: namespace.Name}, roleFound)
-		if roleErr == nil {
-			// Delete role
-			if err := r.Delete(context.TODO(), role); err != nil {
-				return reconcile.Result{}, err
-			}
-			log.Infof("Deleted %s role in %s namespace ", role.Name, projectName)
+		// Delete role
+		if err := r.Delete(context.TODO(), role); err != nil {
+			return reconcile.Result{}, err
 		}
+		log.Infof("Deleted %s  role in %s namespace ", role.Name, projectName)
 
 		labels["app.kubernetes.io/name"] = "appproject-cr"
-		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, namespace.Name, labels, argocdPolicy)
-		customResourceFound := &argocdv1.AppProject{}
-		customResourceErr := r.Get(context.TODO(), types.NamespacedName{Name: appProjectCustomResource.Name, Namespace: namespace.Name}, customResourceFound)
-		if customResourceErr == nil {
-			// Delete appProject Custom Resource
-			if err := r.Delete(context.TODO(), appProjectCustomResource); err != nil {
-				return reconcile.Result{}, err
-			}
-			log.Infof("Deleted %s appProject Custom Resource ", appProjectCustomResource.Name)
-		}
-
-	}
-
-	namespaceFound := &corev1.Namespace{}
-	namespaceErr := r.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, namespaceFound)
-	if namespaceErr == nil {
-		// Delete a Project
-		if err := r.Delete(context.TODO(), namespace); err != nil {
+		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, ARGOCD_NAMESPACE_NAME, labels, argocdPolicy)
+		// Delete appProject Custom Resource
+		if err := r.Delete(context.TODO(), appProjectCustomResource); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s Project", namespace.Name)
+		log.Infof("Deleted %s  appProject Custom Resource ", appProjectCustomResource.Name)
 	}
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, name, operatorNamespace,
-		name, channel, clusterServiceVersion)
-	subscriptionFound := &olmv1alpha1.Subscription{}
-	subscriptionErr := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Name}, subscriptionFound)
-	if subscriptionErr == nil {
-		// Delete subscription
-		if err := r.Delete(context.TODO(), subscription); err != nil {
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, GITOPS_SUBSCRIPTION_NAME, GITOPS_OPERATOR_NAMESPACE_NAME,
+		GITOPS_SUBSCRIPTION_PACKAGE_NAME, channel, clusterServiceVersion)
+	gitopsCSV := subscription.Spec.StartingCSV
+	// Delete subscription
+	if err := r.Delete(context.TODO(), subscription); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s  Subscription", subscription.Name)
+
+	operatorCSV := kubernetes.NewRedHatClusterServiceVersion(workshop, r.Scheme, gitopsCSV, GITOPS_OPERATOR_NAMESPACE_NAME)
+	if err := r.Delete(context.TODO(), operatorCSV); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s  ClusterServiceVersion", operatorCSV.Name)
+
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
+	// Delete a Project
+	if err := r.Delete(context.TODO(), namespace); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleting %s  Project", namespace.Name)
+	namespaceFound := kubernetes.NewNamespace(workshop, r.Scheme, ARGOCD_NAMESPACE_NAME)
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_NAMESPACE_NAME}, namespaceFound); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
+		argoCD := &argocdoperatorv1.ArgoCD{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: ARGOCD_CUSTOMRESOURCE_NAME, Namespace: ARGOCD_NAMESPACE_NAME}, argoCD); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("Deleted %s Subscription", subscription.Name)
+
+		patch := client.MergeFrom(argoCD.DeepCopy())
+		argoCD.Finalizers = nil
+		if err := r.Patch(context.TODO(), argoCD, patch); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
+	log.Infof("Deleted %s  Project", namespace.Name)
 
 	//Success
 	return reconcile.Result{}, nil
@@ -456,27 +453,19 @@ g, ` + username + `, ` + userRole + `
 func (r *WorkshopReconciler) deleteArgocdDefaultClusterConfigSecret(workshop *workshopv1.Workshop, namespaceName string,
 	labels map[string]string, namespaceList string) (reconcile.Result, error) {
 
-	secretName := "argocd-default-cluster-config"
 	clusterConfigSecretData := map[string]string{}
-
 	clusterConfigSecretData["config"] = "{\"tlsClientConfig\":{\"insecure\":false}}"
 	clusterConfigSecretData["name"] = "in-cluster"
 	clusterConfigSecretData["namespaces"] = namespaceList
 	clusterConfigSecretData["server"] = "https://kubernetes.default.svc"
 	labels["app.kubernetes.io/name"] = "argocd-default-cluster-config"
 
-	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, secretName, namespaceName, labels, clusterConfigSecretData)
-	clusterConfigSecretFound := &corev1.Secret{}
-	clusterConfigSecretErr := r.Get(context.TODO(), types.NamespacedName{Name: clusterConfigSecret.Name}, clusterConfigSecretFound)
-	if clusterConfigSecretErr == nil {
-		// delete cluster Config Secret
-		if err := r.Delete(context.TODO(), clusterConfigSecret); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s Secret", clusterConfigSecret.Name)
+	clusterConfigSecret := kubernetes.NewStringDataSecret(workshop, r.Scheme, ARGOCD_CONFIG_SECRET_NAME, namespaceName, labels, clusterConfigSecretData)
+	// delete cluster Config Secret
+	if err := r.Delete(context.TODO(), clusterConfigSecret); err != nil {
+		return reconcile.Result{}, err
 	}
-
+	log.Infof("Deleted %s  Secret", clusterConfigSecret.Name)
 	//Success
 	return reconcile.Result{}, nil
 }
-**/
