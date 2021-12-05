@@ -373,7 +373,7 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		SERVICE_MESH_ROLE_BINDING_NAME, SERVICE_MESH_ROLE_BINDING_NAMESPACE_NAME, istioLabels, istioUsers, SERVICE_MESH_ROLE_NAME, SERVICE_MESH_ROLE_KIND_NAME)
-	// Delete meshUser RoleBinding
+	// Delete RoleBinding
 	if err := r.Delete(context.TODO(), meshUserRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -381,13 +381,13 @@ func (r *WorkshopReconciler) deleteServiceMesh(workshop *workshopv1.Workshop, us
 
 	jaegerRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		JAEGER_ROLE_BINDING_NAME, JAEGER_ROLE_BINDING_NAMESPACE_NAME, istioLabels, istioUsers, jaegerRole.Name, JAEGER_ROLE_KIND_NAME)
-	// Delete jaeger RoleBinding
+	// Delete RoleBinding
 	if err := r.Delete(context.TODO(), jaegerRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Role Binding", jaegerRoleBinding.Name)
 
-	// Delete jaeger Role
+	// Delete Role
 	if err := r.Delete(context.TODO(), jaegerRole); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -495,7 +495,7 @@ func (r *WorkshopReconciler) deleteElasticSearchOperator(workshop *workshopv1.Wo
 func (r *WorkshopReconciler) deleteIstioSystemNamespace(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, ISTIO_NAMESPACE_NAME)
-	// Delete istio-system Namespace
+	// Delete Namespace
 	if err := r.Delete(context.TODO(), istioSystemNamespace); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -571,7 +571,6 @@ func (r *WorkshopReconciler) PatchIstioProject(workshop *workshopv1.Workshop) (r
 		patch := client.MergeFrom(servicemeshcontrolplanes.DeepCopy())
 		servicemeshcontrolplanes.Finalizers = nil
 		if err := r.Patch(context.TODO(), servicemeshcontrolplanes, patch); err != nil {
-			//log.Errorf("Failed to patch ServiceMeshControlPlane %s", servicemeshcontrolplanes.Name)
 			return reconcile.Result{}, err
 		}
 		log.Infof("patched %s ServiceMeshControlPlane", servicemeshcontrolplanes.Name)
@@ -600,7 +599,6 @@ func (r *WorkshopReconciler) PatchIstioProject(workshop *workshopv1.Workshop) (r
 		patch := client.MergeFrom(serviceMeshMemberRoll.DeepCopy())
 		serviceMeshMemberRoll.Finalizers = nil
 		if err := r.Patch(context.TODO(), serviceMeshMemberRoll, patch); err != nil {
-			//log.Errorf("Failed to patch ServiceMeshMemberRoll %s", serviceMeshMemberRoll.Name)
 			return reconcile.Result{}, err
 		}
 		log.Infof("patched %s ServiceMeshMemberRoll", serviceMeshMemberRoll.Name)
