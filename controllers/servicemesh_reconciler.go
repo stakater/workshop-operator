@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	external "github.com/maistra/istio-operator/pkg/apis/external/kiali/v1alpha1"
+	kiali "github.com/maistra/istio-operator/pkg/apis/external/kiali/v1alpha1"
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -578,17 +578,17 @@ func (r *WorkshopReconciler) PatchIstioProject(workshop *workshopv1.Workshop) (r
 	}
 
 	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
-		kiali := &external.Kiali{}
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: KIALI_NAME, Namespace: ISTIO_NAMESPACE_NAME}, kiali); err != nil {
+		kialiFound := &kiali.Kiali{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: KIALI_NAME, Namespace: ISTIO_NAMESPACE_NAME}, kialiFound); err != nil {
 			return reconcile.Result{}, err
 		}
 
-		patch := client.MergeFrom(kiali.DeepCopy())
-		kiali.Finalizers = nil
-		if err := r.Patch(context.TODO(), kiali, patch); err != nil {
+		patch := client.MergeFrom(kialiFound.DeepCopy())
+		kialiFound.Finalizers = nil
+		if err := r.Patch(context.TODO(), kialiFound, patch); err != nil {
 			return reconcile.Result{}, err
 		}
-		log.Infof("patched %s kiali", kiali.Name)
+		log.Infof("patched %s kiali", kialiFound.Name)
 	}
 
 	if namespaceFound.Spec.Finalizers[0] == "kubernetes" {
