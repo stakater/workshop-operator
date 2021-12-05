@@ -22,7 +22,7 @@ const (
 	BOOKBAG_NAMESPACE_NAME    = "workshop-guides"
 	BOOKBAG_ROLE_BINDING_NAME = "adim"
 	BOOKBAG_ROLE_KIND_NAME    = "Role"
-	BOOKBAG_PORT             = 10080
+	BOOKBAG_PORT              = 10080
 )
 
 var bookbagConfigData = map[string]string{
