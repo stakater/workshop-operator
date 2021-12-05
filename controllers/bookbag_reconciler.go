@@ -19,11 +19,17 @@ import (
 )
 
 const (
-	BOOKBAGNAMESPACENAME       = "workshop-guides"
-	BOOKBAGROLEBINDINGNAME     = "adim"
-	BOOKBAGCLUSTERROLEKINDNAME = "Role"
-	BOOKBAGRouteNUMBER         = 10080
+	BOOKBAG_NAMESPACE_NAME    = "workshop-guides"
+	BOOKBAG_ROLE_BINDING_NAME = "adim"
+	BOOKBAG_ROLE_KIND_NAME    = "Role"
+	BOOKBAG_ROUTE             = 10080
 )
+
+var bookbagConfigData = map[string]string{
+	"gateway.sh":  "",
+	"terminal.sh": "",
+	"workshop.sh": "",
+}
 
 // Reconciling Bookbag
 func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, users int,
@@ -42,7 +48,7 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 			bookbagName := fmt.Sprintf("bookbag-%d", id)
 
 			depFound := &appsv1.Deployment{}
-			depErr := r.Get(context.TODO(), types.NamespacedName{Name: bookbagName, Namespace: BOOKBAGNAMESPACENAME}, depFound)
+			depErr := r.Get(context.TODO(), types.NamespacedName{Name: bookbagName, Namespace: BOOKBAG_NAMESPACE_NAME}, depFound)
 
 			if depErr != nil && errors.IsNotFound(depErr) {
 				break
@@ -58,7 +64,8 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, userID string,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
-	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAGNAMESPACENAME)
+	// Create Namespace
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAG_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -72,20 +79,15 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create ConfigMap
-	data := map[string]string{
-		"gateway.sh":  "",
-		"terminal.sh": "",
-		"workshop.sh": "",
-	}
-
-	envConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-env", BOOKBAGNAMESPACENAME, labels, data)
+	envConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-env", BOOKBAG_NAMESPACE_NAME, labels, bookbagConfigData)
 	if err := r.Create(context.TODO(), envConfigMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s ConfigMap", envConfigMap.Name)
 	}
 
-	varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAGNAMESPACENAME, labels, nil)
+	// Create ConfigMap
+	varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAG_NAMESPACE_NAME, labels, nil)
 	if err := r.Create(context.TODO(), varConfigMap); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -93,7 +95,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create Service Account
-	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels)
+	serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels)
 	if err := r.Create(context.TODO(), serviceAccount); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -101,8 +103,8 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create Role Binding
-	roleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels,
-		serviceAccount.Name, BOOKBAGROLEBINDINGNAME, BOOKBAGCLUSTERROLEKINDNAME)
+	roleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels,
+		serviceAccount.Name, BOOKBAG_ROLE_BINDING_NAME, BOOKBAG_ROLE_KIND_NAME)
 	if err := r.Create(context.TODO(), roleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -110,14 +112,14 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Deploy/Update Bookbag
-	dep := bookbag.NewDeployment(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, userID, appsHostnameSuffix, openshiftConsoleURL)
+	dep := bookbag.NewDeployment(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, userID, appsHostnameSuffix, openshiftConsoleURL)
 	if err := r.Create(context.TODO(), dep); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Deployment", dep.Name)
 	} else if errors.IsAlreadyExists(err) {
 		deploymentFound := &appsv1.Deployment{}
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: BOOKBAGNAMESPACENAME}, deploymentFound); err != nil {
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: BOOKBAG_NAMESPACE_NAME}, deploymentFound); err != nil {
 			return reconcile.Result{}, err
 		} else if err == nil {
 			if !reflect.DeepEqual(dep.Spec.Template.Spec.Containers[0].Env, deploymentFound.Spec.Template.Spec.Containers[0].Env) {
@@ -131,7 +133,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create Service
-	service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, []string{"http"}, []int32{BOOKBAGRouteNUMBER})
+	service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, []string{"http"}, []int32{BOOKBAG_ROUTE})
 	if err := r.Create(context.TODO(), service); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -139,7 +141,7 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 	}
 
 	// Create Route
-	route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, bookbagName, BOOKBAGRouteNUMBER)
+	route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, bookbagName, BOOKBAG_ROUTE)
 	if err := r.Create(context.TODO(), route); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -159,38 +161,32 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 			"app":                       bookbagName,
 			"app.kubernetes.io/part-of": "bookbag",
 		}
-		// Create ConfigMap
-		data := map[string]string{
-			"gateway.sh":  "",
-			"terminal.sh": "",
-			"workshop.sh": "",
-		}
 
-		route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, bookbagName, BOOKBAGRouteNUMBER)
+		route := kubernetes.NewRoute(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, bookbagName, BOOKBAG_ROUTE)
 		// Delete route
 		if err := r.Delete(context.TODO(), route); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Route", route.Name)
 
-		service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, []string{"http"}, []int32{BOOKBAGRouteNUMBER})
+		service := kubernetes.NewService(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, []string{"http"}, []int32{BOOKBAG_ROUTE})
 		// Delete Service
 		if err := r.Delete(context.TODO(), service); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Service", service.Name)
 
-		dep := bookbag.NewDeployment(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels, strconv.Itoa(userID), appsHostnameSuffix, openshiftConsoleURL)
+		dep := bookbag.NewDeployment(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels, strconv.Itoa(userID), appsHostnameSuffix, openshiftConsoleURL)
 		// Delete Deployment
 		if err := r.Delete(context.TODO(), dep); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s Deployment", dep.Name)
 
-		serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels)
+		serviceAccount := kubernetes.NewServiceAccount(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels)
 
-		roleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, bookbagName, BOOKBAGNAMESPACENAME, labels,
-			serviceAccount.Name, BOOKBAGROLEBINDINGNAME, BOOKBAGCLUSTERROLEKINDNAME)
+		roleBinding := kubernetes.NewRoleBindingSA(workshop, r.Scheme, bookbagName, BOOKBAG_NAMESPACE_NAME, labels,
+			serviceAccount.Name, BOOKBAG_ROLE_BINDING_NAME, BOOKBAG_ROLE_KIND_NAME)
 		//Delete  Role Binding
 		if err := r.Delete(context.TODO(), roleBinding); err != nil {
 			return reconcile.Result{}, err
@@ -203,33 +199,35 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 		}
 		log.Infof("Deleted %s Service Account", serviceAccount.Name)
 
-		varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAGNAMESPACENAME, labels, nil)
-		// Delete  var ConfigMap
+		varConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-vars", BOOKBAG_NAMESPACE_NAME, labels, nil)
+		// Delete ConfigMap
 		if err := r.Delete(context.TODO(), varConfigMap); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s ConfigMap", varConfigMap.Name)
 
-		envConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-env", BOOKBAGNAMESPACENAME, labels, data)
-		// Delete  env ConfigMap
+		envConfigMap := kubernetes.NewConfigMap(workshop, r.Scheme, bookbagName+"-env", BOOKBAG_NAMESPACE_NAME, labels, bookbagConfigData)
+		// Delete ConfigMap
 		if err := r.Delete(context.TODO(), envConfigMap); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s ConfigMap", envConfigMap.Name)
 
 		depFound := &appsv1.Deployment{}
-		depErr := r.Get(context.TODO(), types.NamespacedName{Name: bookbagName, Namespace: BOOKBAGNAMESPACENAME}, depFound)
+		depErr := r.Get(context.TODO(), types.NamespacedName{Name: bookbagName, Namespace: BOOKBAG_NAMESPACE_NAME}, depFound)
 		if depErr != nil && errors.IsNotFound(depErr) {
 			break
 		}
 		id++
 	}
-	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAGNAMESPACENAME)
+
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAG_NAMESPACE_NAME)
 	// delete namespace
 	if err := r.Delete(context.TODO(), namespace); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s namespace", namespace.Name)
+
 	return reconcile.Result{}, nil
 	//Success
 
