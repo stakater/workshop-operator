@@ -32,7 +32,7 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 	id := 1
 	for {
 		if id <= users && enabled {
-			// Bookback
+
 			if result, err := r.addUpdateBookbag(workshop, strconv.Itoa(id),
 				appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
 				return result, err
@@ -57,7 +57,6 @@ func (r *WorkshopReconciler) reconcileBookbag(workshop *workshopv1.Workshop, use
 
 func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, userID string,
 	appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
-
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAGNAMESPACENAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
@@ -153,7 +152,6 @@ func (r *WorkshopReconciler) addUpdateBookbag(workshop *workshopv1.Workshop, use
 
 func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (reconcile.Result, error) {
 
-
 	id := 1
 	for {
 		bookbagName := fmt.Sprintf("user%s-bookbag", strconv.Itoa(id))
@@ -219,18 +217,19 @@ func (r *WorkshopReconciler) deleteBookbag(workshop *workshopv1.Workshop, userID
 		}
 		log.Infof("Deleted %s ConfigMap", envConfigMap.Name)
 
-		if true {
-			bookbagName := fmt.Sprintf("bookbag-%d", id)
-
-			depFound := &appsv1.Deployment{}
-			depErr := r.Get(context.TODO(), types.NamespacedName{Name: bookbagName, Namespace: BOOKBAGNAMESPACENAME}, depFound)
-			if depErr == nil {
-				break
-			}
+		depFound := &appsv1.Deployment{}
+		depErr := r.Get(context.TODO(), types.NamespacedName{Name: bookbagName, Namespace: BOOKBAGNAMESPACENAME}, depFound)
+		if depErr != nil && errors.IsNotFound(depErr) {
+			break
 		}
 		id++
-
 	}
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, BOOKBAGNAMESPACENAME)
+	// delete namespace
+	if err := r.Delete(context.TODO(), namespace); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s namespace", namespace.Name)
 	return reconcile.Result{}, nil
 	//Success
 
