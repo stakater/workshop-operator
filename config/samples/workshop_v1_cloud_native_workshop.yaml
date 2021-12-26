@@ -19,9 +19,9 @@ spec:
           tag: "1.0"
       scholars:
         enabled: false
-        guideURL: 
+        guideURL:
           "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/5.0/index.html"
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/5.0/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/5.0/index.html"
     codeReadyWorkspace:
       enabled: false
       operatorHub:
@@ -42,15 +42,15 @@ spec:
       enabled: false
       image:
         name: quay.io/mcouliba/nexus-operator
-        tag: v0.10      
-    vault: 
+        tag: v0.10
+    vault:
       enabled: false
-      image: 
+      image:
         name: hashicorp/vault
         tag: 1.8.2
       agentInjectorImage:
         name: hashicorp/vault-k8s
-        tag: 0.13.0        
+        tag: 0.13.0
     pipeline:
       enabled: false
       operatorHub:
