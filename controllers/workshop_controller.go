@@ -145,6 +145,11 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	//////////////////////////
+	// Users
+	//////////////////////////
+
+
+	//////////////////////////
 	// Portal
 	//////////////////////////
 	if result, err := r.reconcilePortal(workshop, users, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
