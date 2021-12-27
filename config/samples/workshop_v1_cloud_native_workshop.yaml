@@ -12,11 +12,6 @@ spec:
     gitBranch: "5.1"
   infrastructure:
     guide:
-      bookbag:
-        enabled: false
-        image:
-          name: docker.io/maazil3861/workshop-operator-bookbag
-          tag: "1.0"
       scholars:
         enabled: false
         guideURL: 
