@@ -18,7 +18,7 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.7.1+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: workshop-operator.v0.0.34
+  name: workshop-operator.v0.0.35
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -42,6 +42,7 @@ spec:
           - admissionregistration.k8s.io
           resources:
           - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
           verbs:
           - create
           - delete
@@ -132,6 +133,15 @@ spec:
           - list
           - patch
           - update
+          - watch
+        - apiGroups:
+          - kiali.io
+          resources:
+          - kialis
+          verbs:
+          - get
+          - list
+          - patch
           - watch
         - apiGroups:
           - maistra.io
@@ -282,7 +292,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: docker.io/stakater/workshop-operator:v0.0.34
+                image: docker.io/stakater/workshop-operator:v0.0.35
                 name: manager
                 resources:
                   limits:
@@ -341,4 +351,4 @@ spec:
   provider:
     name: stakater
     url: https://stakater.com
-  version: 0.0.34
+  version: 0.0.35
