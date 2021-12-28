@@ -32,6 +32,7 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
+	userv1 "github.com/openshift/api/user/v1"
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -55,6 +56,7 @@ func init() {
 	utilruntime.Must(workshopv1.AddToScheme(scheme))
 
 	utilruntime.Must(routev1.AddToScheme(scheme))
+	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
 	utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(olmv1.AddToScheme(scheme))
