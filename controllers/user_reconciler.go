@@ -46,6 +46,15 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	} else if err == nil {
 		log.Infof("Created %s user", user.Name)
 	}
+
+	// Create User Role Binding
+	userRoleBinding := openshiftuser.NewRoleBindingUsers(workshop, r.Scheme, username, "workshop-infra",
+		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
+	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Role Binding", userRoleBinding.Name)
+	}
 	//Success
 	return reconcile.Result{}, nil
 }
