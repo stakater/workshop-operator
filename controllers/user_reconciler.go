@@ -6,7 +6,7 @@ import (
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
-	user1 "github.com/stakater/workshop-operator/common/user"
+	openshiftuser "github.com/stakater/workshop-operator/common/user"
 	"github.com/stakater/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,7 +24,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop, users 
 				return result, err
 			}
 		} else {
-			user := user1.NewUser(workshop, r.Scheme, username)
+			user := openshiftuser.NewUser(workshop, r.Scheme, username)
 			userFound := &userv1.User{}
 			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
 
@@ -40,7 +40,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop, users 
 
 func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
-	user := user1.NewUser(workshop, r.Scheme, username)
+	user := openshiftuser.NewUser(workshop, r.Scheme, username)
 	if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
