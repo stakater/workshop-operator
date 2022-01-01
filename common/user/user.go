@@ -18,7 +18,8 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 		ObjectMeta: metav1.ObjectMeta{
 			Name: username,
 		},
-		FullName: username,
+		FullName:   username,
+		Identities: []string{"htpasswd:user1"},
 	}
 	return user
 }
@@ -47,7 +48,7 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 	return rolebinding
 }
 
-// NewRoleBindingUsers creates a Role Binding for Users
+// NewHTPasswd creates HTPasswd
 func NewHTPasswd(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *configv1.OAuth {
 
 	data, err := ioutil.ReadFile("hack/htpasswd")
