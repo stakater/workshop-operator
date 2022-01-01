@@ -56,14 +56,22 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 		log.Infof("Created %s Role Binding", userRoleBinding.Name)
 	}
 
+	// Create htpasswd secret
+	htpasswdsecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, username)
+	if err := r.Create(context.TODO(), htpasswdsecret); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s HTPasswd Secret", htpasswdsecret.Name)
+	}
+	log.Infoln("69")
 	// Create User password
 	userPassword := openshiftuser.NewHTPasswd(workshop, r.Scheme, username)
-	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
+	if err := r.Create(context.TODO(), userPassword); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s User password", userPassword.Name)
 	}
-
+	log.Infoln("74")
 	//Success
 	return reconcile.Result{}, nil
 }
