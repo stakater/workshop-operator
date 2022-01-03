@@ -31,6 +31,7 @@ import (
 	"github.com/stakater/workshop-operator/controllers"
 
 	configv1 "github.com/openshift/api/config/v1"
+	kiali "github.com/maistra/istio-operator/pkg/apis/external/kiali/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	userv1 "github.com/openshift/api/user/v1"
@@ -71,6 +72,7 @@ func init() {
 	utilruntime.Must(argocdoperatorv1.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(che.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(securityv1.AddToScheme(scheme))
+	utilruntime.Must(kiali.SchemeBuilder.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }
