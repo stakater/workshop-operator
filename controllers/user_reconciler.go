@@ -63,15 +63,16 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	} else if err == nil {
 		log.Infof("Created %s HTPasswd Secret", htpasswdsecret.Name)
 	}
-	log.Infoln("69")
+
 	// Create User password
 	userPassword := openshiftuser.NewHTPasswd(workshop, r.Scheme, username)
-	if err := r.Create(context.TODO(), userPassword); err != nil && !errors.IsAlreadyExists(err) {
+	err := r.Create(context.TODO(), userPassword)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		log.Infoln(err)
 		return reconcile.Result{}, err
-	} else if err == nil {
+	} else {
 		log.Infof("Created %s User password", userPassword.Name)
 	}
-	log.Infoln("74")
 	//Success
 	return reconcile.Result{}, nil
 }

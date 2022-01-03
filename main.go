@@ -30,6 +30,7 @@ import (
 	"github.com/stakater/workshop-operator/common/nexus"
 	"github.com/stakater/workshop-operator/controllers"
 
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	userv1 "github.com/openshift/api/user/v1"
@@ -57,6 +58,7 @@ func init() {
 
 	utilruntime.Must(routev1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
 	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
 	utilruntime.Must(olmv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(olmv1.AddToScheme(scheme))
