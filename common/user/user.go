@@ -1,8 +1,7 @@
 package user
 
 import (
-	bs64 "encoding/base64"
-	configv1 "github.com/openshift/api/config/v1"
+	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -54,6 +53,7 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *corev1.Secret {
 
 	filedata, err := ioutil.ReadFile("hack/users.htpasswd")
+	fmt.Println(string(filedata))
 	if err != nil {
 		log.Errorf(err.Error())
 	}
@@ -64,36 +64,9 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, us
 		},
 		Type: "Opaque",
 		Data: map[string][]byte{
-			"htpasswd": []byte(bs64.StdEncoding.EncodeToString(filedata)),
+			"htpasswd": filedata,
 		},
 	}
 
 	return secret
-}
-
-// NewHTPasswd creates HTPasswd
-func NewHTPasswd(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *configv1.OAuth {
-	log.Infoln("NewHTPasswd")
-	password := &configv1.OAuth{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster",
-		},
-		Spec: configv1.OAuthSpec{
-			IdentityProviders: []configv1.IdentityProvider{
-				{
-					Name:          "htpasswd",
-					MappingMethod: "claim",
-					IdentityProviderConfig: configv1.IdentityProviderConfig{
-						Type: "HTPasswd",
-						HTPasswd: &configv1.HTPasswdIdentityProvider{
-							FileData: configv1.SecretNameReference{
-								Name: "htpass-secret" + username,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	return password
 }

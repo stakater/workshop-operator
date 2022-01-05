@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
-	userv1 "github.com/openshift/api/user/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -24,11 +25,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop, users 
 				return result, err
 			}
 		} else {
-			user := openshiftuser.NewUser(workshop, r.Scheme, username)
-			userFound := &userv1.User{}
-			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
-
-			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
+			if id > users {
 				break
 			}
 		}
@@ -64,15 +61,36 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 		log.Infof("Created %s HTPasswd Secret", htpasswdsecret.Name)
 	}
 
-	// Create User password
-	userPassword := openshiftuser.NewHTPasswd(workshop, r.Scheme, username)
-	err := r.Create(context.TODO(), userPassword)
+	// Patch Username and  password
+	oauthFound := &configv1.OAuth{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
+		log.Error("Failed to get Oauth")
+	}
+	patch := client.MergeFrom(oauthFound.DeepCopy())
+	oauthFound.Spec = configv1.OAuthSpec{
+		IdentityProviders: []configv1.IdentityProvider{
+			{
+				Name:          "htpass-secret" + username,
+				MappingMethod: "claim",
+				IdentityProviderConfig: configv1.IdentityProviderConfig{
+					Type: "HTPasswd",
+					HTPasswd: &configv1.HTPasswdIdentityProvider{
+						FileData: configv1.SecretNameReference{
+							Name: "htpass-secret" + username,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := r.Patch(context.TODO(), oauthFound, patch)
 	if err != nil && !errors.IsAlreadyExists(err) {
-		log.Infoln(err)
 		return reconcile.Result{}, err
 	} else {
-		log.Infof("Created %s User password", userPassword.Name)
+		log.Infof("Patched %s HTPAsswd ", oauthFound.Name)
 	}
+
 	//Success
 	return reconcile.Result{}, nil
 }
