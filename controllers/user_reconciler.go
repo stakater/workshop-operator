@@ -25,9 +25,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop, users 
 				return result, err
 			}
 		} else {
-			if id > users {
-				break
-			}
+			break
 		}
 		id++
 	}
