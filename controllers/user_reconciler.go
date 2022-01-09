@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	configv1 "github.com/openshift/api/config/v1"
+	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
@@ -87,6 +88,29 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 		return reconcile.Result{}, err
 	} else {
 		log.Infof("Patched %s HTPAsswd ", oauthFound.Name)
+	}
+
+	// get user
+	// Patch Username and  password
+	userFound := &userv1.User{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
+		log.Error("Failed to get user")
+	}
+
+	// create identity
+	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, userFound)
+	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s identity ", identity.Name)
+	}
+
+	// create user identity
+	useridentity := openshiftuser.NewUserIdentity(workshop, r.Scheme, username)
+	if err := r.Create(context.TODO(), useridentity); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s useridentity ", identity.Name)
 	}
 
 	//Success

@@ -70,3 +70,37 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, us
 
 	return secret
 }
+
+// NewIdentity creates a identity
+func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, userFound *userv1.User) *userv1.Identity {
+
+	identity := &userv1.Identity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "htpass-secret-" + ":" + username,
+		},
+		ProviderName:     "htpass-secret-",
+		ProviderUserName: username,
+		User: corev1.ObjectReference{
+			Name: username,
+			UID:  userFound.UID,
+		},
+	}
+	return identity
+}
+
+// NewUserIdentity creates a useridentity
+func NewUserIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
+
+	useridentity := &userv1.UserIdentityMapping{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "htpass-secret-" + ":" + username,
+		},
+		Identity: corev1.ObjectReference{
+			Name: "htpass-secret-" + ":" + username,
+		},
+		User: corev1.ObjectReference{
+			Name: username,
+		},
+	}
+	return useridentity
+}
