@@ -69,13 +69,13 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	oauthFound.Spec = configv1.OAuthSpec{
 		IdentityProviders: []configv1.IdentityProvider{
 			{
-				Name:          "htpass-secret" + username,
+				Name:          "htpass-secret-" + username,
 				MappingMethod: "claim",
 				IdentityProviderConfig: configv1.IdentityProviderConfig{
 					Type: "HTPasswd",
 					HTPasswd: &configv1.HTPasswdIdentityProvider{
 						FileData: configv1.SecretNameReference{
-							Name: "htpass-secret" + username,
+							Name: "htpass-secret-" + username,
 						},
 					},
 				},
@@ -91,7 +91,6 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// get user
-	// Patch Username and  password
 	userFound := &userv1.User{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
 		log.Error("Failed to get user")

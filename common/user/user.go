@@ -19,8 +19,7 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 		ObjectMeta: metav1.ObjectMeta{
 			Name: username,
 		},
-		FullName:   username,
-		Identities: []string{"htpasswd:user1"},
+		FullName: username,
 	}
 	return user
 }
@@ -59,7 +58,7 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, us
 	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "htpass-secret" + username,
+			Name:      "htpass-secret-" + username,
 			Namespace: "openshift-config",
 		},
 		Type: "Opaque",
@@ -76,9 +75,9 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 
 	identity := &userv1.Identity{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "htpass-secret-" + ":" + username,
+			Name: "htpass-secret-" + username + ":" + username,
 		},
-		ProviderName:     "htpass-secret-",
+		ProviderName:     "htpass-secret-" + username,
 		ProviderUserName: username,
 		User: corev1.ObjectReference{
 			Name: username,
@@ -88,15 +87,15 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 	return identity
 }
 
-// NewUserIdentity creates a useridentity
+// NewUserIdentity creates a useridentitymapping
 func NewUserIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
 
 	useridentity := &userv1.UserIdentityMapping{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "htpass-secret-" + ":" + username,
+			Name: "htpass-secret-" + username + ":" + username,
 		},
 		Identity: corev1.ObjectReference{
-			Name: "htpass-secret-" + ":" + username,
+			Name: "htpass-secret-" + username + ":" + username,
 		},
 		User: corev1.ObjectReference{
 			Name: username,
