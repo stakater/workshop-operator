@@ -10,6 +10,7 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"os/exec"
 )
 
 // NewUser creates a User
@@ -51,8 +52,12 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 // NewHTPasswdSecret create a HTPasswd Secret
 func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *corev1.Secret {
 
-	filedata, err := ioutil.ReadFile("hack/users.htpasswd")
-	fmt.Println(string(filedata))
+	_, err := exec.Command("/bin/bash", "hack/htpasswd.sh").Output()
+	if err != nil {
+		log.Errorf(err.Error())
+	}
+	filedata, err := ioutil.ReadFile("common/user/users.htpasswd")
+	fmt.Println(string(filedata)) // delete after test
 	if err != nil {
 		log.Errorf(err.Error())
 	}
