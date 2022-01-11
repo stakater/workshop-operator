@@ -326,21 +326,24 @@ spec:
                 - gitBranch
                 - gitURL
                 type: object
-              user:
-                description: UserSpec ...
+              userDetails:
+                description: UserDetailsSpec ...
                 properties:
-                  number:
+                  defaultPassword:
+                    type: string
+                  numberOfUsers:
                     type: integer
-                  password:
+                  userNamePrefix:
                     type: string
                 required:
-                - number
-                - password
+                - defaultPassword
+                - numberOfUsers
+                - userNamePrefix
                 type: object
             required:
             - infrastructure
             - source
-            - user
+            - userDetails
             type: object
           status:
             description: WorkshopStatus defines the observed state of Workshop

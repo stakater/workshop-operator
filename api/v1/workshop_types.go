@@ -27,16 +27,16 @@ import (
 type WorkshopSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	User           UserSpec           `json:"user"`
 	Source         SourceSpec         `json:"source"`
 	Infrastructure InfrastructureSpec `json:"infrastructure"`
+	UserDetails    UserDetailsSpec    `json:"userDetails"`
 }
 
-// UserSpec ...
-type UserSpec struct {
-	Number   int    `json:"number"`
-	Password string `json:"password"`
+// UserDetailsSpec ...
+type UserDetailsSpec struct {
+	UserNamePrefix  string `json:"userNamePrefix"`
+	NumberOfUsers   int    `json:"numberOfUsers"`
+	DefaultPassword string `json:"defaultPassword"`
 }
 
 // SourceSpec ...

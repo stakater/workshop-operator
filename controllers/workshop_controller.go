@@ -105,7 +105,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	appsHostnameSuffix = match[1]
 	log.Infof("Apps Hostname Suffix %s", appsHostnameSuffix)
 
-	users := workshop.Spec.User.Number
+	users := workshop.Spec.UserDetails.NumberOfUsers
 	if users < 0 {
 		users = 0
 	}

@@ -152,7 +152,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 func createGitUser(workshop *workshopv1.Workshop, username string, giteaURL string) (reconcile.Result, error) {
 
 	var (
-		openshiftUserPassword = workshop.Spec.User.Password
+		openshiftUserPassword = workshop.Spec.UserDetails.DefaultPassword
 		err                   error
 		httpResponse          *http.Response
 		httpRequest           *http.Request

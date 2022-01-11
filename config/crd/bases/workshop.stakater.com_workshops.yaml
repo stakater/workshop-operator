@@ -322,7 +322,8 @@ spec:
                     type: object
                 type: object
               source:
-                description: SourceSpec ...
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
                 properties:
                   gitBranch:
                     type: string
@@ -332,21 +333,24 @@ spec:
                 - gitBranch
                 - gitURL
                 type: object
-              user:
-                description: UserSpec ...
+              userDetails:
+                description: UserDetailsSpec ...
                 properties:
-                  number:
+                  defaultPassword:
+                    type: string
+                  numberOfUsers:
                     type: integer
-                  password:
+                  userNamePrefix:
                     type: string
                 required:
-                - number
-                - password
+                - defaultPassword
+                - numberOfUsers
+                - userNamePrefix
                 type: object
             required:
             - infrastructure
             - source
-            - user
+            - userDetails
             type: object
           status:
             description: WorkshopStatus defines the observed state of Workshop

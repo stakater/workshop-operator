@@ -23,7 +23,7 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	labModuleURLs := "https://docs.openshift.com/container-platform/latest/welcome/index.html;openshift_docs"
 	guideURLParameters := "APPS_HOSTNAME_SUFFIX=" + appsHostnameSuffix +
 		"&USER_ID=%USER_ID%" +
-		"&OPENSHIFT_PASSWORD=" + workshop.Spec.User.Password +
+		"&OPENSHIFT_PASSWORD=" + workshop.Spec.UserDetails.DefaultPassword +
 		"&WORKSHOP_GIT_REPO=" + url.QueryEscape(workshop.Spec.Source.GitURL) +
 		"&WORKSHOP_GIT_REF=" + workshop.Spec.Source.GitBranch
 
@@ -81,11 +81,11 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 								},
 								{
 									Name:  "LAB_USER_ACCESS_TOKEN",
-									Value: workshop.Spec.User.Password,
+									Value: workshop.Spec.UserDetails.DefaultPassword,
 								},
 								{
 									Name:  "LAB_USER_PASS",
-									Value: workshop.Spec.User.Password,
+									Value: workshop.Spec.UserDetails.DefaultPassword,
 								},
 								{
 									Name:  "LAB_USER_PREFIX",
