@@ -1,16 +1,12 @@
 package user
 
 import (
-	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
-	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os/exec"
 )
 
 // NewUser creates a User
@@ -52,15 +48,6 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 // NewHTPasswdSecret create a HTPasswd Secret
 func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *corev1.Secret {
 
-	_, err := exec.Command("/bin/bash", "hack/htpasswd.sh").Output()
-	if err != nil {
-		log.Errorf(err.Error())
-	}
-	filedata, err := ioutil.ReadFile("common/user/users.htpasswd")
-	fmt.Println(string(filedata)) // delete after test
-	if err != nil {
-		log.Errorf(err.Error())
-	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "htpass-secret-" + username,
@@ -68,7 +55,7 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, us
 		},
 		Type: "Opaque",
 		Data: map[string][]byte{
-			"htpasswd": filedata,
+			"htpasswd": []byte(""), // use htpasswd
 		},
 	}
 
