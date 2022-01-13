@@ -145,7 +145,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	//////////////////////////
 	// Users
 	//////////////////////////
-	if result, err := r.reconcileUser(workshop, users); util.IsRequeued(result, err) {
+	if result, err := r.reconcileUser(workshop); util.IsRequeued(result, err) {
 		return ctrl.Result{}, err
 	}
 

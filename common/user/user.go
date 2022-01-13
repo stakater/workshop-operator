@@ -1,12 +1,18 @@
 package user
 
 import (
+	"bytes"
 	userv1 "github.com/openshift/api/user/v1"
+	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"os"
+	"os/exec"
+	"fmt"
 )
 
 // NewUser creates a User
@@ -48,6 +54,7 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 // NewHTPasswdSecret create a HTPasswd Secret
 func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *corev1.Secret {
 
+	htpasswd := GeneratePasswd(workshop, scheme, username)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "htpass-secret-" + username,
@@ -55,7 +62,7 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, us
 		},
 		Type: "Opaque",
 		Data: map[string][]byte{
-			"htpasswd": []byte(""), // use htpasswd
+			"htpasswd": htpasswd,
 		},
 	}
 
@@ -94,4 +101,40 @@ func NewUserIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, user
 		},
 	}
 	return useridentity
+}
+
+func GeneratePasswd(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) []byte {
+
+	password := workshop.Spec.UserDetails.DefaultPassword
+	defaultUser := "username"
+	defaultPassword := "password"
+
+	shellScript, err := ioutil.ReadFile("hack/generate_htpasswd.sh")
+	if err != nil {
+		log.Errorf(err.Error())
+	}
+
+	shellScript = bytes.Replace(shellScript, []byte(defaultUser), []byte(username), -1)
+	shellScript = bytes.Replace(shellScript, []byte(defaultPassword), []byte(password), -1)
+	if err = ioutil.WriteFile("hack/generate_htpasswd.sh", shellScript, 0755); err != nil {
+		log.Fatal(err)
+	}
+	_, err = exec.Command("/bin/bash", "hack/generate_htpasswd.sh").Output()
+	if err != nil {
+		fmt.Printf("error %s", err)
+	}
+	shellScript = bytes.Replace(shellScript, []byte(username), []byte(defaultUser), -1)
+	shellScript = bytes.Replace(shellScript, []byte(password), []byte(defaultPassword), -1)
+	if err = ioutil.WriteFile("hack/generate_htpasswd.sh", shellScript, 0755); err != nil {
+		log.Fatal(err)
+	}
+	htpasswdFile, err := ioutil.ReadFile("hack/htpasswdfile.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	deleteHtpasswdFile := os.Remove("hack/htpasswdfile.txt")
+	if deleteHtpasswdFile != nil {
+		log.Fatal(deleteHtpasswdFile)
+	}
+	return htpasswdFile
 }
