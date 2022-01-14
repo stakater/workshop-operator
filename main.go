@@ -30,8 +30,8 @@ import (
 	"github.com/stakater/workshop-operator/common/nexus"
 	"github.com/stakater/workshop-operator/controllers"
 
-	configv1 "github.com/openshift/api/config/v1"
 	kiali "github.com/maistra/istio-operator/pkg/apis/external/kiali/v1alpha1"
+	configv1 "github.com/openshift/api/config/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	securityv1 "github.com/openshift/api/security/v1"
 	userv1 "github.com/openshift/api/user/v1"

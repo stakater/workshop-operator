@@ -1,18 +1,18 @@
 package controllers
 
 import (
+	"context"
+	"fmt"
 	configv1 "github.com/openshift/api/config/v1"
 	userv1 "github.com/openshift/api/user/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"context"
-	openshiftuser "github.com/stakater/workshop-operator/common/user"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
-	"fmt"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
+	openshiftuser "github.com/stakater/workshop-operator/common/user"
 	"github.com/stakater/workshop-operator/common/util"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -68,22 +68,21 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 		log.Error("Failed to get Oauth")
 	}
 	patch := client.MergeFrom(oauthFound.DeepCopy())
-	oauthFound.Spec = configv1.OAuthSpec{
-		IdentityProviders: []configv1.IdentityProvider{
-			{
-				Name:          "htpass-secret-" + username,
-				MappingMethod: "claim",
-				IdentityProviderConfig: configv1.IdentityProviderConfig{
-					Type: "HTPasswd",
-					HTPasswd: &configv1.HTPasswdIdentityProvider{
-						FileData: configv1.SecretNameReference{
-							Name: "htpass-secret-" + username,
-						},
+	IdentityProvider := []configv1.IdentityProvider{
+		{
+			Name:          "htpass-secret-" + username,
+			MappingMethod: "claim",
+			IdentityProviderConfig: configv1.IdentityProviderConfig{
+				Type: "HTPasswd",
+				HTPasswd: &configv1.HTPasswdIdentityProvider{
+					FileData: configv1.SecretNameReference{
+						Name: "htpass-secret-" + username,
 					},
 				},
 			},
 		},
 	}
+	oauthFound.Spec.IdentityProviders = append(IdentityProvider, oauthFound.Spec.IdentityProviders...)
 
 	err := r.Patch(context.TODO(), oauthFound, patch)
 	if err != nil && !errors.IsAlreadyExists(err) {

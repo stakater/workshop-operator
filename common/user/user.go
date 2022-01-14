@@ -2,6 +2,7 @@ package user
 
 import (
 	"bytes"
+	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -12,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"os/exec"
-	"fmt"
 )
 
 // NewUser creates a User
