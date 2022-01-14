@@ -76,8 +76,8 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 		log.Infof("Created %s identity ", identity.Name)
 	}
 
-	// create user identity
-	useridentity := openshiftuser.NewUserIdentity(workshop, r.Scheme, username)
+	// create user identity Mapping
+	useridentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, username)
 	if err := r.Create(context.TODO(), useridentity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -110,7 +110,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else {
-		log.Infof("Patched %s HTPAsswd ", oauthFound.Name)
+		log.Infof("Patched %s IdentityProviders  ", oauthFound.Name)
 	}
 
 	//Success

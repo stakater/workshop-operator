@@ -87,7 +87,7 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 }
 
 // NewUserIdentity creates a useridentitymapping
-func NewUserIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
+func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
 
 	useridentity := &userv1.UserIdentityMapping{
 		ObjectMeta: metav1.ObjectMeta{
