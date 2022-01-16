@@ -15,7 +15,7 @@ import (
 )
 
 var nexuslabels = map[string]string{
-	"app.kubernetes.io/part-of":    "nexus",
+	"app.kubernetes.io/part-of": "nexus",
 }
 
 const (
