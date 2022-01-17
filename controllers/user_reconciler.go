@@ -32,12 +32,16 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		}
 		id++
 	}
+	if result, err := r.PatchOauth(workshop); err != nil {
+		return result, err
+	}
 	//Success
 	return reconcile.Result{}, nil
 }
 
 func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, id int) (reconcile.Result, error) {
 
+	log.Info("addUser method")
 	user := openshiftuser.NewUser(workshop, r.Scheme, username)
 	if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -62,29 +66,33 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 		log.Infof("Created %s HTPasswd Secret", htpasswdsecret.Name)
 	}
 
-	// get user
+	// Get user
 	userFound := &userv1.User{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
-		log.Error("Failed to get user")
+		log.Error("Failed to get User")
 	}
 
-	// create identity
+	// Create Identity
 	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, userFound)
 	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s identity ", identity.Name)
+		log.Infof("Created %s Identity ", identity.Name)
 	}
 
-	// create user identity Mapping
+	// Create User Identity Mapping
 	useridentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, username)
 	if err := r.Create(context.TODO(), useridentity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s useridentity ", identity.Name)
+		log.Infof("Created %s User Identity Mapping ", identity.Name)
 	}
-
-	// Patch Username and  password
+	//Success
+	return reconcile.Result{}, nil
+}
+func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+	log.Info("PatchOauth method")
+	// Patch IdentityProvider
 	oauthFound := &configv1.OAuth{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
 		log.Error("Failed to get Oauth")
@@ -92,13 +100,13 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	patch := client.MergeFrom(oauthFound.DeepCopy())
 	IdentityProvider := []configv1.IdentityProvider{
 		{
-			Name:          "htpass-secret-" + username,
+			Name:          "htpass-secret-users",
 			MappingMethod: "claim",
 			IdentityProviderConfig: configv1.IdentityProviderConfig{
 				Type: "HTPasswd",
 				HTPasswd: &configv1.HTPasswdIdentityProvider{
 					FileData: configv1.SecretNameReference{
-						Name: "htpass-secret-" + username,
+						Name: "htpass-secret-users",
 					},
 				},
 			},
@@ -110,9 +118,8 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else {
-		log.Infof("Patched %s IdentityProviders  ", oauthFound.Name)
+		log.Infof("Patched %s Identity Providers  ", oauthFound.Name)
 	}
-
 	//Success
 	return reconcile.Result{}, nil
 }
