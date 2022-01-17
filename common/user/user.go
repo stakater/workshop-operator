@@ -11,7 +11,6 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
 	"os/exec"
 )
 
@@ -52,12 +51,11 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 }
 
 // NewHTPasswdSecret create a HTPasswd Secret
-func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *corev1.Secret {
+func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, htpasswd []byte) *corev1.Secret {
 
-	htpasswd := GeneratePasswd(workshop, scheme, username)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "htpass-secret-" + username,
+			Name:      "htpass-workshop-users",
 			Namespace: "openshift-config",
 		},
 		Type: "Opaque",
@@ -103,7 +101,7 @@ func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Schem
 	return useridentity
 }
 
-func GeneratePasswd(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) []byte {
+func GeneratePasswd(workshop *workshopv1.Workshop,username string) []byte {
 
 	password := workshop.Spec.UserDetails.DefaultPassword
 	shellScript, err := ioutil.ReadFile("hack/generate_htpasswd.sh")
@@ -129,9 +127,6 @@ func GeneratePasswd(workshop *workshopv1.Workshop, scheme *runtime.Scheme, usern
 	if err != nil {
 		log.Fatal(err)
 	}
-	deleteHtpasswdFile := os.Remove("hack/htpasswdfile.txt")
-	if deleteHtpasswdFile != nil {
-		log.Fatal(deleteHtpasswdFile)
-	}
+
 	return htpasswdFile
 }
