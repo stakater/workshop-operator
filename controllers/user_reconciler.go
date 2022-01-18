@@ -57,7 +57,6 @@ func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcil
 	oauthFound := &configv1.OAuth{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
 		log.Errorf("Failed to find %s Oauth", oauthFound.Name)
-
 	} else {
 		for _, v := range oauthFound.Spec.IdentityProviders {
 			if v.Name != "htpass-workshop-users" {
@@ -85,7 +84,8 @@ func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcil
 				} else {
 					log.Infof("Patched %s Identity Providers  ", oauthFound.Name)
 				}
-			} else if v.Name == "htpass-workshop-users" {
+			}
+			if v.Name == "htpass-workshop-users" {
 				log.Info("Identity Providers htpass-workshop-users already exit")
 				break
 			}
@@ -156,11 +156,19 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	if err != nil {
 		log.Errorf(err.Error())
 	}
+
 	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswdFile)
 	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
-	} else {
-		log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
+	} else if errors.IsAlreadyExists(err) {
+		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, []byte(""))
+		if err := r.Delete(context.TODO(), htpasswdSecretFound); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
+		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+			return reconcile.Result{}, err
+		}
 	}
 
 	deleteHtpasswdFile := os.Remove("hack/htpasswdfile.txt")
