@@ -11,6 +11,7 @@ import (
 	"github.com/stakater/workshop-operator/common/util"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
@@ -134,6 +135,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 	if result, err := r.DeleteUserHTPasswd(workshop); err != nil {
 		return result, err
 	}
+
 	id := 1
 	for {
 		username := fmt.Sprint(userPrefix, id)
@@ -151,6 +153,10 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 			}
 		}
 		id++
+	}
+
+	if result, err := r.DeleteOauthPatch(workshop); err != nil {
+		return result, err
 	}
 
 	//Success
@@ -210,15 +216,16 @@ func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (
 	return reconcile.Result{}, nil
 }
 
-// PatchOauth Patch IdentityProvider
-func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+// DeleteOauthPatch delete Identity Provider
+func (r *WorkshopReconciler) DeleteOauthPatch(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	oauthFound := &configv1.OAuth{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
 		log.Errorf("Failed to find %s Oauth", oauthFound.Name)
 	}
-	patch := client.MergeFrom(oauthFound.DeepCopy())
-	IdentityProvider := []configv1.IdentityProvider{
+	newOauthFound := oauthFound.DeepCopy()
+	newOauthFound.ObjectMeta = metav1.ObjectMeta{}
+	newOauthFound.Spec.IdentityProviders = []configv1.IdentityProvider{
 		{
 			Name:          "htpass-workshop-users",
 			MappingMethod: "claim",
@@ -232,7 +239,38 @@ func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcil
 			},
 		},
 	}
-	oauthFound.Spec.IdentityProviders = append(IdentityProvider, oauthFound.Spec.IdentityProviders...)
+	if err := r.Delete(context.TODO(), newOauthFound); err != nil {
+		return reconcile.Result{}, err
+	}
+	log.Infof("Deleted %s Identity Providers", newOauthFound.Name)
+
+	//Success
+	return reconcile.Result{}, nil
+}
+
+// PatchOauth Patch IdentityProvider
+func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+
+	oauthFound := &configv1.OAuth{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
+		log.Errorf("Failed to find %s Oauth", oauthFound.Name)
+	}
+	patch := client.MergeFrom(oauthFound.DeepCopy())
+	identityProvider := []configv1.IdentityProvider{
+		{
+			Name:          "htpass-workshop-users",
+			MappingMethod: "claim",
+			IdentityProviderConfig: configv1.IdentityProviderConfig{
+				Type: "HTPasswd",
+				HTPasswd: &configv1.HTPasswdIdentityProvider{
+					FileData: configv1.SecretNameReference{
+						Name: "htpass-workshop-users",
+					},
+				},
+			},
+		},
+	}
+	oauthFound.Spec.IdentityProviders = append(identityProvider, oauthFound.Spec.IdentityProviders...)
 
 	err := r.Patch(context.TODO(), oauthFound, patch)
 	if err != nil && !errors.IsAlreadyExists(err) {
