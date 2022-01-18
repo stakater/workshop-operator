@@ -10,6 +10,7 @@ import (
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
 	"github.com/stakater/workshop-operator/common/util"
 	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,10 +22,6 @@ import (
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	users := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
-
-	if result, err := r.CreateUserHTPasswd(workshop); err != nil {
-		return result, err
-	}
 
 	id := 1
 	for {
@@ -38,12 +35,16 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 			userFound := &userv1.User{}
 			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
 			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
-				log.Errorf("failed to get user %s", user.Name)
+				log.Errorf("Failed to find %s User ", user.Name)
 				break
 			}
 		}
 		id++
 	}
+	if result, err := r.CreateUserHTPasswd(workshop); err != nil {
+		return result, err
+	}
+
 	if result, err := r.PatchOauth(workshop); err != nil {
 		return result, err
 	}
@@ -65,13 +66,16 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	if err != nil {
 		log.Errorf(err.Error())
 	}
-
-	// Create htpasswd secret
-	htpasswdsecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswdFile)
-	if err := r.Create(context.TODO(), htpasswdsecret); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s HTPasswd Secret", htpasswdsecret.Name)
+	htpasswdSecretFound := &corev1.Secret{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: "htpass-workshop-users", Namespace: "openshift-config"}, htpasswdSecretFound); err == nil {
+		log.Errorf("HTPasswd Secret %s Not Found ", htpasswdSecretFound.Name)
+	} else if errors.IsNotFound(err) {
+		htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswdFile)
+		if err := r.Create(context.TODO(), htpasswdSecret); err != nil {
+			return reconcile.Result{}, err
+		} else {
+			log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
+		}
 	}
 
 	deleteHtpasswdFile := os.Remove("hack/htpasswdfile.txt")
@@ -105,7 +109,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	// Get User
 	userFound := &userv1.User{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
-		log.Error("Failed to get User")
+		log.Errorf("Failed to find %s User", userFound.Name)
 	}
 
 	// Create Identity
@@ -129,6 +133,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 }
 
 func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+
 	users := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	if result, err := r.DeleteUserHTPasswd(workshop); err != nil {
@@ -142,8 +147,13 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 				return result, err
 			}
 		} else {
-			log.Info("deleteUsers else")
-			break
+			user := openshiftuser.NewUser(workshop, r.Scheme, username)
+			userFound := &userv1.User{}
+			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
+			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
+				log.Errorf("Failed to find %s User ", user.Name)
+				break
+			}
 		}
 		id++
 	}
@@ -158,7 +168,7 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	// Get user
 	userFound := &userv1.User{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
-		log.Error("Failed to get User")
+		log.Errorf("Failed to find %s User", userFound.Name )
 	}
 
 	// Delete User Identity Mapping
@@ -204,11 +214,13 @@ func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (
 	//Success
 	return reconcile.Result{}, nil
 }
+
+// PatchOauth Patch IdentityProvider
 func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	// Patch IdentityProvider
+
 	oauthFound := &configv1.OAuth{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
-		log.Error("Failed to get Oauth")
+		log.Errorf("Failed to find %s Oauth", oauthFound.Name)
 	}
 	patch := client.MergeFrom(oauthFound.DeepCopy())
 	IdentityProvider := []configv1.IdentityProvider{

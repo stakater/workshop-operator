@@ -26,7 +26,7 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 	return user
 }
 
-// NewRoleBindingUsers creates a Role Binding for Users
+// NewRoleBindingUsers creates a Role Binding for User
 func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
 	roleName string, roleKind string) *rbac.RoleBinding {
 
@@ -72,9 +72,9 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 
 	identity := &userv1.Identity{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "htpass-secret-" + username + ":" + username,
+			Name: "htpass-workshop-users" + ":" + username,
 		},
-		ProviderName:     "htpass-secret-" + username,
+		ProviderName:     "htpass-workshop-users",
 		ProviderUserName: username,
 		User: corev1.ObjectReference{
 			Name: username,
@@ -84,15 +84,15 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 	return identity
 }
 
-// NewUserIdentity creates a useridentitymapping
+// NewUserIdentity creates a user identity mapping
 func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
 
 	useridentity := &userv1.UserIdentityMapping{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "htpass-secret-" + username + ":" + username,
+			Name: "htpass-workshop-users" + ":" + username,
 		},
 		Identity: corev1.ObjectReference{
-			Name: "htpass-secret-" + username + ":" + username,
+			Name: "htpass-workshop-users" + ":" + username,
 		},
 		User: corev1.ObjectReference{
 			Name: username,
@@ -101,7 +101,7 @@ func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Schem
 	return useridentity
 }
 
-func GeneratePasswd(workshop *workshopv1.Workshop,username string) []byte {
+func GeneratePasswd(workshop *workshopv1.Workshop, username string) []byte {
 
 	password := workshop.Spec.UserDetails.DefaultPassword
 	shellScript, err := ioutil.ReadFile("hack/generate_htpasswd.sh")
