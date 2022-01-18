@@ -10,7 +10,6 @@ import (
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
 	"github.com/stakater/workshop-operator/common/util"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,6 +21,10 @@ import (
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	users := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
+
+	if result, err := r.PatchOauth(workshop); err != nil {
+		return result, err
+	}
 
 	id := 1
 	for {
@@ -45,9 +48,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		return result, err
 	}
 
-	if result, err := r.PatchOauth(workshop); err != nil {
-		return result, err
-	}
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -66,16 +66,11 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	if err != nil {
 		log.Errorf(err.Error())
 	}
-	htpasswdSecretFound := &corev1.Secret{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "htpass-workshop-users", Namespace: "openshift-config"}, htpasswdSecretFound); err == nil {
-		log.Errorf("HTPasswd Secret %s Not Found ", htpasswdSecretFound.Name)
-	} else if errors.IsNotFound(err) {
-		htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswdFile)
-		if err := r.Create(context.TODO(), htpasswdSecret); err != nil {
-			return reconcile.Result{}, err
-		} else {
-			log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
-		}
+	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswdFile)
+	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else {
+		log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
 	}
 
 	deleteHtpasswdFile := os.Remove("hack/htpasswdfile.txt")
@@ -168,7 +163,7 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	// Get user
 	userFound := &userv1.User{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
-		log.Errorf("Failed to find %s User", userFound.Name )
+		log.Errorf("Failed to find %s User", userFound.Name)
 	}
 
 	// Delete User Identity Mapping
