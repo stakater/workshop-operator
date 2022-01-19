@@ -203,7 +203,7 @@ rules:
       - user.openshift.io
     resources:
       - identities
-      - useridentitymapping
+      - useridentitymappings
       - users
     verbs:
       - create
