@@ -2,7 +2,6 @@ package user
 
 import (
 	"bytes"
-	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
@@ -106,26 +105,26 @@ func GeneratePasswd(workshop *workshopv1.Workshop, username string) []byte {
 	password := workshop.Spec.UserDetails.DefaultPassword
 	shellScript, err := ioutil.ReadFile("/scripts/generate_htpasswd.sh")
 	if err != nil {
-		log.Errorf(err.Error())
+		log.Errorf("error %s", err)
 	}
 
 	shellScript = bytes.Replace(shellScript, []byte("username"), []byte(username), -1)
 	shellScript = bytes.Replace(shellScript, []byte("password"), []byte(password), -1)
 	if err = ioutil.WriteFile("/scripts/generate_htpasswd.sh", shellScript, 0755); err != nil {
-		log.Fatal(err)
+		log.Errorf("error %s", err)
 	}
 	_, err = exec.Command("/bin/bash", "/scripts/generate_htpasswd.sh").Output()
 	if err != nil {
-		fmt.Printf("error %s", err)
+		log.Errorf("error %s", err)
 	}
 	shellScript = bytes.Replace(shellScript, []byte(username), []byte("username"), -1)
 	shellScript = bytes.Replace(shellScript, []byte(password), []byte("password"), -1)
 	if err = ioutil.WriteFile("/scripts/generate_htpasswd.sh", shellScript, 0755); err != nil {
-		log.Fatal(err)
+		log.Errorf("error %s", err)
 	}
 	htpasswdFile, err := ioutil.ReadFile("common/user/htpasswdfile.txt")
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("error %s", err)
 	}
 
 	return htpasswdFile
