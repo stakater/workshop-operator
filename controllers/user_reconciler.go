@@ -152,7 +152,7 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 		log.Info("username", username)
 		openshiftuser.GeneratePasswd(workshop, username)
 	}
-	htpasswdFile, err := ioutil.ReadFile("hack/htpasswdfile.txt")
+	htpasswdFile, err := ioutil.ReadFile("generate_htpasswd/htpasswdfile.txt")
 	if err != nil {
 		log.Errorf(err.Error())
 	}
@@ -171,7 +171,7 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 		}
 	}
 
-	deleteHtpasswdFile := os.Remove("hack/htpasswdfile.txt")
+	deleteHtpasswdFile := os.Remove("generate_htpasswd/htpasswdfile.txt")
 	if deleteHtpasswdFile != nil {
 		log.Fatal(deleteHtpasswdFile)
 	}
