@@ -24,4 +24,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY scripts/ scripts/
+
+USER 65532:65532
+ 
 ENTRYPOINT ["/manager"]
