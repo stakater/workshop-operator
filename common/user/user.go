@@ -104,26 +104,26 @@ func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Schem
 func GeneratePasswd(workshop *workshopv1.Workshop, username string) []byte {
 
 	password := workshop.Spec.UserDetails.DefaultPassword
-	shellScript, err := ioutil.ReadFile("hack/generate_htpasswd.sh")
+	shellScript, err := ioutil.ReadFile("generate_htpasswd/generate_htpasswd.sh")
 	if err != nil {
 		log.Errorf(err.Error())
 	}
 
 	shellScript = bytes.Replace(shellScript, []byte("username"), []byte(username), -1)
 	shellScript = bytes.Replace(shellScript, []byte("password"), []byte(password), -1)
-	if err = ioutil.WriteFile("hack/generate_htpasswd.sh", shellScript, 0755); err != nil {
+	if err = ioutil.WriteFile("generate_htpasswd/generate_htpasswd.sh", shellScript, 0755); err != nil {
 		log.Fatal(err)
 	}
-	_, err = exec.Command("/bin/bash", "hack/generate_htpasswd.sh").Output()
+	_, err = exec.Command("/bin/bash", "generate_htpasswd/generate_htpasswd.sh").Output()
 	if err != nil {
 		fmt.Printf("error %s", err)
 	}
 	shellScript = bytes.Replace(shellScript, []byte(username), []byte("username"), -1)
 	shellScript = bytes.Replace(shellScript, []byte(password), []byte("password"), -1)
-	if err = ioutil.WriteFile("hack/generate_htpasswd.sh", shellScript, 0755); err != nil {
+	if err = ioutil.WriteFile("generate_htpasswd/generate_htpasswd.sh", shellScript, 0755); err != nil {
 		log.Fatal(err)
 	}
-	htpasswdFile, err := ioutil.ReadFile("hack/htpasswdfile.txt")
+	htpasswdFile, err := ioutil.ReadFile("generate_htpasswd/htpasswdfile.txt")
 	if err != nil {
 		log.Fatal(err)
 	}

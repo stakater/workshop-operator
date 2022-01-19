@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTPUT_HTPASSWD="hack/htpasswdfile.txt"
+OUTPUT_HTPASSWD="generate_htpasswd/htpasswdfile.txt"
 touch $OUTPUT_HTPASSWD
 sudo apt-get install apache2 apache2-utils -y
 p=`echo "password" | htpasswd -b -B -i -n  username`
