@@ -72,7 +72,7 @@ rules:
 - apiGroups:
   - config.openshift.io
   resources:
-  - oauth
+  - oauths
   verbs:
   - get
   - list
