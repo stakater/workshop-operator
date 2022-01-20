@@ -22,12 +22,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 USER 65532:65532
+COPY --from=builder /workspace/manager .
 
 WORKDIR /tmp
-COPY --from=builder /workspace/manager .
 RUN mkdir scripts
 
 RUN chown -R 65532:65532 scripts
-COPY --chown=65532 scripts/ scripts/
+COPY --chown=65532:65532 scripts/ scripts/
 
-ENTRYPOINT ["/tmp/manager"]
+ENTRYPOINT ["/manager"]
