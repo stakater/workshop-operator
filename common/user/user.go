@@ -120,7 +120,7 @@ func GeneratePasswd(workshop *workshopv1.Workshop, username string) []byte {
 	}
 	shellScript = bytes.Replace(shellScript, []byte(username), []byte("username"), -1)
 	shellScript = bytes.Replace(shellScript, []byte(password), []byte("password"), -1)
-	if err = ioutil.WriteFile("/tmp/scripts/generate_htpasswd.sh", shellScript, 0755); err != nil {
+	if err = ioutil.WriteFile("/tmp/scripts/generate_htpasswd.sh", shellScript, 0644); err != nil {
 		log.Fatal(err)
 	}
 	htpasswdFile, err := ioutil.ReadFile("/tmp/scripts/htpasswdfile.txt")
