@@ -3,19 +3,17 @@ package controllers
 import (
 	"context"
 	"fmt"
-	configv1 "github.com/openshift/api/config/v1"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
 	"github.com/stakater/workshop-operator/common/util"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"strings"
 )
 
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
@@ -43,55 +41,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	if result, err := r.CreateUserHTPasswd(workshop); err != nil {
 		return result, err
 	}
-
-	if result, err := r.PatchOauth(workshop); err != nil {
-		return result, err
-	}
-	//Success
-	return reconcile.Result{}, nil
-}
-
-// PatchOauth Patch IdentityProvider
-func (r *WorkshopReconciler) PatchOauth(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
-	oauthFound := &configv1.OAuth{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, oauthFound); err != nil {
-		log.Errorf("Failed to find %s Oauth", oauthFound.Name)
-	} else {
-		for _, v := range oauthFound.Spec.IdentityProviders {
-			if v.Name != "htpass-workshop-users" {
-				log.Info("Identity Providers htpass-workshop-users not exit")
-				patch := client.MergeFrom(oauthFound.DeepCopy())
-				identityProvider := []configv1.IdentityProvider{
-					{
-						Name:          "htpass-workshop-users",
-						MappingMethod: "claim",
-						IdentityProviderConfig: configv1.IdentityProviderConfig{
-							Type: "HTPasswd",
-							HTPasswd: &configv1.HTPasswdIdentityProvider{
-								FileData: configv1.SecretNameReference{
-									Name: "htpass-workshop-users",
-								},
-							},
-						},
-					},
-				}
-				oauthFound.Spec.IdentityProviders = append(identityProvider, oauthFound.Spec.IdentityProviders...)
-
-				err := r.Patch(context.TODO(), oauthFound, patch)
-				if err != nil && !errors.IsAlreadyExists(err) {
-					return reconcile.Result{}, err
-				} else {
-					log.Infof("Patched %s Identity Providers  ", oauthFound.Name)
-				}
-			}
-			if v.Name == "htpass-workshop-users" {
-				log.Info("Identity Providers htpass-workshop-users already exit")
-				break
-			}
-		}
-	}
-
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -141,41 +90,40 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-// CreateUserHTPasswd create HTPasswd
 func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	users := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
-
-	for id := 1; id <= users; id++ {
-		username := fmt.Sprint(userPrefix, id)
-		log.Info("username", username)
-		openshiftuser.GeneratePasswd(workshop, username)
+	password := workshop.Spec.UserDetails.DefaultPassword
+	var htpasswds []byte
+	for i := 1 ; i<= 3; i ++ {
+		username := fmt.Sprint(users, userPrefix)
+		command := "echo \"password\" | htpasswd -b -B -i -n " + username
+		strings.Replace(command, "password", password, -1)
+		out, err := exec.Command("/bin/bash", "-c", command).Output()
+		if err != nil {
+			fmt.Printf("error %s", err)
+		}
+		fmt.Println(string(out))
+		p := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
+		htpasswds = append(htpasswds, []byte(p)...)
 	}
-	htpasswdFile, err := ioutil.ReadFile("/tmp/scripts/htpasswdfile.txt")
-	if err != nil {
-		log.Errorf(err.Error())
-	}
-
-	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswdFile)
+	
+	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswds)
 	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if errors.IsAlreadyExists(err) {
-		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, []byte(""))
+		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswds)
 		if err := r.Delete(context.TODO(), htpasswdSecretFound); err != nil {
 			return reconcile.Result{}, err
 		}
 		log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
 		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
+		} else {
+			log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
 		}
 	}
-
-	deleteHtpasswdFile := os.Remove("/tmp/scripts/htpasswdfile.txt")
-	if deleteHtpasswdFile != nil {
-		log.Fatal(deleteHtpasswdFile)
-	}
-
 	//Success
 	return reconcile.Result{}, nil
 }
@@ -264,3 +212,6 @@ func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (
 	//Success
 	return reconcile.Result{}, nil
 }
+
+//     dXNlcjE6JDJ5JDA1JHguN3VQU3lOZmVLNTBKN25tZGsuby5IRGhHTzRlcUVybXlLenJXQXRJbzZUaHhXVFN3bGI2Cg==
+// 
