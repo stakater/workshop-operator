@@ -21,11 +21,11 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 	return user
 }
 
-// NewRoleBindingUsers creates a Role Binding for User
-func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
+// NewRoleBindingUser creates a Role Binding for User
+func NewRoleBindingUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
 	roleName string, roleKind string) *rbac.RoleBinding {
 
-	rolebinding := &rbac.RoleBinding{
+	roleBinding := &rbac.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      username,
 			Namespace: namespace,
@@ -42,7 +42,7 @@ func NewRoleBindingUsers(workshop *workshopv1.Workshop, scheme *runtime.Scheme, 
 			Kind: roleKind,
 		},
 	}
-	return rolebinding
+	return roleBinding
 }
 
 // NewHTPasswdSecret create a HTPasswd Secret
@@ -79,10 +79,10 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 	return identity
 }
 
-// NewUserIdentity creates a user identity mapping
+// NewUserIdentityMapping creates a user identity mapping
 func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
 
-	useridentity := &userv1.UserIdentityMapping{
+	userIdentity := &userv1.UserIdentityMapping{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "htpass-workshop-users" + ":" + username,
 		},
@@ -93,5 +93,5 @@ func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Schem
 			Name: username,
 		},
 	}
-	return useridentity
+	return userIdentity
 }

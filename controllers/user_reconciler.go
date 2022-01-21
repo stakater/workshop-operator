@@ -48,6 +48,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 // Add user to openshift
 func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, id int) (reconcile.Result, error) {
 
+	// Create User
 	user := openshiftuser.NewUser(workshop, r.Scheme, username)
 	if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -56,7 +57,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUsers(workshop, r.Scheme, username, "workshop-infra",
+	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, "workshop-infra",
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -68,6 +69,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	userFound := &userv1.User{}
 	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
 		log.Errorf("Failed to find %s User", userFound.Name)
+
 	}
 
 	// Create Identity
@@ -184,13 +186,14 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	log.Infof("Deleted %s Identity  ", identity.Name)
 
 	// Delete User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUsers(workshop, r.Scheme, username, "workshop-infra",
+	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, "workshop-infra",
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Role Binding", userRoleBinding.Name)
 
+	// Delete User
 	user := openshiftuser.NewUser(workshop, r.Scheme, username)
 	if err := r.Delete(context.TODO(), user); err != nil {
 		return reconcile.Result{}, err
@@ -212,6 +215,3 @@ func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (
 	//Success
 	return reconcile.Result{}, nil
 }
-
-//     dXNlcjE6JDJ5JDA1JHguN3VQU3lOZmVLNTBKN25tZGsuby5IRGhHTzRlcUVybXlLenJXQXRJbzZUaHhXVFN3bGI2Cg==
-//
