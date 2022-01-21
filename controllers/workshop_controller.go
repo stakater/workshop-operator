@@ -54,7 +54,7 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 // +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=create;list;watch;update;patch;get;delete
 // +kubebuilder:rbac:groups=project.openshift.io,resources=projectrequests,verbs=create
 // +kubebuilder:rbac:groups=user.openshift.io,resources=users;identities;useridentitymappings,verbs=create;list;watch;update;get;delete
-// +kubebuilder:rbac:groups=config.openshift.io,resources=oauths,verbs=patch;list;watch;get
+
 
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=*
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
