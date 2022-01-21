@@ -96,19 +96,19 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	password := workshop.Spec.UserDetails.DefaultPassword
 	var htpasswds []byte
-	for i := 1 ; i<= 3; i ++ {
-		username := fmt.Sprint(users, userPrefix)
+	for id := 1; id <= users; id++ {
+		username := fmt.Sprint(userPrefix, id)
 		command := "echo \"password\" | htpasswd -b -B -i -n " + username
-		strings.Replace(command, "password", password, -1)
-		out, err := exec.Command("/bin/bash", "-c", command).Output()
+		updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
+		out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
 		if err != nil {
-			fmt.Printf("error %s", err)
+			log.Errorf("error %s", err)
 		}
 		fmt.Println(string(out))
 		p := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
 		htpasswds = append(htpasswds, []byte(p)...)
 	}
-	
+
 	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswds)
 	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -214,4 +214,4 @@ func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (
 }
 
 //     dXNlcjE6JDJ5JDA1JHguN3VQU3lOZmVLNTBKN25tZGsuby5IRGhHTzRlcUVybXlLenJXQXRJbzZUaHhXVFN3bGI2Cg==
-// 
+//
