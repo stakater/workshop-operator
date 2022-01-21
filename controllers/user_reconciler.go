@@ -96,6 +96,7 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	password := workshop.Spec.UserDetails.DefaultPassword
 	var htpasswds []byte
+
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprint(userPrefix, id)
 		command := "echo \"password\" | htpasswd -b -B -i -n " + username
@@ -104,9 +105,8 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 		if err != nil {
 			log.Errorf("error %s", err)
 		}
-		fmt.Println(string(out))
-		p := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
-		htpasswds = append(htpasswds, []byte(p)...)
+		userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
+		htpasswds = append(htpasswds, []byte(userpwd)...)
 	}
 
 	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswds)
