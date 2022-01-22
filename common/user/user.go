@@ -21,7 +21,7 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 	return user
 }
 
-// NewRoleBindingUser creates a Role Binding for User
+// NewRoleBindingUser creates a RoleBinding
 func NewRoleBindingUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
 	roleName string, roleKind string) *rbac.RoleBinding {
 
@@ -45,13 +45,13 @@ func NewRoleBindingUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, u
 	return roleBinding
 }
 
-// NewHTPasswdSecret create a HTPasswd Secret
-func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, htpasswds []byte) *corev1.Secret {
+// NewHTPasswdSecret create a Secret
+func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name string, namespace string, htpasswds []byte) *corev1.Secret {
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "htpass-workshop-users",
-			Namespace: "openshift-config",
+			Name:      name,
+			Namespace: namespace,
 		},
 		Type: "Opaque",
 		Data: map[string][]byte{
@@ -62,14 +62,14 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, ht
 	return secret
 }
 
-// NewIdentity creates a identity
-func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, userFound *userv1.User) *userv1.Identity {
+// NewIdentity creates an identity
+func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, identityName string, userFound *userv1.User) *userv1.Identity {
 
 	identity := &userv1.Identity{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "htpass-workshop-users" + ":" + username,
+			Name: identityName + ":" + username,
 		},
-		ProviderName:     "htpass-workshop-users",
+		ProviderName:     identityName,
 		ProviderUserName: username,
 		User: corev1.ObjectReference{
 			Name: username,
@@ -80,14 +80,14 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 }
 
 // NewUserIdentityMapping creates a user identity mapping
-func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.UserIdentityMapping {
+func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, userIdentityName, username string) *userv1.UserIdentityMapping {
 
 	userIdentity := &userv1.UserIdentityMapping{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "htpass-workshop-users" + ":" + username,
+			Name: userIdentityName + ":" + username,
 		},
 		Identity: corev1.ObjectReference{
-			Name: "htpass-workshop-users" + ":" + username,
+			Name: userIdentityName + ":" + username,
 		},
 		User: corev1.ObjectReference{
 			Name: username,

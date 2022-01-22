@@ -2,18 +2,28 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
 	"github.com/stakater/workshop-operator/common/util"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"strings"
+)
+
+const (
+	HTPASSWD_SECRET_NAME            = "htpass-workshop-users"
+	HTPASSWD_SECRET_NAMESPACE_NAME  = "openshift-config"
+	USER_ROLE_BINDIN_NAMESPACE_NAME = "workshop-infra"
+	IDENTITY_NAME                   = "htpass-workshop-users"
+	USER_IDENTITY_MAPPING_NAME      = "htpass-workshop-users"
 )
 
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
@@ -24,7 +34,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	for {
 		username := fmt.Sprint(userPrefix, id)
 		if id <= users {
-			if result, err := r.addUser(workshop, r.Scheme, username, id); util.IsRequeued(result, err) {
+			if result, err := r.addUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 				return result, err
 			}
 		} else {
@@ -46,7 +56,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 }
 
 // Add user to openshift
-func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, id int) (reconcile.Result, error) {
+func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
 	// Create User
 	user := openshiftuser.NewUser(workshop, r.Scheme, username)
@@ -57,7 +67,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, "workshop-infra",
+	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -73,7 +83,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create Identity
-	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, userFound)
+	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
 	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -81,7 +91,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create User Identity Mapping
-	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, username)
+	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, USER_IDENTITY_MAPPING_NAME, username)
 	if err := r.Create(context.TODO(), userIdentity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -98,6 +108,7 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	password := workshop.Spec.UserDetails.DefaultPassword
 	var htpasswds []byte
+	var countUsers int
 
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprint(userPrefix, id)
@@ -111,11 +122,35 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 		htpasswds = append(htpasswds, []byte(userpwd)...)
 	}
 
-	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswds)
+	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
 	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if errors.IsAlreadyExists(err) {
-		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, htpasswds)
+		// Get secret
+		secretFound := &corev1.Secret{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
+
+			for _, secretData := range secretFound.Data {
+
+				encodedSecret := base64.StdEncoding.EncodeToString(secretData)
+				decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
+				if err != nil {
+					log.Errorf("Error %s", err)
+				}
+				countUsers = strings.Count(string(decodeSecret), userPrefix)
+			}
+			for countUsers > users {
+
+				username := fmt.Sprint(userPrefix, countUsers)
+				if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+					return result, err
+				}
+				countUsers--
+
+			}
+
+		}
+		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
 		if err := r.Delete(context.TODO(), htpasswdSecretFound); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -140,7 +175,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 	for {
 		username := fmt.Sprint(userPrefix, id)
 		if id <= users {
-			if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username, id); util.IsRequeued(result, err) {
+			if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 				return result, err
 			}
 		} else {
@@ -163,7 +198,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 }
 
 // deleteOpenshiftUser delete OpenShift user
-func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, id int) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
 	// Get user
 	userFound := &userv1.User{}
@@ -172,21 +207,21 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	}
 
 	// Delete User Identity Mapping
-	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, username)
+	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, USER_IDENTITY_MAPPING_NAME, username)
 	if err := r.Delete(context.TODO(), userIdentity); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s User Identity Mapping ", userIdentity.Name)
 
 	// Delete Identity
-	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, userFound)
+	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
 	if err := r.Delete(context.TODO(), identity); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Identity  ", identity.Name)
 
 	// Delete User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, "workshop-infra",
+	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
 		return reconcile.Result{}, err
@@ -207,7 +242,7 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 // DeleteUserHTPasswd delete User HTPasswd
 func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
-	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, []byte(""))
+	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, []byte(""))
 	if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
 		return reconcile.Result{}, err
 	}
