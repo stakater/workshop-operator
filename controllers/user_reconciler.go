@@ -48,14 +48,14 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		}
 		id++
 	}
-	if result, err := r.CreateUserHTPasswd(workshop); err != nil {
+	if result, err := r.CreateUserHtpasswd(workshop); err != nil {
 		return result, err
 	}
 	//Success
 	return reconcile.Result{}, nil
 }
 
-// Add user to openshift
+// Add user in openshift cluster
 func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
 	// Create User
@@ -102,7 +102,8 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+// CreateUserHtpasswd create Htpasswd secret for users
+func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	users := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
@@ -129,9 +130,7 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 		// Get secret
 		secretFound := &corev1.Secret{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
-
 			for _, secretData := range secretFound.Data {
-
 				encodedSecret := base64.StdEncoding.EncodeToString(secretData)
 				decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
 				if err != nil {
@@ -140,15 +139,12 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 				countUsers = strings.Count(string(decodeSecret), userPrefix)
 			}
 			for countUsers > users {
-
 				username := fmt.Sprint(userPrefix, countUsers)
 				if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 					return result, err
 				}
 				countUsers--
-
 			}
-
 		}
 		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
 		if err := r.Delete(context.TODO(), htpasswdSecretFound); err != nil {
@@ -165,7 +161,7 @@ func (r *WorkshopReconciler) CreateUserHTPasswd(workshop *workshopv1.Workshop) (
 	return reconcile.Result{}, nil
 }
 
-// deleteUsers delete openshift users
+// deleteUsers delete users in openshift cluster
 func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	users := workshop.Spec.UserDetails.NumberOfUsers
@@ -189,7 +185,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 		}
 		id++
 	}
-	if result, err := r.DeleteUserHTPasswd(workshop); err != nil {
+	if result, err := r.DeleteUserHtpasswd(workshop); err != nil {
 		return result, err
 	}
 
@@ -239,8 +235,8 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	return reconcile.Result{}, nil
 }
 
-// DeleteUserHTPasswd delete User HTPasswd
-func (r *WorkshopReconciler) DeleteUserHTPasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+// DeleteUserHTPasswd delete Htpasswd secret for users
+func (r *WorkshopReconciler) DeleteUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, []byte(""))
 	if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
