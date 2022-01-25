@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewUser create a User
+// NewUser create an user
 func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.User {
 
 	user := &userv1.User{
@@ -79,7 +79,7 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 	return identity
 }
 
-// NewUserIdentityMapping create a user identity mapping for user
+// NewUserIdentityMapping create an user identity mapping for user
 func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, userIdentityName, username string) *userv1.UserIdentityMapping {
 
 	userIdentity := &userv1.UserIdentityMapping{
