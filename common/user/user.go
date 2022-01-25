@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// NewUser creates a User
+// NewUser create a User
 func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.User {
 
 	user := &userv1.User{
@@ -21,7 +21,7 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 	return user
 }
 
-// NewRoleBindingUser creates a RoleBinding for users
+// NewRoleBindingUser create a RoleBinding for user
 func NewRoleBindingUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
 	roleName string, roleKind string) *rbac.RoleBinding {
 
@@ -62,7 +62,7 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, na
 	return secret
 }
 
-// NewIdentity creates an identity for users
+// NewIdentity create an identity for user
 func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, identityName string, userFound *userv1.User) *userv1.Identity {
 
 	identity := &userv1.Identity{
@@ -79,7 +79,7 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 	return identity
 }
 
-// NewUserIdentityMapping creates a user identity mapping for users
+// NewUserIdentityMapping create a user identity mapping for user
 func NewUserIdentityMapping(workshop *workshopv1.Workshop, scheme *runtime.Scheme, userIdentityName, username string) *userv1.UserIdentityMapping {
 
 	userIdentity := &userv1.UserIdentityMapping{
