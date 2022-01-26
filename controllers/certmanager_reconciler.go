@@ -43,6 +43,7 @@ func (r *WorkshopReconciler) addCertManager(workshop *workshopv1.Workshop) (reco
 	channel := workshop.Spec.Infrastructure.CertManager.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.CertManager.OperatorHub.ClusterServiceVersion
 
+	// Create CertManager Subscription
 	CertManagerSubscription := kubernetes.NewCertifiedSubscription(workshop, r.Scheme, CERT_MANAGER_SUBSCRIPTION_NAME, CERT_MANAGER_SUBSCRIPTION_NAMESPACE_NAME,
 		CERT_MANAGER_PACKAGE_NAME, channel, clusterServiceVersion)
 	if err := r.Create(context.TODO(), CertManagerSubscription); err != nil && !errors.IsAlreadyExists(err) {
@@ -57,6 +58,7 @@ func (r *WorkshopReconciler) addCertManager(workshop *workshopv1.Workshop) (reco
 		return reconcile.Result{Requeue: true}, nil
 	}
 
+	// Create CertManager Namespace
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, CERT_MANAGER_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -64,6 +66,7 @@ func (r *WorkshopReconciler) addCertManager(workshop *workshopv1.Workshop) (reco
 		log.Infof("Created %s Namespace", namespace.Name)
 	}
 
+	// Create CertManager CustomResource
 	customresource := certmanager.NewCustomResource(workshop, r.Scheme, CERT_MANAGER_CUSTOM_RESOURCE_NAME, namespace.Name, certManagerLabels)
 	if err := r.Create(context.TODO(), customresource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -82,22 +85,22 @@ func (r *WorkshopReconciler) deleteCertManager(workshop *workshopv1.Workshop) (r
 
 	namespace := kubernetes.NewNamespace(workshop, r.Scheme, CERT_MANAGER_NAMESPACE_NAME)
 
+	// Delete CertManager CustomResource
 	customresource := certmanager.NewCustomResource(workshop, r.Scheme, CERT_MANAGER_CUSTOM_RESOURCE_NAME, namespace.Name, certManagerLabels)
-	// Delete Custom Resource
 	if err := r.Delete(context.TODO(), customresource); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s Custom Resource", customresource.Name)
 
-	// Delete Namespace
+	// Delete CertManager Namespace
 	if err := r.Delete(context.TODO(), namespace); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Infof("Deleted %s  Namespace", namespace.Name)
 
+	// Delete certManager Subscription
 	CertManagerSubscription := kubernetes.NewCertifiedSubscription(workshop, r.Scheme, CERT_MANAGER_SUBSCRIPTION_NAME, CERT_MANAGER_SUBSCRIPTION_NAMESPACE_NAME,
 		CERT_MANAGER_PACKAGE_NAME, channel, clusterServiceVersion)
-	// Delete certManager Subscription
 	if err := r.Delete(context.TODO(), CertManagerSubscription); err != nil {
 		return reconcile.Result{}, err
 	}

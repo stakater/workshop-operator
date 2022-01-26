@@ -52,7 +52,7 @@ spec:
         channel: stable
         clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
     certManager:
-      enabled: true
+      enabled: false
       operatorHub:
         channel: ''
     project:
