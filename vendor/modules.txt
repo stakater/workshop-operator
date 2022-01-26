@@ -121,6 +121,8 @@ github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
 # github.com/maistra/istio-operator v0.0.0-20201103161300-64d0fff69dbe
 ## explicit
+github.com/maistra/istio-operator/pkg/apis/external
+github.com/maistra/istio-operator/pkg/apis/external/kiali/v1alpha1
 github.com/maistra/istio-operator/pkg/apis/maistra/status
 github.com/maistra/istio-operator/pkg/apis/maistra/v1
 github.com/maistra/istio-operator/pkg/apis/maistra/v2
@@ -525,7 +527,6 @@ k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/homedir
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
-k8s.io/client-go/util/retry
 k8s.io/client-go/util/workqueue
 # k8s.io/klog v1.0.0
 k8s.io/klog
