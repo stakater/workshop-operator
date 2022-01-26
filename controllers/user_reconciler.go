@@ -42,7 +42,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 			userFound := &userv1.User{}
 			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
 			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
-				log.Errorf("Failed to find %s User ", user.Name)
+				log.Infof("Failed to find %s User ", user.Name)
 				break
 			}
 		}
@@ -179,7 +179,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 			userFound := &userv1.User{}
 			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
 			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
-				log.Errorf("Failed to find %s User ", user.Name)
+				log.Infof("Failed to find %s User ", user.Name)
 				break
 			}
 		}

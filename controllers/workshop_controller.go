@@ -250,7 +250,24 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	if result, err := r.deleteUsers(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
-	if result, err := r.deleteServiceMeshService(workshop, userID); util.IsRequeued(result, err) {
+
+	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteBookbag(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteNexus(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -259,16 +276,7 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
-	if result, err := r.deleteBookbag(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
-
-		return result, err
-	}
-
 	if result, err := r.deleteGitOps(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -276,19 +284,11 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
-	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+	if result, err := r.deleteServiceMeshService(workshop, userID); util.IsRequeued(result, err) {
 		return result, err
 	}
 
 	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteNexus(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
