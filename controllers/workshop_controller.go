@@ -222,7 +222,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	//////////////////////////
 	// Cert Manager
 	//////////////////////////
-	if result, err := r.reconcileCertManager(workshop); util.IsRequeued(result, err) {
+	if result, err := r.reconcileCertManager(workshop, users); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -238,6 +238,9 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
+	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
 
 	if result, err := r.deleteServiceMeshService(workshop, userID); util.IsRequeued(result, err) {
 		return result, err
@@ -262,10 +265,6 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	}
 
 	if result, err := r.deleteCodeReadyWorkspace(workshop, userID, appsHostnameSuffix); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
