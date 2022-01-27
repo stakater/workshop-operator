@@ -2,20 +2,15 @@ package controllers
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
 	openshiftuser "github.com/stakater/workshop-operator/common/user"
-	"github.com/stakater/workshop-operator/common/util"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	"os/exec"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
 )
 
 const (
@@ -26,223 +21,273 @@ const (
 	USER_IDENTITY_MAPPING_NAME      = "htpass-workshop-users"
 )
 
+var userLabels = map[string]string{
+	"createdBy": "WorkshopOperator",
+}
+var UserLabelSelector = "createdBy=WorkshopOperator"
+
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	users := workshop.Spec.UserDetails.NumberOfUsers
+	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 
-	id := 1
-	for {
-		username := fmt.Sprint(userPrefix, id)
-		if id <= users {
-			if result, err := r.addUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
-				return result, err
-			}
-		} else {
-			user := openshiftuser.NewUser(workshop, r.Scheme, username)
-			userFound := &userv1.User{}
-			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
-			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
-				log.Infof("Failed to find %s User ", user.Name)
-				break
-			}
-		}
-		id++
-	}
-	if result, err := r.CreateUserHtpasswd(workshop); err != nil {
-		return result, err
-	}
-	//Success
-	return reconcile.Result{}, nil
-}
+	var createUsers []string
+	var userList []string
 
-// Add user in openshift cluster
-func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
-
-	// Create User
-	user := openshiftuser.NewUser(workshop, r.Scheme, username)
-	if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s user", user.Name)
+	for userSuffix := 1; userSuffix <= totalUsers; userSuffix++ {
+		userName := fmt.Sprint(userPrefix, userSuffix)
+		createUsers = append(createUsers, userName)
 	}
 
-	// Create User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
-		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
-	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s Role Binding", userRoleBinding.Name)
-	}
-
-	// Get User
-	userFound := &userv1.User{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
-		log.Errorf("Failed to find %s User", userFound.Name)
-
-	}
-
-	// Create Identity
-	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
-	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s Identity ", identity.Name)
-	}
-
-	// Create User Identity Mapping
-	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, USER_IDENTITY_MAPPING_NAME, username)
-	if err := r.Create(context.TODO(), userIdentity); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s User Identity Mapping ", userIdentity.Name)
-	}
-
-	//Success
-	return reconcile.Result{}, nil
-}
-
-// CreateUserHtpasswd create Htpasswd secret for users
-func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
-	users := workshop.Spec.UserDetails.NumberOfUsers
-	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
-	password := workshop.Spec.UserDetails.DefaultPassword
-	var htpasswds []byte
-	var countUsers int
-
-	for id := 1; id <= users; id++ {
-		username := fmt.Sprint(userPrefix, id)
-		command := "echo \"password\" | htpasswd -b -B -i -n " + username
-		updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
-		out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
-		if err != nil {
-			log.Errorf("error %s", err)
-		}
-		userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
-		htpasswds = append(htpasswds, []byte(userpwd)...)
-	}
-
-	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
-	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if errors.IsAlreadyExists(err) {
-		// Get secret
-		secretFound := &corev1.Secret{}
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
-			for _, secretData := range secretFound.Data {
-				encodedSecret := base64.StdEncoding.EncodeToString(secretData)
-				decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
-				if err != nil {
-					log.Errorf("Error %s", err)
-				}
-				countUsers = strings.Count(string(decodeSecret), userPrefix)
-			}
-			for countUsers > users {
-				username := fmt.Sprint(userPrefix, countUsers)
-				if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
-					return result, err
-				}
-				countUsers--
-			}
-		}
-		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
-		if err := r.Delete(context.TODO(), htpasswdSecretFound); err != nil {
+	for _, username := range createUsers {
+		// Create User
+		user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
+		if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
-		}
-		log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
-		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
-			return reconcile.Result{}, err
-		} else {
-			log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
+		} else if err == nil {
+			log.Infof("Created %s user", user.Name)
 		}
 	}
+
+	labelSelector, err := labels.Parse(UserLabelSelector)
+	if err != nil {
+		log.Errorf("Error %s", err)
+	}
+
+	// list User
+	ListUsers := &userv1.UserList{}
+	listOps := &client.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	if err := r.List(context.TODO(), ListUsers, listOps); err != nil {
+		log.Errorf("Error %s", err)
+	}
+
+	for _, vls := range ListUsers.Items {
+		username := vls.Name
+		userList = append(userList, username)
+	}
+
+	for _, vls := range userList {
+		log.Infoln(vls)
+	}
+
+	// list of user based on filter and `userList` type me be list or something else
+
+	// skipUsers = [] // it is use when user is already exist
+
+	//id := 1
+	//for {
+	//	username := fmt.Sprint(userPrefix, id)
+	//	if id <= users {
+	//		if result, err := r.addUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+	//			return result, err
+	//		}
+	//	} else {
+	//		user := openshiftuser.NewUser(workshop, r.Scheme, username)
+	//		userFound := &userv1.User{}
+	//		userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
+	//		if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
+	//			log.Infof("Failed to find %s User ", user.Name)
+	//			break
+	//		}
+	//	}
+	//	id++
+	//}
+	//if result, err := r.CreateUserHtpasswd(workshop); err != nil {
+	//	return result, err
+	//}
 	//Success
 	return reconcile.Result{}, nil
 }
 
+//// Add user in openshift cluster
+//func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
+//
+//	// Create User
+//	user := openshiftuser.NewUser(workshop, r.Scheme, username)
+//	if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
+//		return reconcile.Result{}, err
+//	} else if err == nil {
+//		log.Infof("Created %s user", user.Name)
+//	}
+//
+//	// Create User Role Binding
+//	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
+//		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
+//	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
+//		return reconcile.Result{}, err
+//	} else if err == nil {
+//		log.Infof("Created %s Role Binding", userRoleBinding.Name)
+//	}
+//
+//	// Get User
+//	userFound := &userv1.User{}
+//	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
+//		log.Errorf("Failed to find %s User", userFound.Name)
+//
+//	}
+//
+//	// Create Identity
+//	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
+//	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
+//		return reconcile.Result{}, err
+//	} else if err == nil {
+//		log.Infof("Created %s Identity ", identity.Name)
+//	}
+//
+//	// Create User Identity Mapping
+//	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, USER_IDENTITY_MAPPING_NAME, username)
+//	if err := r.Create(context.TODO(), userIdentity); err != nil && !errors.IsAlreadyExists(err) {
+//		return reconcile.Result{}, err
+//	} else if err == nil {
+//		log.Infof("Created %s User Identity Mapping ", userIdentity.Name)
+//	}
+//
+//	//Success
+//	return reconcile.Result{}, nil
+//}
+//
+//// CreateUserHtpasswd create Htpasswd secret for users
+//func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+//
+//	users := workshop.Spec.UserDetails.NumberOfUsers
+//	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
+//	password := workshop.Spec.UserDetails.DefaultPassword
+//	var htpasswds []byte
+//	var countUsers int
+//
+//	for id := 1; id <= users; id++ {
+//		username := fmt.Sprint(userPrefix, id)
+//		command := "echo \"password\" | htpasswd -b -B -i -n " + username
+//		updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
+//		out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
+//		if err != nil {
+//			log.Errorf("error %s", err)
+//		}
+//		userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
+//		htpasswds = append(htpasswds, []byte(userpwd)...)
+//	}
+//
+//	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
+//	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+//		return reconcile.Result{}, err
+//	} else if errors.IsAlreadyExists(err) {
+//		// Get secret
+//		secretFound := &corev1.Secret{}
+//		if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
+//			for _, secretData := range secretFound.Data {
+//				encodedSecret := base64.StdEncoding.EncodeToString(secretData)
+//				decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
+//				if err != nil {
+//					log.Errorf("Error %s", err)
+//				}
+//				countUsers = strings.Count(string(decodeSecret), userPrefix)
+//			}
+//			for countUsers > users {
+//				username := fmt.Sprint(userPrefix, countUsers)
+//				if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+//					return result, err
+//				}
+//				countUsers--
+//			}
+//		}
+//		htpasswdSecretFound := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
+//		if err := r.Delete(context.TODO(), htpasswdSecretFound); err != nil {
+//			return reconcile.Result{}, err
+//		}
+//		log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
+//		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+//			return reconcile.Result{}, err
+//		} else {
+//			log.Infof("Created %s HTPasswd Secret", htpasswdSecret.Name)
+//		}
+//	}
+//	//Success
+//	return reconcile.Result{}, nil
+//}
+//
 // deleteUsers delete users in openshift cluster
-func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
-	users := workshop.Spec.UserDetails.NumberOfUsers
-	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
-
-	id := 1
-	for {
-		username := fmt.Sprint(userPrefix, id)
-		if id <= users {
-			if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
-				return result, err
-			}
-		} else {
-			user := openshiftuser.NewUser(workshop, r.Scheme, username)
-			userFound := &userv1.User{}
-			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
-			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
-				log.Infof("Failed to find %s User ", user.Name)
-				break
-			}
-		}
-		id++
-	}
-	if result, err := r.DeleteUserHtpasswd(workshop); err != nil {
-		return result, err
-	}
-
-	//Success
-	return reconcile.Result{}, nil
-}
-
-// deleteOpenshiftUser delete OpenShift user
-func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
-
-	// Get user
-	userFound := &userv1.User{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
-		log.Errorf("Failed to find %s User", userFound.Name)
-	}
-
-	// Delete User Identity Mapping
-	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, USER_IDENTITY_MAPPING_NAME, username)
-	if err := r.Delete(context.TODO(), userIdentity); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s User Identity Mapping ", userIdentity.Name)
-
-	// Delete Identity
-	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
-	if err := r.Delete(context.TODO(), identity); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Identity  ", identity.Name)
-
-	// Delete User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
-		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
-	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s Role Binding", userRoleBinding.Name)
-
-	// Delete User
-	user := openshiftuser.NewUser(workshop, r.Scheme, username)
-	if err := r.Delete(context.TODO(), user); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s user", user.Name)
-
-	//Success
-	return reconcile.Result{}, nil
-}
+//func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+//
+//	users := workshop.Spec.UserDetails.NumberOfUsers
+//	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
+//
+//	id := 1
+//	for {
+//		username := fmt.Sprint(userPrefix, id)
+//		if id <= users {
+//			if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+//				return result, err
+//			}
+//		} else {
+//			user := openshiftuser.NewUser(workshop, r.Scheme, username)
+//			userFound := &userv1.User{}
+//			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
+//			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
+//				log.Infof("Failed to find %s User ", user.Name)
+//				break
+//			}
+//		}
+//		id++
+//	}
+//	if result, err := r.DeleteUserHtpasswd(workshop); err != nil {
+//		return result, err
+//	}
+//
+//	//Success
+//	return reconcile.Result{}, nil
+//}
+//
+//// deleteOpenshiftUser delete OpenShift user
+//func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
+//
+//	// Get user
+//	userFound := &userv1.User{}
+//	if err := r.Get(context.TODO(), types.NamespacedName{Name: username}, userFound); err != nil {
+//		log.Errorf("Failed to find %s User", userFound.Name)
+//	}
+//	//
+//	// Delete User Identity Mapping
+//	userIdentity := openshiftuser.NewUserIdentityMapping(workshop, r.Scheme, USER_IDENTITY_MAPPING_NAME, username)
+//	if err := r.Delete(context.TODO(), userIdentity); err != nil {
+//		return reconcile.Result{}, err
+//	}
+//	log.Infof("Deleted %s User Identity Mapping ", userIdentity.Name)
+//
+//	// Delete Identity
+//	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
+//	if err := r.Delete(context.TODO(), identity); err != nil {
+//		return reconcile.Result{}, err
+//	}
+//	log.Infof("Deleted %s Identity  ", identity.Name)
+//
+//	// Delete User Role Binding
+//	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
+//		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
+//	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
+//		return reconcile.Result{}, err
+//	}
+//	log.Infof("Deleted %s Role Binding", userRoleBinding.Name)
+//
+//	// Delete User
+//	user := openshiftuser.NewUser(workshop, r.Scheme, username)
+//	if err := r.Delete(context.TODO(), user); err != nil {
+//		return reconcile.Result{}, err
+//	}
+//	log.Infof("Deleted %s user", user.Name)
+//
+//	//Success
+//	return reconcile.Result{}, nil
+//}
 
 // DeleteUserHTPasswd delete Htpasswd secret for users
-func (r *WorkshopReconciler) DeleteUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
-	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, []byte(""))
-	if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
-		return reconcile.Result{}, err
-	}
-	log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
-	//Success
-	return reconcile.Result{}, nil
-}
+//func (r *WorkshopReconciler) DeleteUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+//
+//	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, []byte(""))
+//	if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
+//		return reconcile.Result{}, err
+//	}
+//	log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
+//	//Success
+//	return reconcile.Result{}, nil
+//}
