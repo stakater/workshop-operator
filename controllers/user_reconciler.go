@@ -38,7 +38,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		userName := fmt.Sprint(userPrefix, userSuffix)
 		createUsers = append(createUsers, userName)
 	}
-
 	labelSelector, err := labels.Parse(UserLabelSelector)
 	if err != nil {
 		log.Errorf("Error %s", err)
@@ -57,18 +56,26 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		username := user.Name
 		userList = append(userList, username)
 	}
+
 	if len(userList) > 0 {
-		for _, username := range createUsers {
-			for _, availableUser := range userList {
-				log.Infof("username%s = availableUser%s ", username, availableUser)
+		for _, availableUser := range userList {
+			for _, username := range createUsers {
+				log.Infof("availableUser %s == username%s", availableUser, username)
 				if availableUser == username {
 					skipUsers = append(skipUsers, availableUser)
+				}
+				if len(createUsers) < len(userList) {
+					if availableUser != username {
+						log.Infoln("delete availableUser", availableUser)
+					}
+
 				}
 			}
 		}
 	}
+
 	for _, username := range createUsers {
-		if len(skipUsers) == 0 {
+		if len(skipUsers) >= 0 {
 			// Create User
 			user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
 			if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
@@ -78,7 +85,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 			}
 		} else {
 			for _, availableUser := range skipUsers {
-				log.Infof("username%s != availableUser%s ", username, availableUser)
 				if availableUser != username {
 					// Create User
 					user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
@@ -90,7 +96,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 				}
 			}
 		}
-
 	}
 
 	// skipUsers = [] // it is use when user is already exist
