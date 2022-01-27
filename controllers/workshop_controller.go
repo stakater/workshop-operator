@@ -2,9 +2,7 @@
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,10 +58,11 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=org.eclipse.che,resources=checlusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=maistra.io,resources=servicemeshcontrolplanes;servicemeshmemberrolls,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=gpte.opentlc.com,resources=nexus;giteas,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=operatorgroups;subscriptions;clusterserviceversions;installplans,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=argoproj.io,resources=argocds;appprojects,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kiali.io,resources=kialis,verbs=get;list;watch;patch
 
 func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -143,7 +142,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 	}
-
 	//////////////////////////
 	// Portal
 	//////////////////////////
@@ -241,7 +239,17 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
 
+	if result, err := r.deleteServiceMeshService(workshop, userID); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteBookbag(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+
+		return result, err
+	}
+
 	if result, err := r.deletePipelines(workshop); util.IsRequeued(result, err) {
+
 		return result, err
 	}
 

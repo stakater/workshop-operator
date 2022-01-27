@@ -10,6 +10,7 @@ rules:
   - admissionregistration.k8s.io
   resources:
   - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   verbs:
   - create
   - delete
@@ -100,6 +101,15 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - kiali.io
+  resources:
+  - kialis
+  verbs:
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - maistra.io
