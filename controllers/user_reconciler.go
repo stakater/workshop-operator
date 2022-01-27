@@ -32,20 +32,11 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 
 	var createUsers []string
 	var userList []string
+	var skipUsers []string
 
 	for userSuffix := 1; userSuffix <= totalUsers; userSuffix++ {
 		userName := fmt.Sprint(userPrefix, userSuffix)
 		createUsers = append(createUsers, userName)
-	}
-
-	for _, username := range createUsers {
-		// Create User
-		user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
-		if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
-			return reconcile.Result{}, err
-		} else if err == nil {
-			log.Infof("Created %s user", user.Name)
-		}
 	}
 
 	labelSelector, err := labels.Parse(UserLabelSelector)
@@ -62,16 +53,45 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		log.Errorf("Error %s", err)
 	}
 
-	for _, vls := range ListUsers.Items {
-		username := vls.Name
+	for _, user := range ListUsers.Items {
+		username := user.Name
 		userList = append(userList, username)
 	}
-
-	for _, vls := range userList {
-		log.Infoln(vls)
+	if len(userList) > 0 {
+		for _, username := range createUsers {
+			for _, availableUser := range userList {
+				log.Infof("username%s = availableUser%s ", username, availableUser)
+				if availableUser == username {
+					skipUsers = append(skipUsers, availableUser)
+				}
+			}
+		}
 	}
+	for _, username := range createUsers {
+		if len(skipUsers) == 0 {
+			// Create User
+			user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
+			if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
+				return reconcile.Result{}, err
+			} else if err == nil {
+				log.Infof("Created %s user", user.Name)
+			}
+		} else {
+			for _, availableUser := range skipUsers {
+				log.Infof("username%s != availableUser%s ", username, availableUser)
+				if availableUser != username {
+					// Create User
+					user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
+					if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
+						return reconcile.Result{}, err
+					} else if err == nil {
+						log.Infof("Created %s user", user.Name)
+					}
+				}
+			}
+		}
 
-	// list of user based on filter and `userList` type me be list or something else
+	}
 
 	// skipUsers = [] // it is use when user is already exist
 
