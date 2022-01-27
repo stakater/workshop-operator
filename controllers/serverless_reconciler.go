@@ -27,20 +27,30 @@ func (r *WorkshopReconciler) reconcileServerless(workshop *workshopv1.Workshop) 
 	return reconcile.Result{}, nil
 }
 
+const (
+	SERVERLESS_NAMESPACE_NAME              = "openshift-serverless"
+	SERVERLESS_SUBSCRIPTION_NAME           = "serverless-operator"
+	SERVERLESS_SUBSCRIPTION_NAMESPACE_NAME = "openshift-serverless"
+	SERVERLESS_PACKAGE_NAME                = "serverless-operator"
+	KNATIVE_SERVING_NAMESPACE_NAME         = "knative-serving"
+	KNATIVE_EVENTING_NAMESPACE_NAME        = "knative-eventing"
+)
+
 // Add Serverless
 func (r *WorkshopReconciler) addServerless(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Info("start addServerless")
+	log.Info("start addServerless method")
 	channel := workshop.Spec.Infrastructure.Serverless.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.Serverless.OperatorHub.ClusterServiceVersion
 
-	namespace := kubernetes.NewNamespace(workshop, r.Scheme, "openshift-serverless")
+	// Create Serverless Namespace
+	namespace := kubernetes.NewNamespace(workshop, r.Scheme, SERVERLESS_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), namespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Project", namespace.Name)
 	}
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "serverless-operator", namespace.Name, "serverless-operator",
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, SERVERLESS_SUBSCRIPTION_NAME, SERVERLESS_SUBSCRIPTION_NAMESPACE_NAME, SERVERLESS_PACKAGE_NAME,
 		channel, clusterServiceVersion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -48,14 +58,14 @@ func (r *WorkshopReconciler) addServerless(workshop *workshopv1.Workshop) (recon
 		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	knativeServingNamespace := kubernetes.NewNamespace(workshop, r.Scheme, "knative-serving")
+	knativeServingNamespace := kubernetes.NewNamespace(workshop, r.Scheme, KNATIVE_SERVING_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), knativeServingNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Namespace", knativeServingNamespace.Name)
 	}
 
-	knativeEventingNamespace := kubernetes.NewNamespace(workshop, r.Scheme, "knative-eventing")
+	knativeEventingNamespace := kubernetes.NewNamespace(workshop, r.Scheme, KNATIVE_EVENTING_NAMESPACE_NAME)
 	if err := r.Create(context.TODO(), knativeEventingNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
