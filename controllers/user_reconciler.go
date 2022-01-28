@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	userv1 "github.com/openshift/api/user/v1"
 	"github.com/prometheus/common/log"
@@ -151,9 +152,12 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-
 func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, userList int, createUsers []string, password string) (reconcile.Result, error) {
 	var htpasswds []byte
+	var countUsers int
+
+	userPrefix := workshop.Spec.UserDetails.DefaultPassword
+	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
 
 	if userList == 0 || len(createUsers) > userList || len(createUsers) < userList {
 		for _, username := range createUsers {
@@ -168,27 +172,35 @@ func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, u
 		}
 	}
 
-	// Get secret
-	secretFound := &corev1.Secret{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err != nil {
-		htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
-		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
-			return reconcile.Result{}, err
-		} else if err == nil {
-			log.Infof("Created  %s secret", htpasswdSecret.Name)
-		}
-	} else {
-		patch := client.MergeFrom(secretFound.DeepCopy())
-		secretFound.Data = map[string][]byte{
-			"htpasswd": htpasswds,
-		}
-
-		if err := r.Patch(context.TODO(), secretFound, patch); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("patched %s Secret", secretFound.Name)
+	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
+	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created  %s secret", htpasswdSecret.Name)
 	}
 
+	// Get secret
+	secretFound := &corev1.Secret{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
+		for _, secretData := range secretFound.Data {
+			encodedSecret := base64.StdEncoding.EncodeToString(secretData)
+			decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
+			if err != nil {
+				log.Errorf("Error %s", err)
+			}
+			countUsers = strings.Count(string(decodeSecret), userPrefix)
+		}
+		if countUsers < totalUsers || countUsers > totalUsers {
+			if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
+				return reconcile.Result{}, err
+			}
+			if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+				return reconcile.Result{}, err
+			} else if err == nil {
+				log.Infof("Created  %s secret", htpasswdSecret.Name)
+			}
+		}
+	}
 	return reconcile.Result{}, nil
 }
 
