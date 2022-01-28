@@ -104,46 +104,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, userList int, createUsers []string, password string) (reconcile.Result, error) {
-	var htpasswds []byte
-
-	if userList == 0 || len(createUsers) > userList || len(createUsers) < userList {
-		for _, username := range createUsers {
-			command := "echo \"password\" | htpasswd -b -B -i -n " + username
-			updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
-			out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
-			if err != nil {
-				log.Errorf("error %s", err)
-			}
-			userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
-			htpasswds = append(htpasswds, []byte(userpwd)...)
-		}
-	}
-
-	// Get secret
-	secretFound := &corev1.Secret{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err != nil {
-		htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
-		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
-			return reconcile.Result{}, err
-		} else if err == nil {
-			log.Infof("Created  %s secret", secretFound.Name)
-		}
-	} else {
-		patch := client.MergeFrom(secretFound.DeepCopy())
-		secretFound.Data = map[string][]byte{
-			"htpasswd": htpasswds,
-		}
-
-		if err := r.Patch(context.TODO(), secretFound, patch); err != nil {
-			return reconcile.Result{}, err
-		}
-		log.Infof("patched %s Secret", secretFound.Name)
-	}
-
-	return reconcile.Result{}, nil
-}
-
 // Add user in openshift cluster
 func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
@@ -188,6 +148,47 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	//Success
+	return reconcile.Result{}, nil
+}
+
+
+func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, userList int, createUsers []string, password string) (reconcile.Result, error) {
+	var htpasswds []byte
+
+	if userList == 0 || len(createUsers) > userList || len(createUsers) < userList {
+		for _, username := range createUsers {
+			command := "echo \"password\" | htpasswd -b -B -i -n " + username
+			updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
+			out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
+			if err != nil {
+				log.Errorf("error %s", err)
+			}
+			userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
+			htpasswds = append(htpasswds, []byte(userpwd)...)
+		}
+	}
+
+	// Get secret
+	secretFound := &corev1.Secret{}
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err != nil {
+		htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
+		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Created  %s secret", htpasswdSecret.Name)
+		}
+	} else {
+		patch := client.MergeFrom(secretFound.DeepCopy())
+		secretFound.Data = map[string][]byte{
+			"htpasswd": htpasswds,
+		}
+
+		if err := r.Patch(context.TODO(), secretFound, patch); err != nil {
+			return reconcile.Result{}, err
+		}
+		log.Infof("patched %s Secret", secretFound.Name)
+	}
+
 	return reconcile.Result{}, nil
 }
 
