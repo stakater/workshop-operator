@@ -10,11 +10,12 @@ import (
 )
 
 // NewUser create an user
-func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) *userv1.User {
+func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, labels map[string]string) *userv1.User {
 
 	user := &userv1.User{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: username,
+			Name:   username,
+			Labels: labels,
 		},
 		FullName: username,
 	}
