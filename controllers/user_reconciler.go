@@ -126,6 +126,8 @@ func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, u
 		htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
 		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Created %s secret", secretFound.Name)
 		}
 	} else {
 		patch := client.MergeFrom(secretFound.DeepCopy())
