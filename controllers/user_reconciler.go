@@ -156,7 +156,7 @@ func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, u
 	var htpasswds []byte
 	var countUsers int
 
-	userPrefix := workshop.Spec.UserDetails.DefaultPassword
+	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
 
 	if userList == 0 || len(createUsers) > userList || len(createUsers) < userList {
@@ -177,30 +177,32 @@ func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, u
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created  %s secret", htpasswdSecret.Name)
+	} else if errors.IsAlreadyExists(err) {
+		// Get secret
+		secretFound := &corev1.Secret{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
+			for _, secretData := range secretFound.Data {
+				encodedSecret := base64.StdEncoding.EncodeToString(secretData)
+				decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
+				if err != nil {
+					log.Errorf("Error %s", err)
+				}
+				log.Infoln(string(decodeSecret))
+				countUsers = strings.Count(string(decodeSecret), userPrefix)
+			}
+			if totalUsers > countUsers || totalUsers < countUsers {
+				if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
+					return reconcile.Result{}, err
+				}
+				if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
+					return reconcile.Result{}, err
+				} else if err == nil {
+					log.Infof("Created  %s secret", htpasswdSecret.Name)
+				}
+			}
+		}
 	}
 
-	// Get secret
-	secretFound := &corev1.Secret{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: HTPASSWD_SECRET_NAME, Namespace: HTPASSWD_SECRET_NAMESPACE_NAME}, secretFound); err == nil {
-		for _, secretData := range secretFound.Data {
-			encodedSecret := base64.StdEncoding.EncodeToString(secretData)
-			decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
-			if err != nil {
-				log.Errorf("Error %s", err)
-			}
-			countUsers = strings.Count(string(decodeSecret), userPrefix)
-		}
-		if countUsers < totalUsers || countUsers > totalUsers {
-			if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
-				return reconcile.Result{}, err
-			}
-			if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
-				return reconcile.Result{}, err
-			} else if err == nil {
-				log.Infof("Created  %s secret", htpasswdSecret.Name)
-			}
-		}
-	}
 	return reconcile.Result{}, nil
 }
 
