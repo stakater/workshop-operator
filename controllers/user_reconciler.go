@@ -49,11 +49,11 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	if err != nil {
 		log.Errorf("Error %s", err)
 	}
-	// list User
 	ListUsers := &userv1.UserList{}
 	listOps := &client.ListOptions{
 		LabelSelector: labelSelector,
 	}
+	// list User
 	if err := r.List(context.TODO(), ListUsers, listOps); err != nil {
 		log.Errorf("Error %s", err)
 	}
@@ -127,7 +127,7 @@ func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, u
 		if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			log.Infof("Created %s secret", secretFound.Name)
+			log.Infof("Created  %s secret", secretFound.Name)
 		}
 	} else {
 		patch := client.MergeFrom(secretFound.DeepCopy())
