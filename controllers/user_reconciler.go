@@ -90,7 +90,9 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	createdUsers := len(userList)
 	for totalUsers < createdUsers {
 		username := fmt.Sprint(userPrefix, createdUsers)
-		log.Infoln("delete user", username)
+		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+			return result, err
+		}
 		createdUsers--
 	}
 
@@ -187,30 +189,34 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-
 // deleteUsers delete users in openshift cluster
 func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-
-	users := workshop.Spec.UserDetails.NumberOfUsers
+	var userList []string
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
+	labelSelector, err := labels.Parse(UserLabelSelector)
+	if err != nil {
+		log.Errorf("Error %s", err)
+	}
 
-	id := 1
-	for {
-		username := fmt.Sprint(userPrefix, id)
-		if id <= users {
-			if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
-				return result, err
-			}
-		} else {
-			user := openshiftuser.NewUser(workshop, r.Scheme, username, userLabels)
-			userFound := &userv1.User{}
-			userFoundErr := r.Get(context.TODO(), types.NamespacedName{Name: user.Name}, userFound)
-			if userFoundErr != nil && errors.IsNotFound(userFoundErr) {
-				log.Infof("Failed to find %s User ", user.Name)
-				break
-			}
+	ListUsers := &userv1.UserList{}
+	listOps := &client.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	if err := r.List(context.TODO(), ListUsers, listOps); err != nil {
+		log.Errorf("Error %s", err)
+	}
+	for _, user := range ListUsers.Items {
+		username := user.Name
+		userList = append(userList, username)
+	}
+
+	createdUsers := len(userList)
+	for createdUsers >= 1 {
+		username := fmt.Sprint(userPrefix, createdUsers)
+		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+			return result, err
 		}
-		id++
+		createdUsers--
 	}
 	if result, err := r.DeleteUserHtpasswd(workshop); err != nil {
 		return result, err
