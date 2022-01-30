@@ -55,6 +55,10 @@ spec:
       operatorHub:
         channel: stable
         clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
+    certManager:
+      enabled: false
+      operatorHub:
+        channel: ''
     project:
       enabled: false
       stagingName: cn-project
