@@ -235,7 +235,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 		}
 		createdUsers--
 	}
-	if result, err := r.DeleteUserHtpasswd(workshop); err != nil {
+	if result, err := r.deleteUserHtpasswd(workshop); err != nil {
 		return result, err
 	}
 
@@ -285,8 +285,8 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	return reconcile.Result{}, nil
 }
 
-//DeleteUserHTPasswd delete Htpasswd secret for users
-func (r *WorkshopReconciler) DeleteUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
+//deleteUserHtpasswd delete Htpasswd secret for users
+func (r *WorkshopReconciler) deleteUserHtpasswd(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, []byte(""))
 	if err := r.Delete(context.TODO(), htpasswdSecret); err != nil {
