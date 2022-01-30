@@ -22,8 +22,8 @@ func NewUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username str
 	return user
 }
 
-// NewRoleBindingUser create a RoleBinding for user
-func NewRoleBindingUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
+// NewUserRoleBinding create a RoleBinding for user
+func NewUserRoleBinding(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, namespace string,
 	roleName string, roleKind string) *rbac.RoleBinding {
 
 	roleBinding := &rbac.RoleBinding{

@@ -91,7 +91,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	createdUsers := len(userList)
 	for totalUsers < createdUsers {
 		username := fmt.Sprint(userPrefix, createdUsers)
-		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+		if result, err := r.deleteUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 			return result, err
 		}
 		createdUsers--
@@ -117,7 +117,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
+	userRoleBinding := openshiftuser.NewUserRoleBinding(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -230,7 +230,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 	createdUsers := len(userList)
 	for createdUsers >= 1 {
 		username := fmt.Sprint(userPrefix, createdUsers)
-		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+		if result, err := r.deleteUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 			return result, err
 		}
 		createdUsers--
@@ -243,8 +243,8 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 	return reconcile.Result{}, nil
 }
 
-// deleteOpenshiftUser delete OpenShift user
-func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
+// deleteUser delete OpenShift user
+func (r *WorkshopReconciler) deleteUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
 	// Get user
 	userFound := &userv1.User{}
@@ -267,7 +267,7 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	log.Infof("Deleted %s Identity  ", identity.Name)
 
 	// Delete User Role Binding
-	userRoleBinding := openshiftuser.NewRoleBindingUser(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
+	userRoleBinding := openshiftuser.NewUserRoleBinding(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
 		return reconcile.Result{}, err

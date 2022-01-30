@@ -247,13 +247,6 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
-	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
 
 	if result, err := r.deleteUsers(workshop); util.IsRequeued(result, err) {
 		return result, err
@@ -296,7 +289,15 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
+	if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
 	if result, err := r.deleteVault(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
