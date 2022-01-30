@@ -97,7 +97,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 		createdUsers--
 	}
 
-	if result, err := r.CreateUserHtpasswd(workshop, len(userList), createUsers, password); util.IsRequeued(result, err) {
+	if result, err := r.createUserHtpasswd(workshop, len(userList), createUsers, password); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -152,7 +152,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) CreateUserHtpasswd(workshop *workshopv1.Workshop, userList int, createUsers []string, password string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, userList int, createUsers []string, password string) (reconcile.Result, error) {
 	var htpasswds []byte
 	var countUsers int
 
