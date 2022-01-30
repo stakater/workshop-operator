@@ -39,6 +39,10 @@ spec:
       image:
         name: quay.io/mcouliba/nexus-operator
         tag: v0.10
+    serverless:
+      enabled: false
+      operatorHub:
+        channel: ''
     vault:
       enabled: false
       image:
@@ -52,6 +56,10 @@ spec:
       operatorHub:
         channel: stable
         clusterServiceVersion: redhat-openshift-pipelines.v1.5.2
+    certManager:
+      enabled: false
+      operatorHub:
+        channel: ''
     project:
       enabled: false
       stagingName: cn-project

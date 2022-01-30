@@ -26,6 +26,7 @@ import (
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 	workshopv1 "github.com/stakater/workshop-operator/api/v1"
+	"github.com/stakater/workshop-operator/common/certmanager"
 	"github.com/stakater/workshop-operator/common/gitea"
 	"github.com/stakater/workshop-operator/common/nexus"
 	"github.com/stakater/workshop-operator/controllers"
@@ -65,6 +66,7 @@ func init() {
 	utilruntime.Must(olmv1.AddToScheme(scheme))
 
 	utilruntime.Must(gitea.AddToScheme(scheme))
+	utilruntime.Must(certmanager.AddToScheme(scheme))
 	utilruntime.Must(nexus.AddToScheme(scheme))
 	utilruntime.Must(maistrav1.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(maistrav2.SchemeBuilder.AddToScheme(scheme))

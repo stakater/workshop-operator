@@ -64,6 +64,7 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=operatorgroups;subscriptions;clusterserviceversions;installplans,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=argoproj.io,resources=argocds;appprojects,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kiali.io,resources=kialis,verbs=get;list;watch;patch
+// +kubebuilder:rbac:groups=operator.cert-manager.io,resources=certmanagers,verbs=get;list;watch;create;update;patch;delete
 
 func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -246,6 +247,13 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
+	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
 
 	if result, err := r.deleteUsers(workshop); util.IsRequeued(result, err) {
 		return result, err
