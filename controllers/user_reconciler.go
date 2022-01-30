@@ -91,7 +91,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 	createdUsers := len(userList)
 	for totalUsers < createdUsers {
 		username := fmt.Sprint(userPrefix, createdUsers)
-		if result, err := r.deleteUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 			return result, err
 		}
 		createdUsers--
@@ -230,7 +230,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 	createdUsers := len(userList)
 	for createdUsers >= 1 {
 		username := fmt.Sprint(userPrefix, createdUsers)
-		if result, err := r.deleteUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 			return result, err
 		}
 		createdUsers--
@@ -244,7 +244,7 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 }
 
 // deleteUser delete OpenShift user
-func (r *WorkshopReconciler) deleteUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string) (reconcile.Result, error) {
 
 	// Get user
 	userFound := &userv1.User{}
