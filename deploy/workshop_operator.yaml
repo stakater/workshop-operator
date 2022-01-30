@@ -414,10 +414,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.36
+    helm.sh/chart: workshop-operator-0.0.37
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.36"
+    app.kubernetes.io/version: "0.0.37"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -545,6 +545,18 @@ rules:
       - patch
       - update
       - watch
+  - apiGroups:
+    - operator.cert-manager.io
+    resources:
+    - certmanagers
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
   - apiGroups:
       - operators.coreos.com
     resources:
@@ -754,10 +766,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.36
+    helm.sh/chart: workshop-operator-0.0.37
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.36"
+    app.kubernetes.io/version: "0.0.37"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -777,10 +789,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.36
+    helm.sh/chart: workshop-operator-0.0.37
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.36"
+    app.kubernetes.io/version: "0.0.37"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -817,7 +829,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.36
+          image: docker.io/stakater/workshop-operator:v0.0.37
           name: manager
           resources:
             limits:
