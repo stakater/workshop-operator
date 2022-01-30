@@ -36,7 +36,7 @@ const (
 
 // Add Serverless
 func (r *WorkshopReconciler) addServerless(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	log.Info("start addServerless method")
+
 	channel := workshop.Spec.Infrastructure.Serverless.OperatorHub.Channel
 	clusterServiceVersion := workshop.Spec.Infrastructure.Serverless.OperatorHub.ClusterServiceVersion
 
