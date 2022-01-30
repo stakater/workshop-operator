@@ -78,7 +78,6 @@ func (r *WorkshopReconciler) addServerless(workshop *workshopv1.Workshop) (recon
 	return reconcile.Result{}, nil
 }
 
-
 // delete Serverless
 func (r *WorkshopReconciler) deleteServerless(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
