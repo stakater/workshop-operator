@@ -187,7 +187,6 @@ func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, u
 				if err != nil {
 					log.Errorf("Error %s", err)
 				}
-				log.Infoln(string(decodeSecret))
 				countUsers = strings.Count(string(decodeSecret), userPrefix)
 			}
 			if totalUsers > countUsers || totalUsers < countUsers {
