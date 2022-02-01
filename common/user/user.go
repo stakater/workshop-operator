@@ -64,7 +64,7 @@ func NewHTPasswdSecret(workshop *workshopv1.Workshop, scheme *runtime.Scheme, na
 }
 
 // NewIdentity create an identity for user
-func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, identityName string, userFound *userv1.User) *userv1.Identity {
+func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username string, identityName string, user *userv1.User) *userv1.Identity {
 
 	identity := &userv1.Identity{
 		ObjectMeta: metav1.ObjectMeta{
@@ -74,7 +74,7 @@ func NewIdentity(workshop *workshopv1.Workshop, scheme *runtime.Scheme, username
 		ProviderUserName: username,
 		User: corev1.ObjectReference{
 			Name: username,
-			UID:  userFound.UID,
+			UID:  user.UID,
 		},
 	}
 	return identity

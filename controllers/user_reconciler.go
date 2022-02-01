@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	HTPASSWD_SECRET_NAME            = "htpass-workshop-users"
-	HTPASSWD_SECRET_NAMESPACE_NAME  = "openshift-config"
-	USER_ROLE_BINDIN_NAMESPACE_NAME = "workshop-infra"
-	IDENTITY_NAME                   = "htpass-workshop-users"
-	USER_IDENTITY_MAPPING_NAME      = "htpass-workshop-users"
+	HTPASSWD_SECRET_NAME             = "htpass-workshop-users"
+	HTPASSWD_SECRET_NAMESPACE_NAME   = "openshift-config"
+	USER_ROLE_BINDING_NAMESPACE_NAME = "workshop-infra"
+	IDENTITY_NAME                    = "htpass-workshop-users"
+	USER_IDENTITY_MAPPING_NAME       = "htpass-workshop-users"
 )
 
 var userLabels = map[string]string{
@@ -34,70 +34,53 @@ var userLabels = map[string]string{
 var UserLabelSelector = "createdBy=WorkshopOperator"
 
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	var createUsers []string
-	var userList []string
-	var skipUsers []string
-
+	createUsers := make(map[string]bool)
+	var existingUsers []string
 	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	password := workshop.Spec.UserDetails.DefaultPassword
-
 	for userSuffix := 1; userSuffix <= totalUsers; userSuffix++ {
 		userName := fmt.Sprint(userPrefix, userSuffix)
-		createUsers = append(createUsers, userName)
+		createUsers[userName] = true
 	}
+
 	labelSelector, err := labels.Parse(UserLabelSelector)
 	if err != nil {
-		log.Errorf("Error %s", err)
+		log.Errorf("Failed to get users, filtered by labelSelector {%s} ,{%s}", labelSelector, err)
 	}
-	ListUsers := &userv1.UserList{}
+	listUsers := &userv1.UserList{}
 	listOps := &client.ListOptions{
 		LabelSelector: labelSelector,
 	}
 	// list User
-	if err := r.List(context.TODO(), ListUsers, listOps); err != nil {
-		log.Errorf("Error %s", err)
+	if err := r.List(context.TODO(), listUsers, listOps); err != nil {
+		log.Errorf("Failed to get list of users %s", err)
 	}
-	for _, user := range ListUsers.Items {
+	for _, user := range listUsers.Items {
 		username := user.Name
-		userList = append(userList, username)
+		existingUsers = append(existingUsers, username)
 	}
 
-	if len(userList) > 0 {
-		for _, availableUser := range userList {
-			for _, username := range createUsers {
-				if availableUser == username {
-					skipUsers = append(skipUsers, availableUser)
-				}
+	for _, username := range existingUsers {
+		_, ok := createUsers[username]
+		if ok {
+			createUsers[username] = false
+		} else {
+			if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
+				return result, err
 			}
 		}
+
 	}
 
-	for _, username := range createUsers {
-		if len(skipUsers) >= 0 {
+	for username, value := range createUsers {
+		if value {
 			if result, err := r.addUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 				return result, err
 			}
-		} else {
-			for _, availableUser := range skipUsers {
-				if availableUser != username {
-					if result, err := r.addUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
-						return result, err
-					}
-				}
-			}
 		}
 	}
-	createdUsers := len(userList)
-	for totalUsers < createdUsers {
-		username := fmt.Sprint(userPrefix, createdUsers)
-		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
-			return result, err
-		}
-		createdUsers--
-	}
-
-	if result, err := r.createUserHtpasswd(workshop, len(userList), createUsers, password); util.IsRequeued(result, err) {
+	if result, err := r.createUserHtpasswd(workshop, len(existingUsers), password); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -117,7 +100,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create User Role Binding
-	userRoleBinding := openshiftuser.NewUserRoleBinding(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
+	userRoleBinding := openshiftuser.NewUserRoleBinding(workshop, r.Scheme, username, USER_ROLE_BINDING_NAMESPACE_NAME,
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Create(context.TODO(), userRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -133,7 +116,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create Identity
-	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
+		identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
 	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -152,13 +135,16 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, userList int, createUsers []string, password string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, userList int, password string) (reconcile.Result, error) {
 	var htpasswds []byte
 	var countUsers int
-
+	var createUsers []string
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
-
+	for userSuffix := 1; userSuffix <= totalUsers; userSuffix++ {
+		userName := fmt.Sprint(userPrefix, userSuffix)
+		createUsers = append(createUsers, userName)
+	}
 	if userList == 0 || len(createUsers) > userList || len(createUsers) < userList {
 		for _, username := range createUsers {
 			command := "echo \"password\" | htpasswd -b -B -i -n " + username
@@ -266,7 +252,7 @@ func (r *WorkshopReconciler) deleteOpenshiftUser(workshop *workshopv1.Workshop, 
 	log.Infof("Deleted %s Identity  ", identity.Name)
 
 	// Delete User Role Binding
-	userRoleBinding := openshiftuser.NewUserRoleBinding(workshop, r.Scheme, username, USER_ROLE_BINDIN_NAMESPACE_NAME,
+	userRoleBinding := openshiftuser.NewUserRoleBinding(workshop, r.Scheme, username, USER_ROLE_BINDING_NAMESPACE_NAME,
 		USER_ROLE_BINDING_NAME, KIND_CLUSTER_ROLE)
 	if err := r.Delete(context.TODO(), userRoleBinding); err != nil {
 		return reconcile.Result{}, err
