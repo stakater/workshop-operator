@@ -181,8 +181,6 @@ func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, u
 
 // deleteUsers delete users in openshift cluster
 func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
-	var userList []string
-	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
 
 	listUsers, err := r.createdUserList(workshop)
 	if err != nil {
@@ -191,17 +189,11 @@ func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconci
 
 	for _, user := range listUsers.Items {
 		username := user.Name
-		userList = append(userList, username)
-	}
-
-	createdUsers := len(userList)
-	for createdUsers >= 1 {
-		username := fmt.Sprint(userPrefix, createdUsers)
 		if result, err := r.deleteOpenshiftUser(workshop, r.Scheme, username); util.IsRequeued(result, err) {
 			return result, err
 		}
-		createdUsers--
 	}
+
 	if result, err := r.deleteUserHtpasswd(workshop); err != nil {
 		return result, err
 	}
