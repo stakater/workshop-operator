@@ -316,7 +316,7 @@ spec:
                     type: object
                 type: object
               source:
-                description: SourceSpec ...
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run "make" to regenerate code after modifying this file'
                 properties:
                   gitBranch:
                     type: string

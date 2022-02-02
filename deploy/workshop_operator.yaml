@@ -328,7 +328,8 @@ spec:
                     type: object
                 type: object
               source:
-                description: SourceSpec ...
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
                 properties:
                   gitBranch:
                     type: string
@@ -338,21 +339,24 @@ spec:
                 - gitBranch
                 - gitURL
                 type: object
-              user:
-                description: UserSpec ...
+              userDetails:
+                description: UserDetailsSpec ...
                 properties:
-                  number:
+                  defaultPassword:
+                    type: string
+                  numberOfUsers:
                     type: integer
-                  password:
+                  userNamePrefix:
                     type: string
                 required:
-                - number
-                - password
+                - defaultPassword
+                - numberOfUsers
+                - userNamePrefix
                 type: object
             required:
             - infrastructure
             - source
-            - user
+            - userDetails
             type: object
           status:
             description: WorkshopStatus defines the observed state of Workshop
@@ -414,10 +418,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.37
+    helm.sh/chart: workshop-operator-0.0.38
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.37"
+    app.kubernetes.io/version: "0.0.38"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: workshop-operator/templates/clusterrole.yaml
@@ -624,6 +628,19 @@ rules:
       - update
       - watch
   - apiGroups:
+      - user.openshift.io
+    resources:
+      - identities
+      - useridentitymappings
+      - users
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+  - apiGroups:
       - workshop.stakater.com
     resources:
       - workshops
@@ -766,10 +783,10 @@ metadata:
   name: workshop-operator-metrics-service
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.37
+    helm.sh/chart: workshop-operator-0.0.38
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.37"
+    app.kubernetes.io/version: "0.0.38"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -789,10 +806,10 @@ metadata:
   name: workshop-operator
   namespace: workshop-infra
   labels:
-    helm.sh/chart: workshop-operator-0.0.37
+    helm.sh/chart: workshop-operator-0.0.38
     app.kubernetes.io/name: workshop-operator
     app.kubernetes.io/instance: workshop-operator
-    app.kubernetes.io/version: "0.0.37"
+    app.kubernetes.io/version: "0.0.38"
     app.kubernetes.io/managed-by: Helm
     control-plane: controller-manager
 spec:
@@ -829,7 +846,7 @@ spec:
             - --enable-leader-election
           command:
             - /manager
-          image: docker.io/stakater/workshop-operator:v0.0.37
+          image: docker.io/stakater/workshop-operator:v0.0.38
           name: manager
           resources:
             limits:
