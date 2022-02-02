@@ -26,12 +26,12 @@ const (
 	USER_ROLE_BINDING_NAMESPACE_NAME = "workshop-infra"
 	IDENTITY_NAME                    = "htpass-workshop-users"
 	USER_IDENTITY_MAPPING_NAME       = "htpass-workshop-users"
+	UserLabelSelector = "createdBy=WorkshopOperator"
 )
 
 var userLabels = map[string]string{
 	"createdBy": "WorkshopOperator",
 }
-var UserLabelSelector = "createdBy=WorkshopOperator"
 
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	createUsers := make(map[string]bool)
