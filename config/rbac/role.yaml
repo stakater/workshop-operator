@@ -203,6 +203,19 @@ rules:
   - update
   - watch
 - apiGroups:
+  - user.openshift.io
+  resources:
+  - identities
+  - useridentitymappings
+  - users
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - workshop.stakater.com
   resources:
   - workshops

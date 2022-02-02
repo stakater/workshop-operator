@@ -53,6 +53,7 @@ const workshopFinalizer = "finalizer.workshop.stakater.com"
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=create;list;watch;update;patch;get;delete
 // +kubebuilder:rbac:groups=project.openshift.io,resources=projectrequests,verbs=create
+// +kubebuilder:rbac:groups=user.openshift.io,resources=users;identities;useridentitymappings,verbs=create;list;watch;update;get;delete
 
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings;clusterroles;clusterrolebindings,verbs=*
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
@@ -106,7 +107,7 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	appsHostnameSuffix = match[1]
 	log.Infof("Apps Hostname Suffix %s", appsHostnameSuffix)
 
-	users := workshop.Spec.User.Number
+	users := workshop.Spec.UserDetails.NumberOfUsers
 	if users < 0 {
 		users = 0
 	}
@@ -143,6 +144,13 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 	}
+	//////////////////////////
+	// Users
+	//////////////////////////
+	if result, err := r.reconcileUser(workshop); util.IsRequeued(result, err) {
+		return ctrl.Result{}, err
+	}
+
 	//////////////////////////
 	// Portal
 	//////////////////////////
@@ -239,20 +247,28 @@ func (r *WorkshopReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request, workshop *workshopv1.Workshop, userID int, appsHostnameSuffix string, openshiftConsoleURL string) (ctrl.Result, error) {
 	log := r.Log.WithValues("workshop", req.NamespacedName)
 	log.Info("Deleting workshop   " + workshop.ObjectMeta.Name)
-	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
+
+	if result, err := r.deleteUsers(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
-	if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
+	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
 		return result, err
 	}
 
-	if result, err := r.deleteServiceMeshService(workshop, userID); util.IsRequeued(result, err) {
+	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
 		return result, err
 	}
 
 	if result, err := r.deleteBookbag(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+		return result, err
+	}
 
+	if result, err := r.deleteNexus(workshop); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -265,15 +281,15 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
-	if result, err := r.deleteProject(workshop, userID); util.IsRequeued(result, err) {
-		return result, err
-	}
-
 	if result, err := r.deleteCodeReadyWorkspace(workshop, userID, appsHostnameSuffix); util.IsRequeued(result, err) {
 		return result, err
 	}
 
-	if result, err := r.deletePortal(workshop, userID, appsHostnameSuffix, openshiftConsoleURL); util.IsRequeued(result, err) {
+	if result, err := r.deleteServiceMeshService(workshop, userID); util.IsRequeued(result, err) {
+		return result, err
+	}
+
+	if result, err := r.deleteServerless(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -281,11 +297,7 @@ func (r *WorkshopReconciler) handleDelete(ctx context.Context, req ctrl.Request,
 		return result, err
 	}
 
-	if result, err := r.deleteGitea(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	if result, err := r.deleteNexus(workshop); util.IsRequeued(result, err) {
+	if result, err := r.deleteCertManager(workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 

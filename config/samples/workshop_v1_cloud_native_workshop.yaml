@@ -4,9 +4,10 @@ metadata:
   name: cloud-native-workshop
   namespace: workshop-infra
 spec:
-  user:
-    number: 1
-    password: openshift
+  userDetails:
+    userNamePrefix: "user"
+    numberOfUsers: 1
+    defaultPassword: "openshift"
   source:
     gitURL: https://github.com/stakater/cloud-native-workshop
     gitBranch: "5.1"
@@ -14,13 +15,9 @@ spec:
     guide:
       scholars:
         enabled: false
-        guideURL: 
-          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/5.0/index.html"
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/5.0/index.html"
-    serverless:
-      enabled: false
-      operatorHub:
-        channel: ''
+        guideURL:
+          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/5.1/index.html"
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/5.1/index.html"
     codeReadyWorkspace:
       enabled: false
       operatorHub:
@@ -41,20 +38,24 @@ spec:
       enabled: false
       image:
         name: quay.io/mcouliba/nexus-operator
-        tag: v0.10      
-    vault: 
+        tag: v0.10
+    serverless:
       enabled: false
-      image: 
+      operatorHub:
+        channel: ''
+    vault:
+      enabled: false
+      image:
         name: hashicorp/vault
         tag: 1.8.2
       agentInjectorImage:
         name: hashicorp/vault-k8s
-        tag: 0.13.0        
+        tag: 0.13.0
     pipeline:
       enabled: false
       operatorHub:
         channel: stable
-        clusterServiceVersion: redhat-openshift-pipelines.v1.5.0
+        clusterServiceVersion: redhat-openshift-pipelines.v1.5.2
     certManager:
       enabled: false
       operatorHub:

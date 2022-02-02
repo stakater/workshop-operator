@@ -93,7 +93,7 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 		log.Infof("Created %s  Project", namespace.Name)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(workshop.Spec.User.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(workshop.Spec.UserDetails.DefaultPassword), bcrypt.DefaultCost)
 	if err != nil {
 		log.Errorf("Error when Bcrypt encrypt password for Argo CD: %v", err)
 		return reconcile.Result{}, err
@@ -311,7 +311,7 @@ func (r *WorkshopReconciler) deleteGitOps(workshop *workshopv1.Workshop, users i
 	labels := map[string]string{
 		"app.kubernetes.io/part-of": "argocd",
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(workshop.Spec.User.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(workshop.Spec.UserDetails.DefaultPassword), bcrypt.DefaultCost)
 	if err != nil {
 		log.Errorf("Error when Bcrypt encrypt password for Argo CD: %v", err)
 		return reconcile.Result{}, err

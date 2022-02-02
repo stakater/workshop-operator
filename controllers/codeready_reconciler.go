@@ -243,7 +243,7 @@ func createUser(workshop *workshopv1.Workshop, username string, codeflavor strin
 	namespace string, appsHostnameSuffix string, masterToken string) (reconcile.Result, error) {
 
 	var (
-		openshiftUserPassword = workshop.Spec.User.Password
+		openshiftUserPassword = workshop.Spec.UserDetails.DefaultPassword
 		body                  []byte
 		err                   error
 		httpResponse          *http.Response
@@ -288,7 +288,7 @@ func createUser(workshop *workshopv1.Workshop, username string, codeflavor strin
 func getUserToken(workshop *workshopv1.Workshop, username string, codeflavor string, namespace string, appsHostnameSuffix string) (string, reconcile.Result, error) {
 
 	var (
-		openshiftUserPassword = workshop.Spec.User.Password
+		openshiftUserPassword = workshop.Spec.UserDetails.DefaultPassword
 		err                   error
 		httpResponse          *http.Response
 		httpRequest           *http.Request
@@ -343,7 +343,7 @@ func getUserToken(workshop *workshopv1.Workshop, username string, codeflavor str
 func getOAuthUserToken(workshop *workshopv1.Workshop, username string,
 	codeflavor string, namespace string, appsHostnameSuffix string) (string, reconcile.Result, error) {
 	var (
-		openshiftUserPassword = workshop.Spec.User.Password
+		openshiftUserPassword = workshop.Spec.UserDetails.DefaultPassword
 		err                   error
 		httpResponse          *http.Response
 		httpRequest           *http.Request
