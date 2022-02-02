@@ -26,7 +26,7 @@ const (
 	USER_ROLE_BINDING_NAMESPACE_NAME = "workshop-infra"
 	IDENTITY_NAME                    = "htpass-workshop-users"
 	USER_IDENTITY_MAPPING_NAME       = "htpass-workshop-users"
-	UserLabelSelector = "createdBy=WorkshopOperator"
+	USER_LABEL_SELECTOR              = "createdBy=WorkshopOperator"
 )
 
 var userLabels = map[string]string{
@@ -35,33 +35,20 @@ var userLabels = map[string]string{
 
 func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	createUsers := make(map[string]bool)
-	var existingUsers []string
 	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
-	password := workshop.Spec.UserDetails.DefaultPassword
 	for userSuffix := 1; userSuffix <= totalUsers; userSuffix++ {
 		userName := fmt.Sprint(userPrefix, userSuffix)
 		createUsers[userName] = true
 	}
 
-	labelSelector, err := labels.Parse(UserLabelSelector)
+	listUsers, err := r.createdUserList(workshop)
 	if err != nil {
-		log.Errorf("Failed to get users, filtered by labelSelector {%s} ,{%s}", labelSelector, err)
-	}
-	listUsers := &userv1.UserList{}
-	listOps := &client.ListOptions{
-		LabelSelector: labelSelector,
-	}
-	// list User
-	if err := r.List(context.TODO(), listUsers, listOps); err != nil {
-		log.Errorf("Failed to get list of users %s", err)
-	}
-	for _, user := range listUsers.Items {
-		username := user.Name
-		existingUsers = append(existingUsers, username)
+		log.Errorf("Failed to get Created User List {%s} ", err)
 	}
 
-	for _, username := range existingUsers {
+	for _, user := range listUsers.Items {
+		username := user.Name
 		_, ok := createUsers[username]
 		if ok {
 			createUsers[username] = false
@@ -70,7 +57,6 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 				return result, err
 			}
 		}
-
 	}
 
 	for username, value := range createUsers {
@@ -80,7 +66,7 @@ func (r *WorkshopReconciler) reconcileUser(workshop *workshopv1.Workshop) (recon
 			}
 		}
 	}
-	if result, err := r.createUserHtpasswd(workshop, len(existingUsers), password); util.IsRequeued(result, err) {
+	if result, err := r.createUserHtpasswd(workshop, createUsers); util.IsRequeued(result, err) {
 		return result, err
 	}
 
@@ -96,7 +82,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	if err := r.Create(context.TODO(), user); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s user", user.Name)
+		log.Infof("Created %s User", user.Name)
 	}
 
 	// Create User Role Binding
@@ -116,7 +102,7 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	}
 
 	// Create Identity
-		identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
+	identity := openshiftuser.NewIdentity(workshop, r.Scheme, username, IDENTITY_NAME, userFound)
 	if err := r.Create(context.TODO(), identity); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -135,34 +121,36 @@ func (r *WorkshopReconciler) addUser(workshop *workshopv1.Workshop, scheme *runt
 	return reconcile.Result{}, nil
 }
 
-func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, userList int, password string) (reconcile.Result, error) {
+func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, users map[string]bool) (reconcile.Result, error) {
+
 	var htpasswds []byte
 	var countUsers int
-	var createUsers []string
-	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
+	createUsers := []string{}
+
+	password := workshop.Spec.UserDetails.DefaultPassword
 	totalUsers := workshop.Spec.UserDetails.NumberOfUsers
-	for userSuffix := 1; userSuffix <= totalUsers; userSuffix++ {
-		userName := fmt.Sprint(userPrefix, userSuffix)
-		createUsers = append(createUsers, userName)
+	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
+
+	for usersname := range users {
+		createUsers = append(createUsers, usersname)
 	}
-	if userList == 0 || len(createUsers) > userList || len(createUsers) < userList {
-		for _, username := range createUsers {
-			command := "echo \"password\" | htpasswd -b -B -i -n " + username
-			updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
-			out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
-			if err != nil {
-				log.Errorf("error %s", err)
-			}
-			userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
-			htpasswds = append(htpasswds, []byte(userpwd)...)
+
+	for _, username := range createUsers {
+		command := "echo \"password\" | htpasswd -b -B -i -n " + username
+		updateCommad := fmt.Sprint(strings.Replace(command, "password", password, -1))
+		out, err := exec.Command("/bin/bash", "-c", updateCommad).Output()
+		if err != nil {
+			log.Errorf("Failed to Execute Bash Command %s", err)
 		}
+		userpwd := fmt.Sprint(strings.TrimSpace(string(out)), "\n")
+		htpasswds = append(htpasswds, []byte(userpwd)...)
 	}
 
 	htpasswdSecret := openshiftuser.NewHTPasswdSecret(workshop, r.Scheme, HTPASSWD_SECRET_NAME, HTPASSWD_SECRET_NAMESPACE_NAME, htpasswds)
 	if err := r.Create(context.TODO(), htpasswdSecret); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created  %s secret", htpasswdSecret.Name)
+		log.Infof("Created  %s Secret", htpasswdSecret.Name)
 	} else if errors.IsAlreadyExists(err) {
 		// Get secret
 		secretFound := &corev1.Secret{}
@@ -171,7 +159,7 @@ func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, u
 				encodedSecret := base64.StdEncoding.EncodeToString(secretData)
 				decodeSecret, err := base64.StdEncoding.DecodeString(encodedSecret)
 				if err != nil {
-					log.Errorf("Error %s", err)
+					log.Errorf("Failed to Decode Secret %s", err)
 				}
 				countUsers = strings.Count(string(decodeSecret), userPrefix)
 			}
@@ -195,19 +183,13 @@ func (r *WorkshopReconciler) createUserHtpasswd(workshop *workshopv1.Workshop, u
 func (r *WorkshopReconciler) deleteUsers(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 	var userList []string
 	userPrefix := workshop.Spec.UserDetails.UserNamePrefix
-	labelSelector, err := labels.Parse(UserLabelSelector)
+
+	listUsers, err := r.createdUserList(workshop)
 	if err != nil {
-		log.Errorf("Error %s", err)
+		log.Errorf("Failed to get Created User List {%s} ", err)
 	}
 
-	ListUsers := &userv1.UserList{}
-	listOps := &client.ListOptions{
-		LabelSelector: labelSelector,
-	}
-	if err := r.List(context.TODO(), ListUsers, listOps); err != nil {
-		log.Errorf("Error %s", err)
-	}
-	for _, user := range ListUsers.Items {
+	for _, user := range listUsers.Items {
 		username := user.Name
 		userList = append(userList, username)
 	}
@@ -280,4 +262,21 @@ func (r *WorkshopReconciler) deleteUserHtpasswd(workshop *workshopv1.Workshop) (
 	log.Infof("Deleted %s HTPasswd Secret", htpasswdSecret.Name)
 	//Success
 	return reconcile.Result{}, nil
+}
+
+//createdUserList return list of users
+func (r *WorkshopReconciler) createdUserList(workshop *workshopv1.Workshop) (*userv1.UserList, error) {
+	labelSelector, err := labels.Parse(USER_LABEL_SELECTOR)
+	if err != nil {
+		log.Errorf("Failed to get list of users %s", err)
+	}
+	listUsers := &userv1.UserList{}
+	listOps := &client.ListOptions{
+		LabelSelector: labelSelector,
+	}
+	// list User
+	if err := r.List(context.TODO(), listUsers, listOps); err != nil {
+		log.Errorf("Failed to get  list of  users, filtered by labelSelector {%s} ,{%s}", labelSelector, err)
+	}
+	return listUsers, err
 }
