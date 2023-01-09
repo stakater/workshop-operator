@@ -51,7 +51,7 @@ The Workshop Infrastructure is deployed by creating a Custom Resource based on t
 
 There is examples of custom resources (CR) in https://github.com/stakater/workshop-operator/tree/main/config/samples[CR]
 
-For instance, to deploy the Workshop Infrastruture for the Cloud-Native Workshop, please execute the following command:
+For instance, to deploy the Workshop Infrastructure for the Cloud-Native Workshop, please execute the following command:
 
 [source,bash]
 
